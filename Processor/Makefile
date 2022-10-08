@@ -14,8 +14,8 @@
 #
 TARGET = Processor
 
-NMEA_GPS = $(HOME)/code/Navigation/GPS/GTop/v1.3
-IMU      = $(HOME)/code/Navigation/ICM-20948/v0.7
+NMEA_GPS = ../GTOP
+IMU      = ../ICM-20948
 COMMON   = $(HOME)/common
 #
 # Compile time resolution.
@@ -25,7 +25,6 @@ INCLUDE = -I$(COMMON)/utility -I$(COMMON)/iolib -I$(COMMON)/libNavBasic \
 
 LIBS = -lNMEA -lIMUData -lio -lutility -lNavBasic -lproj -lhdf5_cpp -lhdf5
 LIBS += -L$(IMU) -L$(NMEA_GPS) -L$(DRIVE)/common/iolib -L$(HDF5LIB) -lconfig++
-
 
 # Rules to make the object files depend on the sources.
 SRC     = 
