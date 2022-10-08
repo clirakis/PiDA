@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title> lassen GPS data </title>
+    <!-- https://www.w3schools.com/css/css_table.asp -->
+    <link rel="stylesheet" href='../static/style.css'/>
+  </head>
+  <body>
+    <h1> Data Panel </h1>
+    <table id=rawdata>
+      <tr>
+	<th> Label </th>
+	<th> Value </th>
+      </tr>
+      <tr>
+        <td> Time      </td>
+        <td> {{ time }} </td>
+      </tr>
+      <tr>
+        <td> Latitude  </td>
+        <td> {{ LatDeg }} {{ LatMin }} {{ LatSec }}</td>
+      </tr>
+      <tr>
+        <td> Longitude </td>
+        <td> {{ LonDeg }} {{ LonMin }} {{ LonSec }} </td>
+      </tr>
+      <tr>
+        <td> Altitude  </td>
+        <td> {{ Alt }} </td>
+      </tr>
+    </table>
+    <hr>
+    <a href="/"class="button">REFRESH</a></h3>
+    <hr>
+    <img src="/plot/scat" alt="Image Placeholder" width="49%">
+    <hr>
+    <p> @2021 CBL </p>
+  </body>
+</html>

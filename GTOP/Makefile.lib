@@ -1,0 +1,41 @@
+##################################################################
+#
+#	Makefile for NMEALIB using gcc on Linux. 
+#
+#
+#	Modified	by	Reason
+# 	--------	--	------
+#	24-Feb-22       CBL     Original
+#
+######################################################################
+# Machine specific stuff
+#
+#
+LIBRARY = GTOP.a
+#
+# Compile time resolution.
+#
+INCLUDE = -I$(DRIVE)/common/utility -I$(DRIVE)/common/iolib \
+	-I/usr/include/hdf5/serial
+
+#HDF5LIB setup as part of shell file. 
+#
+LIBS = -lutility -lio  -lrt -lcurses -lhdf5_cpp -lhdf5
+LIBS += -L$(HDF5LIB) -lconfig++
+
+# Rules to make the object files depend on the sources.
+SRC     = 
+SRCCPP  = NMEA_GPS.cpp 
+SRCS    = $(SRC) $(SRCCPP)
+
+HEADERS = NMEA_GPS.hh 
+
+# When we build all, what do we build?
+all:      $(TARGET)
+
+include $(DRIVE)/common/makefiles/makefile.inc
+
+
+#dependencies
+include make.depend 
+# DO NOT DELETE
