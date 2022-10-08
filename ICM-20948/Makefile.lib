@@ -12,27 +12,25 @@
 # Machine specific stuff
 #
 #
-TARGET = IMU
+LIBRARY = libIMUData.a 
 #
 # Compile time resolution.
 #
-INCLUDE = -I$(DRIVE)/common/utility -I$(DRIVE)/common/iolib \
-	-I/usr/include/hdf5/serial
-LIBS = -lwiringPi -lIMUData -lio -lutility -lhdf5_cpp -lhdf5
-LIBS += -L. -L$(HDF5LIB) -lconfig++
-
+INCLUDE = -I$(DRIVE)/common/utility 
+LIBS = 
 
 # Rules to make the object files depend on the sources.
 SRC     = 
-SRCCPP  = main.cpp ICM-20948.cpp IMU.cpp smIPC.cpp \
-	UserSignals.cpp
+SRCCPP  = IMUData.cpp
 SRCS    = $(SRC) $(SRCCPP)
 
-HEADERS = ICM-20948.hh IMU.hh IMUData.hh smIPC.hh UserSignals.hh Version.hh
+HEADERS = IMUData.hh
 
+libIMUData.a: IMUData.cpp IMUData.hh
+	ar -r libIMUData.a IMUData.o
 
 # When we build all, what do we build?
-all:      $(TARGET) 
+all:      $(TARGET) libIMUData.a
 
 include $(DRIVE)/common/makefiles/makefile.inc
 
