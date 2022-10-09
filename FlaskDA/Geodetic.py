@@ -74,6 +74,8 @@ class Geodetic(object):
         X - East in meters
         Y - North in meters
         returns Lat, Lon
+        Look at this for using the Transformer method
+        https://gis.stackexchange.com/questions/78838/converting-projected-coordinates-to-lat-lon-using-python
         """
         Lon, Lat = self.prj(X,Y,inverse=True)
         return Lat, Lon
