@@ -11,27 +11,24 @@
 # Machine specific stuff
 #
 #
-LIBRARY = GTOP.a
+LIBRARY = libNMEA.a
 #
 # Compile time resolution.
 #
-INCLUDE = -I$(DRIVE)/common/utility -I$(DRIVE)/common/iolib \
-	-I/usr/include/hdf5/serial
+INCLUDE = -I$(DRIVE)/common/utility 
 
-#HDF5LIB setup as part of shell file. 
 #
-LIBS = -lutility -lio  -lrt -lcurses -lhdf5_cpp -lhdf5
-LIBS += -L$(HDF5LIB) -lconfig++
+LIBS = 
 
 # Rules to make the object files depend on the sources.
-SRC     = 
+SRC     = serial.c
 SRCCPP  = NMEA_GPS.cpp 
 SRCS    = $(SRC) $(SRCCPP)
 
-HEADERS = NMEA_GPS.hh 
+HEADERS = NMEA_GPS.hh serial.h
 
 # When we build all, what do we build?
-all:      $(TARGET)
+all:      $(LIBRARY)
 
 include $(DRIVE)/common/makefiles/makefile.inc
 

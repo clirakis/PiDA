@@ -32,19 +32,15 @@ LIBS += -L./ -L$(HDF5LIB) -lconfig++
 
 # Rules to make the object files depend on the sources.
 SRC     = GTOP_utilities.c 
-SRCCPP  = main.cpp GTOP.cpp GTOPdisp.cpp smIPC.cpp \
-	UserSignals.cpp
+SRCCPP  = main.cpp GTOP.cpp GTOPdisp.cpp smIPC.cpp UserSignals.cpp
 SRCS    = $(SRC) $(SRCCPP)
 
-HEADERS = GTOP.hh NMEA_GPS.hh GTOPdisp.hh GTOP_utilities.h smIPC.hh serial.h \
+HEADERS = GTOP.hh GTOPdisp.hh GTOP_utilities.h smIPC.hh serial.h \
 	 UserSignals.hh Version.hh
 
 
-NMEALIB.a: NMEA_GPS.o serial.o
-	ar -r libNMEA.a NMEA_GPS.o serial.o
-
 # When we build all, what do we build?
-all:      $(TARGET) libNMEA.a
+all:      $(TARGET) 
 
 include $(DRIVE)/common/makefiles/makefile.inc
 

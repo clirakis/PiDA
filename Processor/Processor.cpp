@@ -192,12 +192,14 @@ void Processor::Do(void)
 {
     const struct timespec sleeptime = {0L, 100000000L};
     SET_DEBUG_STACK;
-    Point  current, delta;
+    Point current;
+    Point  delta;
     double Lat, Lon;
     time_t Seconds;
     double milli, tdelta;
     RMC    *pRMC = fGPS->GetRMC();
     Point xy0 = fGeo->XY0();
+    const double alt = 0.0;
 
     fRun = true;
     while(fRun)
@@ -206,7 +208,7 @@ void Processor::Do(void)
 	{
 	    Lat = pRMC->Latitude();
 	    Lon = pRMC->Longitude();
-	    current = fGeo->ToXY( Lon, Lat);
+	    current = fGeo->ToXY( Lon, Lat, alt);
 	    delta   = xy0 - current;
 	    Seconds = pRMC->Seconds();
 	    milli   = pRMC->Milli();
