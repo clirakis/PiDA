@@ -104,6 +104,10 @@ class PositionPlot(object):
         self.__ax_histy.grid(True)
 
     def SetXLimits(self,minX, maxX):
+        """@brief Set the X lower and upper limits on the plots.
+        @minX - minimum X value for plot
+        @maxX - maximum X value for plot
+        """
         self.__MinX       = minX
         self.__MaxX       = maxX
         # Set for central plot
@@ -116,6 +120,8 @@ class PositionPlot(object):
 ##            print(self.__xbins[i])
 
     def SetYLimits(self, minY, maxY):
+        """@brief Set the Y limits on all histograms and scatterplot.
+        """
         self.__MinY       = minY
         self.__MaxY       = maxY
         # set for central plot

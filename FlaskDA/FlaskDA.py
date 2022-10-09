@@ -8,7 +8,8 @@
                 all the pieces together for a DA system
                 
   05-Feb-22 CBL Operational, adding in plotting. 
- 
+
+  09-Oct-22 CBL adding functionality. Still doing testing with the lassen GPS.
  
   References:
   -----------
@@ -25,7 +26,9 @@ import signal
 #
 # My methods
 #
+# access shared memory for lassen GPS (on linux box Rod)
 from PySM.TSIPosition import TSIPosition
+# My plotting tools. 
 from Plotting.PositionPlot import PositionPlot
 
 # instantiate the Flask app

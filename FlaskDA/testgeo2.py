@@ -16,6 +16,31 @@ from pygeodesy import utm
 from pygeodesy import points
 from pygeodesy.ellipsoidalVincenty import LatLon
 
+def CalculateLimits(Lat, Lon, scale):
+    """@brief calculate the four corners of a polygon for display
+    given the center latitude and longitude
+    @Lat - lattitude in degrees of center of polygon
+    @Lon - longitude in degrees of the center of polygon
+    @scale - scale value in meters side to side.
+    """
+    p = LatLon(Lat, Lon)
+    print("Points: ", p)
+
+    # calculate the window based on the four corners, the range is
+    # on a 45 degree angle which is scale/(2 root(2))
+    Range   = scale/(2.0*np.sqrt(2.0))
+    Bearing = 45.0
+
+    # Calculate Left edge - assume north up
+    ul = p.destination(Range, Bearing)
+    print("Upper Left: ", ul)
+
+    Bearing = 135.0
+    ll = p.destination(Range, Bearing)
+    print("Lower Left: ", ll)
+
+
+
 if __name__ == "__main__":
     """
     This is our main entry point. I wonder if I could define all the
@@ -74,3 +99,4 @@ if __name__ == "__main__":
     LonRI = -71.3
     #az,R = pGeo.RangeBearing(Lon, Lat, LonRI, LatRI)
     #print("Azimuth: ", az," Range(m):", R)
+
