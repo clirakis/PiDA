@@ -9,31 +9,42 @@
     <h1> Data Panel </h1>
     <table id=rawdata>
       <tr>
-	<th> Label </th>
-	<th> Value </th>
+	<th><b> Label </b> </th>
+	<th><b> Value </b> </th>
       </tr>
       <tr>
-        <td> Time      </td>
+        <td> <b>Time</b>      </td>
         <td> {{ time }} </td>
       </tr>
       <tr>
-        <td> Latitude  </td>
+        <td> <b>Latitude</b>  </td>
         <td> {{ LatDeg }} {{ LatMin }} {{ LatSec }}</td>
       </tr>
       <tr>
-        <td> Longitude </td>
+        <td> <b>Longitude</b> </td>
         <td> {{ LonDeg }} {{ LonMin }} {{ LonSec }} </td>
       </tr>
       <tr>
-        <td> Altitude  </td>
+        <td> <b>Altitude</b>  </td>
         <td> {{ Alt }} </td>
       </tr>
     </table>
     <hr>
-    <a href="/"class="button">REFRESH</a></h3>
+
+    <a href="/" class="button">REFRESH</a>
+
+    <!-- This is a POST method. It has to have a /SetScale method
+      inside the flask program. The method will retrive the results
+      and just return the index.html template. 
+    -->
+    <form action="/SetScale"" method="POST">
+        <label for="fScale"> Scale </label> 
+        <input type="number" id="fScale" name="fScale" value="1000"> 
+	<input type="submit" value="Set">
+    </form>
     <hr>
     <img src="/plot/scat" alt="Image Placeholder" width="49%">
     <hr>
-    <p> @2021 CBL </p>
+    <p> @2022 CBL </p>
   </body>
 </html>

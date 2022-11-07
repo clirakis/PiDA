@@ -1,3 +1,4 @@
+
 #!/usr/bin/python3
 """
  FlaskDA.py
@@ -10,11 +11,21 @@
   05-Feb-22 CBL Operational, adding in plotting. 
 
   09-Oct-22 CBL adding functionality. Still doing testing with the lassen GPS.
+
+  06-Nov-22 CBL Menu packages aren't really that great. Adding more buttons
+                and neating up the table of data.
+                Need to set the limits by scale value.
+                A lot of what is below replicates. Can I fix it to
+                call a single template call. Also really need to work on
+                the sizing of the label/numberical entry and set button. 
  
   References:
   -----------
    https://medium.com/@rovai/from-data-to-graph-a-web-jorney-with-flask-and-sqlite-6c2ec9c0ad0
   https://wiki.gentoo.org/wiki/Gpib
+
+ https://flask.palletsprojects.com/en/2.2.x/api/
+ https://flask.palletsprojects.com/en/2.2.x/api/#url-route-registrations
 
  ===============================================================
  """
@@ -94,13 +105,12 @@ def SignalHandler(signum, frame):
         dt = t1-t0
         t0 = t1
         gps_t, fix_time, Lat, Lon, z = getGPS_Position()
-        print("Timeout: ", dt)
+        #print("Timeout: ", dt)
         x = np.rad2deg(Lon)
         y = np.rad2deg(Lat)
         PPlot.AddPoint(x,y)
         # make it happen again. 
         signal.alarm(1)
-
 
 # main route
 @app.route("/")
@@ -139,26 +149,27 @@ def my_form_post():
     }
     return render_template('index.html', **templateData)
 
-##@app.route('/plot/temp')
-##def plot_temp():
-##    times, temps, hums = getHistData(numSamples)
-##    ys = temps
-##    fig = Figure()
-##    axis = fig.add_subplot(1, 1, 1)
-##    axis.set_title("Temperature [F]")
-##    axis.set_xlabel("Samples")
-##    axis.grid(True)
-##    xs = range(numSamples)
-##    axis.plot(xs, ys)
-##    canvas = FigureCanvas(fig)
-##    output = io.BytesIO()
-##    canvas.print_png(output)
-##    response = make_response(output.getvalue())
-##    response.mimetype = 'image/png'
-##    return response
+@app.route('/SetScale', methods=['POST'])
+def setScale():
+    """
+    https://stackoverflow.com/questions/13279399/how-to-obtain-values-of-request-variables-using-python-and-flask
+    
+    https://www.geeksforgeeks.org/retrieving-html-from-data-using-flask/
+    """
+    # POST
+    data = request.form.get("fScale")
+    print('set scale.', data)
+    
+    # GET
+    #data = request.args.get("fScale")
+    return render_template('index.html')
 
 @app.route('/plot/scat')
 def plot_scat():
+    """@plot_scat
+    Gets an inline png to plot from Position Plot and returns it
+    to be rendered. 
+    """
     output = PPlot.InlinePlot()
     response = make_response(output.getvalue())
     response.mimetype = 'image/png'
@@ -173,4 +184,4 @@ if __name__ == "__main__":
     PPlot.SetYLimits(41.25, 41.35)
     signal.signal(signal.SIGALRM, SignalHandler)
     signal.alarm(1)
-    app.run(host='0.0.0.0', port=8050, debug=False)
+    app.run(host='0.0.0.0', port=8050, debug=True)
