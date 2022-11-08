@@ -40,7 +40,7 @@ import signal
 # access shared memory for lassen GPS (on linux box Rod)
 from PySM.TSIPosition import TSIPosition
 # My plotting tools. 
-from Plotting.PositionPlot import PositionPlot
+from Plotting.ProjectedPlot import ProjectedPlot
 
 # instantiate the Flask app
 app = Flask(__name__)
@@ -53,7 +53,7 @@ MySM = TSIPosition()
 #
 # Plotting tools.
 #
-PPlot = PositionPlot()
+PPlot = ProjectedPlot()
 
 #
 # Global variables.
@@ -180,8 +180,9 @@ if __name__ == "__main__":
     This is our main entry point. I wonder if I could define all the
     classes here.
     """
-    PPlot.SetXLimits(-73.95, -73.85)
-    PPlot.SetYLimits(41.25, 41.35)
+    PPlot.Center(41.308385, -73.893)
+   # PPlot.SetXLimits(-73.95, -73.85)
+    #PPlot.SetYLimits(41.25, 41.35)
     signal.signal(signal.SIGALRM, SignalHandler)
     signal.alarm(1)
     app.run(host='0.0.0.0', port=8050, debug=True)
