@@ -15,6 +15,9 @@ https://proj.org/faq.html#what-is-the-best-format-for-describing-coordinate-refe
 Place to validate projections
 https://www.earthpoint.us/convert.aspx
 https://scienceweb.whoi.edu/marine/ndsf/cgi-bin/NDSFutility.cgi?form=0&from=LatLon&to=UTM
+
+https://pyproj4.github.io/pyproj/stable/examples.html
+This suports proj 8.2 and above. 
 """
 import numpy as np
 from pyproj import Proj
