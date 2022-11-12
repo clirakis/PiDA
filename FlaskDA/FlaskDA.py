@@ -158,10 +158,9 @@ def setScale():
     """
     # POST
     data = request.form.get("fScale")
-    print('set scale.', data)
-    
-    # GET
-    #data = request.args.get("fScale")
+    x = float(data)
+    print('set scale.', x)
+    PPlot.Scale(x)
     return render_template('index.html')
 
 @app.route('/plot/scat')

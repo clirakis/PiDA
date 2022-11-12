@@ -55,6 +55,7 @@ class ProjectedPlot(PositionPlot):
         """@brief method to set new scale value
         @val input in meters
         """
+        print('Set scale.', val)
         self.__scale = val
         self.calculateLimits()
 
