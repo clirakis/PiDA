@@ -53,7 +53,7 @@ MySM = TSIPosition()
 #
 # Plotting tools.
 #
-PPlot = ProjectedPlot()
+PPlot = ProjectedPlot(41.3,-73.83)
 
 #
 # Global variables.

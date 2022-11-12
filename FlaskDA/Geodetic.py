@@ -33,10 +33,10 @@ class Geodetic(object):
         self.__X0        = 0.0
         self.__Y0        = 0.0
         self.__Zone      = 0
-        self.SetCenter(41.3, -73.89)
+        self.setCenter(41.3, -73.89)
         
 
-    def CalculateZone(self, Longitude):
+    def calculateZone(self, Longitude):
         """
         @Longitude in degress
         returns Zone as integer
@@ -45,7 +45,7 @@ class Geodetic(object):
         Zone = np.ceil(Zone/6.0)
         return Zone
 
-    def SetCenter(self, Latitude, Longitude):
+    def setCenter(self, Latitude, Longitude):
         """
         SetCenter  - reset the center for the projection
         @Latitude  - degrees latitude for center of projection
@@ -53,23 +53,23 @@ class Geodetic(object):
         """
         self.__Latitude  = Latitude
         self.__Longitude = Longitude
-        self.__Zone = self.CalculateZone(self.__Longitude)
+        self.__Zone = self.calculateZone(self.__Longitude)
 
         crs_4326  = CRS.from_epsg(4326) # WGS 84
         # 32618 - UTM zone 18
-        crs_in    = 32600 + CalculateZone(Longitude)
+        crs_in    = 32600 + self.__Zone
         crs_32618 = CRS.from_epsg(crs_in)
         # Forward to UTM XY
         self.__fwd = Transformer.from_crs(crs_4326, crs_32618)
         # go in reverse.
-        self.inv = Transformer.from_crs( crs_32618, crs_4326)
-        self.__X0, self.__Y0 = self.fwd(self.__Longitude, self.__Latitude)
+        self.__inv = Transformer.from_crs( crs_32618, crs_4326)
+        self.__X0, self.__Y0 = self.__fwd.transform(self.__Longitude, self.__Latitude)
         #
 
-    def CenterLL(self):
+    def centerLL(self):
         return self.__Latitude, self.__Longitude
     
-    def CenterXY(self):
+    def centerXY(self):
         return self.__X0, self.__Y0
 
     def ToXY(self, Lon, Lat):
@@ -78,7 +78,7 @@ class Geodetic(object):
         Lat in degrees
         return X,Y in UTM
         """
-        X,Y = self.fwd.transform(Lon, Lat)
+        X,Y = self.__fwd.transform(Lon, Lat)
         return X,Y
 
     def ToLL(self, X, Y):
@@ -89,7 +89,7 @@ class Geodetic(object):
         Look at this for using the Transformer method
         https://gis.stackexchange.com/questions/78838/converting-projected-coordinates-to-lat-lon-using-python
         """
-        Lon, Lat = self.inv.transform(X,Y)
+        Lat, Lon = self.__inv.transform(X,Y)
         return Lat, Lon
 
     

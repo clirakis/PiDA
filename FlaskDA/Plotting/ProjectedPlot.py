@@ -29,16 +29,21 @@ class ProjectedPlot(PositionPlot):
         @param Lon - projection center
         """
         PositionPlot.__init__(self)
+        #
+        # Create the projection and set the center of the projection
+        # with the supplied coordinates. 
         self.__geo        = Geodetic()
-        self.__geo.SetCenter(Lat, Lon)
+        self.__geo.setCenter(Lat, Lon)
         
         self.__scale      = 1000      # initial scale size in meters
 
-        self.setCenter(Lat, Lon)
-        self.__center.Lat = 41.0
-        self.__center.Lon = -71.5
-
-        self.calculateLimits()
+        # Set the display center, this is not necessiarly the
+        # same as the projection center, but stat that way. 
+        self.__center_Lat =  41.0
+        self.__center_Lon = -71.5
+        self.__X0 = 0
+        self.__Y0 = 0
+        self.Center(Lat, Lon)
 
     def Scale(self):
         """@brief method for retrieving the scale in meters.
@@ -61,9 +66,8 @@ class ProjectedPlot(PositionPlot):
     def Center(self, Lat, Lon):
         """@brief Set the current display center.
         """
-        self.__center.Lat = Lat
-        self.__center.Lon = Lon
-        
+        self.__center_Lat = Lat
+        self.__center_Lon = Lon
         self.calculateLimits()
 
     def calculateLimits(self):
@@ -73,29 +77,26 @@ class ProjectedPlot(PositionPlot):
         @Lon - longitude in degrees of the center of polygon
         @scale - scale value in meters side to side.
         """
-        print("Points: ", self.__center)
+        print("Points: ", self.__center_Lat, " ", self.__center_Lon)
 
-        res = fwd.transform(self.__center.Lat, self.__center.Lon)
-        self.X0 = res[0]
-        self.Y0 = res[1]
+        self.__X0, self.__Y0 = self.__geo.ToXY(self.__center_Lat, self.__center_Lon)
+        print("X: " , self.__X0, " Y:", self.__Y0)
 
-        print("X: " , res[0], " Y:", res[1])
-
-        XL = res[0] - scale/2
-        XR = res[0] + scale/2
-        YL = res[1] - scale/2
-        YR = res[1] + scale/2
+        XL = self.__X0 - self.__scale/2
+        XR = self.__X0 + self.__scale/2
+        YL = self.__Y0 - self.__scale/2
+        YR = self.__Y0 + self.__scale/2
 
         print("Upper Right: ", XR, " ", YR)
-        print("Lower Left: ", XL, " ", YL)
+        print("Lower Left:  ", XL, " ", YL)
 
 
-        ul = inv.transform(XR,YR)
-        ll = inv.transform(XL,YL)
+        ur_Lat,ur_Lon = self.__geo.ToLL(XR,YR)
+        ll_Lat,ll_Lon = self.__geo.ToLL(XL,YL)
     
         # Calculate Left edge - assume north up
-        print("Upper Right: ", ul)
-        print("Lower Left: ", ll)
+        print("Upper Right: ", ur_Lat, " " , ur_Lon)
+        print("Lower Left:  ", ll_Lat, " ", ll_Lon)
 
-        self.SetXLimits(ll[1], ur[1])
-        self.SetYLimits(ll[0], ur[0])
+        self.SetXLimits(ll_Lon, ur_Lon)
+        self.SetYLimits(ll_Lat, ur_Lat)
