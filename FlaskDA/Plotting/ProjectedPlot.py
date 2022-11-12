@@ -7,6 +7,7 @@
    --------  --   ------
    09-Oct-22 CBL  Original
    07-Nov-22 CBL  Added in calculate center
+   11-Nov-22 CBL  updated calculate limits
 
    References:
    pygeodesy as part of PyPI builds on top of PyProj with a whole lot
@@ -18,21 +19,26 @@
 """
 import numpy as np
 from Plotting.PositionPlot import PositionPlot
-from pygeodesy.ellipsoidalVincenty import LatLon
-from pygeodesy import utm
-from pygeodesy import points
-
+from Geodetic import Geodetic
 
 class ProjectedPlot(PositionPlot):
-    def __init__(self):
+    def __init__(self, Lat, Lon):
         """@brief using geodetic projections we can create x-y plots.
         no input now
+        @param Lat - projection center
+        @param Lon - projection center
         """
         PositionPlot.__init__(self)
-        self.__scale  = 1000      # initial scale size in meters
-        self.__center = LatLon(41.0, -71.5)
-        self.calculateLimits()
+        self.__geo        = Geodetic()
+        self.__geo.SetCenter(Lat, Lon)
         
+        self.__scale      = 1000      # initial scale size in meters
+
+        self.setCenter(Lat, Lon)
+        self.__center.Lat = 41.0
+        self.__center.Lon = -71.5
+
+        self.calculateLimits()
 
     def Scale(self):
         """@brief method for retrieving the scale in meters.
@@ -55,7 +61,9 @@ class ProjectedPlot(PositionPlot):
     def Center(self, Lat, Lon):
         """@brief Set the current display center.
         """
-        self.__center = LatLon(Lat,Lon)
+        self.__center.Lat = Lat
+        self.__center.Lon = Lon
+        
         self.calculateLimits()
 
     def calculateLimits(self):
@@ -66,19 +74,28 @@ class ProjectedPlot(PositionPlot):
         @scale - scale value in meters side to side.
         """
         print("Points: ", self.__center)
-        
-        # calculate the window based on the four corners, the range is
-        # on a 45 degree angle which is scale/(2 root(2))
-        Range   = self.__scale/(2.0*np.sqrt(2.0))
-        Bearing = 45.0
 
+        res = fwd.transform(self.__center.Lat, self.__center.Lon)
+        self.X0 = res[0]
+        self.Y0 = res[1]
+
+        print("X: " , res[0], " Y:", res[1])
+
+        XL = res[0] - scale/2
+        XR = res[0] + scale/2
+        YL = res[1] - scale/2
+        YR = res[1] + scale/2
+
+        print("Upper Right: ", XR, " ", YR)
+        print("Lower Left: ", XL, " ", YL)
+
+
+        ul = inv.transform(XR,YR)
+        ll = inv.transform(XL,YL)
+    
         # Calculate Left edge - assume north up
-        ur = self.__center.destination(Range, Bearing)
-        print("Upper Right: ", ur)
-        
-        Bearing = 135.0
-        ll = self.__center.destination(Range, Bearing)
+        print("Upper Right: ", ul)
         print("Lower Left: ", ll)
 
-        self.SetXLimits(ll.lon, ur.lon)
-        self.SetYLimits(ll.lat, ur.lat)
+        self.SetXLimits(ll[1], ur[1])
+        self.SetYLimits(ll[0], ur[0])

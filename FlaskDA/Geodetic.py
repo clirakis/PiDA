@@ -4,7 +4,8 @@ Utilities to interface to proj and help do projections back and forth.
      Modified  By   Reason
      --------  --   ------
      10-Feb-22 CBL  Original
-     07-Nov-22 CBL  does not work. 
+     07-Nov-22 CBL  does not work.
+     11-Nov-22 CBL  update with pyproj
 
 References:
 https://en.wikipedia.org/wiki/Geographic_coordinate_conversion#From_geodetic_to_ECEF_coordinates 
@@ -20,10 +21,10 @@ https://pyproj4.github.io/pyproj/stable/examples.html
 This suports proj 8.2 and above. 
 """
 import numpy as np
-from pyproj import Proj
-#from pyproj import CRS This is in a newer version. I am stuck at 4
-import pyproj
+from pyproj import CRS
+from pyproj import Transformer
 from pyproj import Geod
+
 
 class Geodetic(object):
     def __init__(self):
@@ -33,6 +34,7 @@ class Geodetic(object):
         self.__Y0        = 0.0
         self.__Zone      = 0
         self.SetCenter(41.3, -73.89)
+        
 
     def CalculateZone(self, Longitude):
         """
@@ -52,17 +54,23 @@ class Geodetic(object):
         self.__Latitude  = Latitude
         self.__Longitude = Longitude
         self.__Zone = self.CalculateZone(self.__Longitude)
-        self.prj = Proj(proj='utm',zone =self.__Zone, ellps='WGS84')
-        self.geod = Geod(ellps='WGS84')
-        #print(self.prj.proj_version)
-        # initialize projection
-        # ECEF stuff
-        #ecef = Proj(proj='geocent', ellps='WGS84', datum='WGS84')
-        #self.prj = Proj(proj='latlong', ellps='WGS84', datum='WGS84')
 
-        # ordinary surface projections
-        self.__X0, self.__Y0 = self.prj(self.__Longitude, self.__Latitude)
+        crs_4326  = CRS.from_epsg(4326) # WGS 84
+        # 32618 - UTM zone 18
+        crs_in    = 32600 + CalculateZone(Longitude)
+        crs_32618 = CRS.from_epsg(crs_in)
+        # Forward to UTM XY
+        self.__fwd = Transformer.from_crs(crs_4326, crs_32618)
+        # go in reverse.
+        self.inv = Transformer.from_crs( crs_32618, crs_4326)
+        self.__X0, self.__Y0 = self.fwd(self.__Longitude, self.__Latitude)
         #
+
+    def CenterLL(self):
+        return self.__Latitude, self.__Longitude
+    
+    def CenterXY(self):
+        return self.__X0, self.__Y0
 
     def ToXY(self, Lon, Lat):
         """
@@ -70,7 +78,7 @@ class Geodetic(object):
         Lat in degrees
         return X,Y in UTM
         """
-        X,Y = self.prj(Lon, Lat)
+        X,Y = self.fwd.transform(Lon, Lat)
         return X,Y
 
     def ToLL(self, X, Y):
@@ -81,7 +89,7 @@ class Geodetic(object):
         Look at this for using the Transformer method
         https://gis.stackexchange.com/questions/78838/converting-projected-coordinates-to-lat-lon-using-python
         """
-        Lon, Lat = self.prj(X,Y,inverse=True)
+        Lon, Lat = self.inv.transform(X,Y)
         return Lat, Lon
 
     

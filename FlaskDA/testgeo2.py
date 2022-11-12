@@ -19,32 +19,37 @@ import time
 from pygeodesy import utm
 from pygeodesy import points
 from pygeodesy.ellipsoidalVincenty import LatLon
+from pyproj import CRS
+from pyproj import Transformer
+from pyproj import Geod
 
-def CalculateLimitsTwo(Lat, Lon, scale):
+
+
+def CalculateLimitsTwo(fwd, inv, Lat, Lon, scale):
     """@brief calculate the four corners of a polygon for display
     given the center latitude and longitude
     @Lat - lattitude in degrees of center of polygon
     @Lon - longitude in degrees of the center of polygon
     @scale - scale value in meters side to side.
     """
-    p = LatLon(Lat, Lon)
+    res = fwd.transform(Lat, Lon)
+
+    print("X: " , res[0], " Y:", res[1])
+
+    XL = res[0] - scale/2
+    XR = res[0] + scale/2
+    YL = res[1] - scale/2
+    YR = res[1] + scale/2
+
+    print("Upper Right: ", XR, " ", YR)
+    print("Lower Left: ", XL, " ", YL)
+
+
+    ul = inv.transform(XR,YR)
+    ll = inv.transform(XL,YL)
     
-    u = utm.toUtm8(Lat, Lon)
-    print("UTM: ", u)
-    print("X: " , u.easting, " Y:", u.northing)
-
-    XL = u.easting - scale/2
-    XR = u.easting + scale/2
-    YL = u.northing + scale/2
-    YR = u.northing - scale/2
-
-
     # Calculate Left edge - assume north up
-    ul = p.destination(Range, Bearing)
     print("Upper Right: ", ul)
-
-    Bearing = 135.0
-    ll = p.destination(Range, Bearing)
     print("Lower Left: ", ll)
 
 
@@ -160,12 +165,39 @@ def TestTwo():
     LonRI = -71.3
     az,R = pGeo.RangeBearing(Lon, Lat, LonRI, LatRI)
     print("Azimuth: ", az," Range(m):", R)
+
+def CalculateZone(Longitude):
+    """
+    @Longitude in degress
+    returns Zone as integer
+    """
+    Zone = Longitude + 180.0
+    Zone = np.ceil(Zone/6.0)
+    return Zone
+
+def Setup(Longitude):
+    crs_4326 = CRS.from_epsg(4326) # WGS 84
+    crs_4326
     
+    # 32618 - UTM zone 18
+    crs_in = 32600 + CalculateZone(Longitude)
+    crs_32618 = CRS.from_epsg(crs_in)
+    print(crs_32618)
+
+    # Forward to UTM XY
+    forward = Transformer.from_crs(crs_4326, crs_32618)
+    # go in reverse.
+
+    inverse = Transformer.from_crs( crs_32618, crs_4326)
+
+    return forward,inverse
+
 def TestThree():
     # Google Maps position for 217 Locust Ave
     Lat =  41.308489
     Lon = -73.893027
-    CalculateLimitsTwo(Lat,Lon, 1000)
+    fwd,inv = Setup(Lon)
+    CalculateLimitsTwo( fwd, inv, Lat, Lon, 1000)
     
 if __name__ == "__main__":
     """
