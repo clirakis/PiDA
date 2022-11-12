@@ -24,6 +24,7 @@
                   https://stackoverflow.com/questions/53630158/add-points-to-the-existing-matplotlib-scatter-plot
 
    06-Feb-22 CBL  Modifying how we create and present plots.
+   12-Nov-22 CBL  Clean up on documentation. Issues with scaling. 
 
    
    References:
@@ -45,24 +46,28 @@ class PositionPlot(object):
         a scatter plot and the projections along the X & Y axes.
         This will also create the figure. 
         """
-#        self.__binwidth   = 0.01  # histogram bin size.
-        self.__nbins      = 20
-        self.__MinX       = -1.0
-        self.__MaxX       =  1.0
-        self.__MinY       = -1.0
-        self.__MaxY       =  1.0
-        self.__MyPlot     = None
-        self.__xbins      = None
-        self.__ybins      = None
-        self.__xhist      = None
-        self.__yhist      = None
-        self.__Error      = False
-        self.__CodeVersion= 0.6
+
+        # Histogram and scatterplot definition bin. Upper and lower Y
+        # only make sense for the scatter plot. 
+        self.__nbins       = 80
+        self.__LowerX      = -1.0
+        self.__UpperX      =  1.0
+        self.__LowerY      = -1.0
+        self.__UpperY      =  1.0
+        
+        self.__ScatterPlot = None
+        self.__xbins       = None
+        self.__ybins       = None
+        self.__xhist       = None
+        self.__yhist       = None
+        self.__Error       = False
+        self.__CodeVersion = 1.0
         
         #
         # define the layout of the scatterplot and histograms.
         #
-        # definitions for the axes
+        # definitions for the axes, This lays out the boundaries
+        #
         left, width    = 0.1, 0.65
         bottom, height = 0.1, 0.65
         spacing        = 0.005
@@ -72,24 +77,23 @@ class PositionPlot(object):
         
         # start with a square Figure: 8x8 inches
         #  https://matplotlib.org/api/_as_gen/matplotlib.figure.Figure.html
+        # one central figure. Really all the data is held in the
+        # axis so we don't need to strore this. 
         self.__fig = plt.figure(figsize=(8, 8))
-
-        # For the FLASK application don't do this. 
-        # Adding these bits helps get the plot always showing. 
-        #fig.canvas.draw()
-        #plt.show(block=False)
 
         #
         # create the central figure for the scatter plot
         #
-        #
         self.__ax = self.__fig.add_axes(rect_scatter)
         self.__ax.grid(True)
-        #self.__ax.set_title('GPS X-Y drift')
-        self.__ax.set_xlabel('Centered False Easting')
-        self.__ax.set_ylabel('Centered False Northing')
-        self.__ax.set_xlim(self.__MinX, self.__MaxX)
-        self.__ax.set_ylim(self.__MinY, self.__MaxY)
+        #self.__ax.set_title('GPS X-Y')
+        #self.__ax.set_xlabel('Centered False Easting')
+        #self.__ax.set_ylabel('Centered False Northing')
+        self.__ax.set_xlabel('Latitude')
+        self.__ax.set_ylabel('Longitude')
+        self.__ax.set_xlim(self.__LowerX, self.__UpperX)
+        self.__ax.set_ylim(self.__LowerY, self.__UpperY)
+
 
         #
         # create a histogram for the x projection
@@ -103,41 +107,79 @@ class PositionPlot(object):
         self.__ax_histy = self.__fig.add_axes(rect_histy, sharey=self.__ax)
         self.__ax_histy.grid(True)
 
-    def SetXLimits(self,minX, maxX):
+    def SetXLimits(self, lowerX, upperX):
         """@brief Set the X lower and upper limits on the plots.
-        @minX - minimum X value for plot
-        @maxX - maximum X value for plot
+        @lowerX - lower X bin value for scatter plot
+        @upperX - upper X bin value for scatter plot
         """
-        self.__MinX       = minX
-        self.__MaxX       = maxX
+        self.__LowerX       = lowerX
+        self.__UpperX       = upperX
         # Set for central plot
-        self.__ax.set_xlim(self.__MinX, self.__MaxX)
-        self.__ax.set_ylim(self.__MinY, self.__MaxY)
-        binwidth = (maxX - minX)/self.__nbins
-        self.__xbins = np.arange(minX, maxX, binwidth)
+        self.__ax.set_xlim(self.__LowerX, self.__UpperX)
+        self.__ax.set_ylim(self.__LowerY, self.__UpperY)
+        binwidth = (upperX - lowerX)/self.__nbins
+        #
+        # This depends a bit on if we are - or +
+        #
+        if (lowerX < upperX):
+            self.__xbins = np.arange(lowerX, upperX, binwidth)
+        else:
+            self.__xbins = np.arange(upperX, lowerX, binwidth)
 
-##        for i in range(len(self.__xbins)):
-##            print(self.__xbins[i])
+        #
+        # Make our own bin labels
+        # Example for putting a comma in an existing label set.
+        # current_values = plt.gca().get_yticks()
+        # plt.gca().set_yticklabels(['{:,.0f}'.format(x) for x in current_values])
+        # IN our case fix the number of labels
+        #
+        dX = (upperX-lowerX)/4.0
+        #labels = np.around(np.arange(lowerX, upperX, dX), decimals=3)
+        labels = np.arange(lowerX, upperX, dX)
+        self.__ax.set_xticks(labels)
 
-    def SetYLimits(self, minY, maxY):
-        """@brief Set the Y limits on all histograms and scatterplot.
+        # set the format on the axis
+        #self.__ax.set_xticklabels(['3.5f'])
+        # string format example
+        # precision = 4
+        # print( "{:.{}f}".format( pi, precision ) )
+        first = "{:.{}f}".format( labels[0], 7 )
+        fpart, ipart = np.modf(labels)
+        second = "{:.{}f}".format( fpart[1], 7 )
+        third  = "{:.{}f}".format( fpart[2], 7 )
+        fourth = "{:.{}f}".format( fpart[3], 7 )
+        
+        fmtlabel = [first, second, third, fourth]
+        self.__ax.set_xticklabels(fmtlabel)
+
+    def SetYLimits(self, lowerY, upperY):
+        """@brief Set the X and Y limits the scatterplot.
         """
-        self.__MinY       = minY
-        self.__MaxY       = maxY
+        self.__LowerY       = lowerY
+        self.__UpperY       = upperY
         # set for central plot
-        self.__ax.set_xlim(self.__MinX, self.__MaxX)
-        self.__ax.set_ylim(self.__MinY, self.__MaxY)
-        binwidth = (maxY - minY)/self.__nbins
-        #print('y binwidth:', binwidth)
-        self.__ybins = np.arange(minY, maxY, binwidth)
+        self.__ax.set_xlim(self.__LowerX, self.__UpperX)
+        self.__ax.set_ylim(self.__LowerY, self.__UpperY)
+        binwidth = (upperY - lowerY)/self.__nbins
+        self.__ybins = np.arange( lowerY, upperY, binwidth)
 
+        dY = (upperY-lowerY)/4.0
+        labels = np.arange(lowerY, upperY, dY)
+        print("Y labels:", labels)
+        self.__ax.set_yticks(labels)
+        
+        #self.__ax.locator_params(axis='y', nbins = 4)
 
     def FillHist(self,x,y):
+        """@FillHist - fill the histograms with the new values
+        @x - new x point
+        @y - new y point
+        """
         self.__xhist = self.__ax_histx.hist(x, bins=self.__xbins,color='b')
         self.__yhist = self.__ax_histy.hist(y, bins=self.__ybins,
                                             orientation='horizontal',
                                             color='b')
-        
+
     def BlockFill(self, x, y):
         """@brief Method to update the current points in the plot.
         This entry point has all the points.
@@ -156,7 +198,7 @@ class PositionPlot(object):
         # since I won't use multiple symbols/markers and this
         # is substantially faster.
         #
-        self.__MyPlot, = self.__ax.plot(x, y, 'g.')
+        self.__ScatterPlot, = self.__ax.plot(x, y, 'g.')
 
         # now determine nice limits by hand, kind of autoscaling
 ##        xymax = max(np.max(np.abs(x)), np.max(np.abs(y)))
@@ -171,9 +213,9 @@ class PositionPlot(object):
         points currently in the scatter plot.
         """
         self.__Error = False
-        if (self.__MyPlot):
+        if (self.__ScatterPlot):
             # A plot does exist to extract data from. 
-            x,y = self.__MyPlot.get_data()
+            x,y = self.__ScatterPlot.get_data()
             return np.mean(x),np.mean(y)
         else:
             self.__Error = True
@@ -185,12 +227,12 @@ class PositionPlot(object):
         points currently in the scatter plot.
         """
         self.__Error = False
-        if (self.__MyPlot == None):
+        if (self.__ScatterPlot == None):
             self.__Error = True
             return -9999999, -9999999
         else:
             # A plot does exist to extract data from. 
-            x,y = self.__MyPlot.get_data()
+            x,y = self.__ScatterPlot.get_data()
             return np.std(x),np.std(y)
         
     def AddPoint(self, xp, yp):
@@ -203,29 +245,31 @@ class PositionPlot(object):
         self.__Error = False
 
         # This deals with the central plot well. 
-        if (self.__MyPlot == None):
+        if (self.__ScatterPlot == None):
             # plot returns a list, putting the comma here
             # returns just the first entry in the list. 
-            self.__MyPlot, = self.__ax.plot(xp, yp, 'g.')
+            self.__ScatterPlot, = self.__ax.plot(xp, yp, 'g.')
         else:
-            # get the data and add to it. 
-            x,y = self.__MyPlot.get_data(orig=True)
-            np.append(x, xp)
-            np.append(y, yp)
-            self.__MyPlot.set_xdata(x)
-            self.__MyPlot.set_ydata(y)
-            self.__ax.plot(xp, yp, 'g.')
+            # get the data from the source and add to it. 
+            x,y = self.__ScatterPlot.get_data(orig=True)
 
-        # update histograms.
-        # print(dir(self.__ax_histx))
-        self.FillHist(xp,yp)
+            if ((x!= 0) and (y!=0)):
+                print("add point.", x, " ", y)
+                np.append(x, xp)
+                np.append(y, yp)
+                self.__ScatterPlot.set_xdata(x)
+                self.__ScatterPlot.set_ydata(y)
+                self.__ax.plot(xp, yp, 'g.')
+
+                # update histograms.
+                self.FillHist(xp,yp)
 
     def draw(self):
         """
         @brief update the plot on the screen.
         """
         self.__ax.figure.canvas.draw()
-        self.AddStatistics()
+        self.addStatistics()
         self.__ax.figure.canvas.flush_events()
         plt.pause(0.001)
         
@@ -238,7 +282,7 @@ class PositionPlot(object):
         plt.show(block=False)
         #self.__ax.figure.canvas.flush_events()
 
-    def AddStatistics(self):
+    def addStatistics(self):
         """
         @brief Get the statistics about the plot and put them in a
         text box that the user can read the basic numbers.
@@ -278,7 +322,6 @@ class PositionPlot(object):
 
     def Version(self):
         return self.__CodeVersion
-
 
     def InlinePlot(self):
         canvas = FigureCanvas(self.__fig)

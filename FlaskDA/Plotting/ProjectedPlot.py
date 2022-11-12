@@ -30,17 +30,22 @@ class ProjectedPlot(PositionPlot):
         """
         PositionPlot.__init__(self)
         #
+        # True  - plot LL
+        # False - plot projected XY using utm
+        #
+        self.__PlotLL     = True  
+        #
         # Create the projection and set the center of the projection
         # with the supplied coordinates. 
         self.__geo        = Geodetic()
         self.__geo.setCenter(Lat, Lon)
         
-        self.__scale      = 1000      # initial scale size in meters
+        self.__scale      = 500      # initial scale size in meters
 
         # Set the display center, this is not necessiarly the
         # same as the projection center, but stat that way. 
-        self.__center_Lat =  41.0
-        self.__center_Lon = -71.5
+        self.__center_Lat = Lat
+        self.__center_Lon = Lon
         self.__X0 = 0
         self.__Y0 = 0
         self.Center(Lat, Lon)
@@ -83,21 +88,35 @@ class ProjectedPlot(PositionPlot):
         self.__X0, self.__Y0 = self.__geo.ToXY(self.__center_Lat, self.__center_Lon)
         print("X: " , self.__X0, " Y:", self.__Y0)
 
-        XL = self.__X0 - self.__scale/2
-        XR = self.__X0 + self.__scale/2
-        YL = self.__Y0 - self.__scale/2
-        YR = self.__Y0 + self.__scale/2
+        dX = self.__scale/2.0
+
+        """
+        Works in upper western hemisphere
+        L = upper Left
+        R = lower Right
+        """
+        XL = self.__X0 - dX
+        XR = self.__X0 + dX
+        YL = self.__Y0 - dX
+        YR = self.__Y0 + dX
 
         print("Upper Right: ", XR, " ", YR)
         print("Lower Left:  ", XL, " ", YL)
 
-
-        ur_Lat,ur_Lon = self.__geo.ToLL(XR,YR)
-        ll_Lat,ll_Lon = self.__geo.ToLL(XL,YL)
+        if (self.__PlotLL):
+            ur_Lat,ur_Lon = self.__geo.ToLL(XR,YR)
+            ll_Lat,ll_Lon = self.__geo.ToLL(XL,YL)
     
-        # Calculate Left edge - assume north up
-        print("Upper Right: ", ur_Lat, " " , ur_Lon)
-        print("Lower Left:  ", ll_Lat, " ", ll_Lon)
+            # Calculate Left edge - assume north up
+            print("Upper Right: ", ur_Lat, " ", ur_Lon)
+            print("Lower Left:  ", ll_Lat, " ", ll_Lon)
 
-        self.SetXLimits(ll_Lon, ur_Lon)
-        self.SetYLimits(ll_Lat, ur_Lat)
+            self.SetXLimits(ll_Lon, ur_Lon)
+            self.SetYLimits(ll_Lat, ur_Lat)
+        else:
+            print("Upper Right: ", XR, " ", YR)
+            print("Lower Left:  ", XL, " ", YL)
+
+            self.SetXLimits(XR, XL)
+            self.SetYLimits(YL, YR)
+            

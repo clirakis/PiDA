@@ -45,6 +45,7 @@
     </form>
 -->
     <!-- https://www.w3schools.com/tags/tag_select.asp -->
+    <!-- https://www.w3schools.com/jsref/dom_obj_select.asp -->
     <!-- If I use the selected keyword here. It will end up overriding
          the set value -->
     <form action="/SetScale" method="POST">
@@ -53,11 +54,30 @@
 	  <option value = "1"> 1 </option>
 	  <option value = "10"> 10 </option>
 	  <option value = "100"> 100 </option>
-	  <option value = "1000"> 1,000 </option>
+	  <option value = "200"> 200 </option>
+	  <option value = "500"> 500 </option>
+	  <option value = "1000" selected> 1,000 </option>
+	  <option value = "5000"> 5000 </option>
 	  <option value = "10000"> 10,000 </option>
 	</select>
 	<input type="submit" value="Set">
     </form>
+    <form action="/SetGridType" method="POST">
+	<fieldset>
+	  <legend> Select Grid Type: </legend>
+	  <div>
+
+	    <input type="radio" id="Lat-Lon" name="gridtype" value="LatLon" checked>
+	      <label for="Lat-Lon"> Lat-Lon </label>
+	  </div>
+
+	  <div>
+	    <input type="radio" id="X-Y" name="gridtype" value="XY">
+	      <label for="X-Y"> XY </label>
+	  </div>
+	  <input type="submit" value="Set">
+	</fieldset>
+      </form>
     <hr>
     <img src="/plot/scat" alt="Image Placeholder" width="49%">
     <hr>

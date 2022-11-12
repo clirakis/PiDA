@@ -1,5 +1,3 @@
-
-#!/usr/bin/python3
 """
  FlaskDA.py
 
@@ -162,6 +160,18 @@ def setScale():
     print('set scale.', x)
     PPlot.Scale(x)
     return render_template('index.html')
+
+@app.route('/SetGridType', methods=['POST'])
+def setGrid():
+    """
+    Using a radio button set the grid type. 
+    """
+    # POST
+    data = request.form.get("gridtype")
+    print('set grid type.', data)
+
+    return render_template('index.html')
+
 
 @app.route('/plot/scat')
 def plot_scat():
