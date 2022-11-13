@@ -143,14 +143,11 @@ def page_not_found(e):
     """
     return render_template('404.html'), 404
 
-
 @app.errorhandler(500)
 def internal_server_error(e):
     return render_template('500.html'), 500
 
-
-
-# main route
+# main route - home page
 @app.route("/", methods=['POST', 'GET'])
 def index():
     """
@@ -169,7 +166,7 @@ def index():
            PPlot.Scale(x)
         elif(val == 'Set Grid'):
             data = request.form.get("gridtype")
-            PPlot.whichGrid(data)
+            PPlot.setGrid(data)
             print("Set Grid:", data)
         
     elif request.method == 'GET':
@@ -187,9 +184,11 @@ def index():
         'LonMin' : LonMin,
         'LonSec' : LonSec,
         'Alt' : round(z,2),
-        'gridtype' : 'LatLon',
+        'gridtype' : PPlot.whichGrid(),
     }
     return render_template('index.html', **templateData)
+
+
 
 @app.route('/plot/scat')
 def plot_scat():
@@ -202,14 +201,15 @@ def plot_scat():
     response.mimetype = 'image/png'
     return response
 
+
+
 if __name__ == "__main__":
     """
     This is our main entry point. I wonder if I could define all the
     classes here.
     """
     PPlot.Center(41.308385, -73.893)
-   # PPlot.SetXLimits(-73.95, -73.85)
-    #PPlot.SetYLimits(41.25, 41.35)
     signal.signal(signal.SIGALRM, SignalHandler)
     signal.alarm(1)
+    moment.init_app(app)
     app.run(host='0.0.0.0', port=8050, debug=True)

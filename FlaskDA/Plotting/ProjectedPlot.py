@@ -70,8 +70,32 @@ class ProjectedPlot(PositionPlot):
             self.setXLabel('Centered False Easting')
             self.setYLabel('Centered False Northing')
 
+    def whichGrid(self):
+        """
+        Return a string value for the web page based on the current
+        grid selected.
+        """
+        if self.__PlotLL :
+            str = "LatLon"
+        else:
+            str = "XY"
+        print("Which Grid: ", str)
+        return str
 
-    def whichGrid(self, stringval):
+    def whichScale(self):
+        """
+        Return a string for use by web page based on current scale.
+        """
+        val = np.trunc(self.__scale)
+        rv = str(val)
+        print("which Scale:", rv)
+        return rv
+
+    def setGrid(self, stringval):
+        """
+        Method to input string value from HTML webpage and
+        make the selection.
+        """
         if ("XY" in stringval):
             grd = "XY"
             self.ToggleGrid(False)
