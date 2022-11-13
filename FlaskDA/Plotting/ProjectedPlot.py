@@ -56,6 +56,30 @@ class ProjectedPlot(PositionPlot):
         """
         return self.__scale
 
+    def ToggleGrid(self, val):
+        """@ToggleGrid - toggle between L/L - True and XY - False
+        """
+        self.__PlotLL = val
+        # should redo the limits on the graph.
+        self.clear()
+        self.calculateLimits()
+        if (val):
+            self.setXLabel('Latitude')
+            self.setYLabel('Longitude')
+        else:
+            self.setXLabel('Centered False Easting')
+            self.setYLabel('Centered False Northing')
+
+
+    def whichGrid(self, stringval):
+        print("Which Grid?")
+        if ("XY" in stringval):
+            print("XY")
+            self.ToggleGrid(False)
+        else:
+            print("LL")
+            self.ToggleGrid(True)
+
     def Scale(self, val):
         """@brief method to set new scale value
         @val input in meters
@@ -120,3 +144,15 @@ class ProjectedPlot(PositionPlot):
             self.SetXLimits(XR, XL)
             self.SetYLimits(YL, YR)
             
+    def addPoint(self, inX, inY):
+        """@addPoint - built off PositionPlot
+        This will perform a projection as necessary.
+        """
+        print("ProjectedPlot:", inX, " ", inY, "-----------------------")
+        if (self.__PlotLL):
+            print("LL")
+            PositionPlot.addPoint(self,inX, inY)
+        else:
+            x,y = self.__geo.ToXY(inX,inY)
+            print("XY:", x, " ", y)
+            PositionPlot.addPoint(self,x,y)

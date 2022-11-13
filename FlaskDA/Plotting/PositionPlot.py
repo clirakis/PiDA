@@ -94,7 +94,6 @@ class PositionPlot(object):
         self.__ax.set_xlim(self.__LowerX, self.__UpperX)
         self.__ax.set_ylim(self.__LowerY, self.__UpperY)
 
-
         #
         # create a histogram for the x projection
         #
@@ -107,6 +106,13 @@ class PositionPlot(object):
         self.__ax_histy = self.__fig.add_axes(rect_histy, sharey=self.__ax)
         self.__ax_histy.grid(True)
 
+    def setXLabel(self, label):
+        self.__ax.set_xlabel(label)
+
+    def setYLabel(self, label):
+        self.__ax.set_ylabel(label)
+
+        
     def SetXLimits(self, lowerX, upperX):
         """@brief Set the X lower and upper limits on the plots.
         @lowerX - lower X bin value for scatter plot
@@ -169,6 +175,19 @@ class PositionPlot(object):
         self.__ax.set_yticks(labels)
         
         #self.__ax.locator_params(axis='y', nbins = 4)
+
+    def clear(self):
+        """@clear
+        Usually called when we change from LL to XY.
+        The data in the arrays are in one format or another
+        and need to be flushed. 
+        """
+        x = []
+        y = []
+        self.__ScatterPlot.set_xdata(x)
+        self.__ScatterPlot.set_ydata(y)
+        self.__xhist = self.__ax_histx.hist(x, bins=self.__xbins,color='b')
+        self.__yhist = self.__ax_histy.hist(y, bins=self.__ybins, orientation='horizontal', color='b')
 
     def FillHist(self,x,y):
         """@FillHist - fill the histograms with the new values
@@ -235,7 +254,7 @@ class PositionPlot(object):
             x,y = self.__ScatterPlot.get_data()
             return np.std(x),np.std(y)
         
-    def AddPoint(self, xp, yp):
+    def addPoint(self, xp, yp):
         """@brief Method to update the current points in the plot.
         the previous instantiation updated a single block at a time
         rather than using a point pair.
@@ -254,7 +273,7 @@ class PositionPlot(object):
             x,y = self.__ScatterPlot.get_data(orig=True)
 
             if ((x!= 0) and (y!=0)):
-                print("add point.", x, " ", y)
+                print("Position Plot add point.", x, " ", y)
                 np.append(x, xp)
                 np.append(y, yp)
                 self.__ScatterPlot.set_xdata(x)

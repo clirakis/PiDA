@@ -106,7 +106,7 @@ def SignalHandler(signum, frame):
         #print("Timeout: ", dt)
         x = np.rad2deg(Lon)
         y = np.rad2deg(Lat)
-        PPlot.AddPoint(x,y)
+        PPlot.addPoint(x,y)
         # make it happen again. 
         signal.alarm(1)
 
@@ -168,8 +168,7 @@ def setGrid():
     """
     # POST
     data = request.form.get("gridtype")
-    print('set grid type.', data)
-
+    PPlot.whichGrid(data)
     return render_template('index.html')
 
 
