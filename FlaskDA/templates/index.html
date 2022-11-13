@@ -48,7 +48,8 @@
     <!-- https://www.w3schools.com/jsref/dom_obj_select.asp -->
     <!-- If I use the selected keyword here. It will end up overriding
          the set value -->
-    <form action="/SetScale" method="POST">
+    <!-- Have all of the functions go through the parent form. -->
+    <form action="/" method="POST">
 	<label for="fScale"> Choose scale: </label>
 	<select name="fScale" id="fScale">
 	  <option value = "1"> 1 </option>
@@ -60,9 +61,8 @@
 	  <option value = "5000"> 5000 </option>
 	  <option value = "10000"> 10,000 </option>
 	</select>
-	<input type="submit" value="Set">
-    </form>
-    <form action="/SetGridType" method="POST">
+	<input type="submit" value="Set Scale" name="Submit"/>
+
 	<fieldset>
 	  <legend> Select Grid Type: </legend>
 	  <div>
@@ -75,7 +75,7 @@
 	    <input type="radio" id="X-Y" name="gridtype" value="XY">
 	      <label for="X-Y"> XY </label>
 	  </div>
-	  <input type="submit" value="Set">
+	  <input type="submit" value="Set Grid" name="Submit">
 	</fieldset>
       </form>
     <hr>

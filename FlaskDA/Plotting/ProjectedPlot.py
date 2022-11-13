@@ -72,19 +72,22 @@ class ProjectedPlot(PositionPlot):
 
 
     def whichGrid(self, stringval):
-        print("Which Grid?")
         if ("XY" in stringval):
-            print("XY")
+            grd = "XY"
             self.ToggleGrid(False)
         else:
-            print("LL")
+            grd = "LL"
             self.ToggleGrid(True)
+            
+        if(self.debug):
+            print("Which Grid? ", grd)
 
     def Scale(self, val):
         """@brief method to set new scale value
         @val input in meters
         """
-        print('Set scale.', val)
+        if (self.debug):
+            print('Set scale.', val)
         self.__scale = val
         self.calculateLimits()
 
@@ -107,10 +110,11 @@ class ProjectedPlot(PositionPlot):
         @Lon - longitude in degrees of the center of polygon
         @scale - scale value in meters side to side.
         """
-        print("Points: ", self.__center_Lat, " ", self.__center_Lon)
 
         self.__X0, self.__Y0 = self.__geo.ToXY(self.__center_Lat, self.__center_Lon)
-        print("X: " , self.__X0, " Y:", self.__Y0)
+        if (self.debug):
+            print("Points: ", self.__center_Lat, " ", self.__center_Lon,
+                  " X: " , self.__X0, " Y:", self.__Y0)
 
         dX = self.__scale/2.0
 
@@ -124,22 +128,25 @@ class ProjectedPlot(PositionPlot):
         YL = self.__Y0 - dX
         YR = self.__Y0 + dX
 
-        print("Upper Right: ", XR, " ", YR)
-        print("Lower Left:  ", XL, " ", YL)
+        if (self.debug):
+            print("Upper Right: ", XR, " ", YR)
+            print("Lower Left:  ", XL, " ", YL)
 
         if (self.__PlotLL):
             ur_Lat,ur_Lon = self.__geo.ToLL(XR,YR)
             ll_Lat,ll_Lon = self.__geo.ToLL(XL,YL)
     
             # Calculate Left edge - assume north up
-            print("Upper Right: ", ur_Lat, " ", ur_Lon)
-            print("Lower Left:  ", ll_Lat, " ", ll_Lon)
+            if (self.debug):
+                print("Upper Right: ", ur_Lat, " ", ur_Lon)
+                print("Lower Left:  ", ll_Lat, " ", ll_Lon)
 
             self.SetXLimits(ll_Lon, ur_Lon)
             self.SetYLimits(ll_Lat, ur_Lat)
         else:
-            print("Upper Right: ", XR, " ", YR)
-            print("Lower Left:  ", XL, " ", YL)
+            if (self.debug):
+                print("Upper Right: ", XR, " ", YR)
+                print("Lower Left:  ", XL, " ", YL)
 
             self.SetXLimits(XR, XL)
             self.SetYLimits(YL, YR)
@@ -148,11 +155,17 @@ class ProjectedPlot(PositionPlot):
         """@addPoint - built off PositionPlot
         This will perform a projection as necessary.
         """
-        print("ProjectedPlot:", inX, " ", inY, "-----------------------")
+        x = 0
+        y = 0
         if (self.__PlotLL):
-            print("LL")
+            ptype = "LL"
             PositionPlot.addPoint(self,inX, inY)
         else:
             x,y = self.__geo.ToXY(inX,inY)
-            print("XY:", x, " ", y)
+            ptype = "XY"
             PositionPlot.addPoint(self,x,y)
+            
+        if (self.debug):
+            print("ProjectedPlot:", inX, " ", inY, "-----------------------",
+                  ptype, " ", x, " " , y)
+            

@@ -62,6 +62,8 @@ class PositionPlot(object):
         self.__yhist       = None
         self.__Error       = False
         self.__CodeVersion = 1.0
+
+        self.debug         = False
         
         #
         # define the layout of the scatterplot and histograms.
@@ -171,7 +173,7 @@ class PositionPlot(object):
 
         dY = (upperY-lowerY)/4.0
         labels = np.arange(lowerY, upperY, dY)
-        print("Y labels:", labels)
+        #print("Y labels:", labels)
         self.__ax.set_yticks(labels)
         
         #self.__ax.locator_params(axis='y', nbins = 4)
@@ -273,7 +275,8 @@ class PositionPlot(object):
             x,y = self.__ScatterPlot.get_data(orig=True)
 
             if ((x!= 0) and (y!=0)):
-                print("Position Plot add point.", x, " ", y)
+                if(self.debug):
+                    print("Position Plot add point.", x, " ", y)
                 np.append(x, xp)
                 np.append(y, yp)
                 self.__ScatterPlot.set_xdata(x)

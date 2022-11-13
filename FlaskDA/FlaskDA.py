@@ -15,7 +15,9 @@
                 Need to set the limits by scale value.
                 A lot of what is below replicates. Can I fix it to
                 call a single template call. Also really need to work on
-                the sizing of the label/numberical entry and set button. 
+                the sizing of the label/numberical entry and set button.
+                
+  13-Nov-22 CBL condensed the way of handling callbacks/button pushes etc. 
  
   References:
   -----------
@@ -27,7 +29,10 @@
 
  ===============================================================
  """
-from flask import Flask, render_template, send_file, make_response, request
+from flask import (
+    Flask, render_template, send_file, make_response, request, redirect,
+    url_for
+    )
 import numpy as np
 from threading import Thread
 import time
@@ -111,66 +116,41 @@ def SignalHandler(signum, frame):
         signal.alarm(1)
 
 # main route
-@app.route("/")
+@app.route("/", methods=['POST', 'GET'])
 def index():
-    gps_t, fix_time, Lat, Lon, z = getGPS_Position()
-    LatDeg,LatMin,LatSec = MySM.Format(Lat)
-    LonDeg,LonMin,LonSec = MySM.Format(Lon)
-    templateData = {
-        'time': time.ctime(fix_time),
-        'LatDeg' : LatDeg,
-        'LatMin' : LatMin,
-        'LatSec' : LatSec,
-        'LonDeg' : LonDeg,
-        'LonMin' : LonMin,
-        'LonSec' : LonSec,
-        'Alt' : round(z,2),
-    }
-    return render_template('index.html', **templateData)
-
-@app.route('/', methods=['POST'])
-def my_form_post():
-    #
-    # This is causing a "length exceeded" when executed
-    gps_t, fix_time, Lat, Lon, z = getGPS_Position()
-    LatDeg,LatMin,LatSec = MySM.Format(Lat)
-    LonDeg,LonMin,LonSec = MySM.Format(Lon)
-    templateData = {
-        'time': time.ctime(fix_time),
-        'LatDeg' : LatDeg,
-        'LatMin' : LatMin,
-        'LatSec' : LatSec,
-        'LonDeg' : LonDeg,
-        'LonMin' : LonMin,
-        'LonSec' : LonSec,
-        'Alt' : round(z,2),
-    }
-    return render_template('index.html', **templateData)
-
-@app.route('/SetScale', methods=['POST'])
-def setScale():
     """
-    https://stackoverflow.com/questions/13279399/how-to-obtain-values-of-request-variables-using-python-and-flask
+    Parent form data. handle index.html at top.
+    """
+    if request.method == 'POST':
+        val = request.form.get('Submit')
+        print("POST!", val)
+        if(val == 'Set Scale'):
+           data = request.form.get("fScale")
+           x = float(data)
+           print('Set Scale.', x)
+           PPlot.Scale(x)
+        elif(val == 'Set Grid'):
+            data = request.form.get("gridtype")
+            PPlot.whichGrid(data)
+            print("Set Grid:", data)
+        
+    elif request.method == 'GET':
+        print("GET!")
     
-    https://www.geeksforgeeks.org/retrieving-html-from-data-using-flask/
-    """
-    # POST
-    data = request.form.get("fScale")
-    x = float(data)
-    print('set scale.', x)
-    PPlot.Scale(x)
-    return render_template('index.html')
-
-@app.route('/SetGridType', methods=['POST'])
-def setGrid():
-    """
-    Using a radio button set the grid type. 
-    """
-    # POST
-    data = request.form.get("gridtype")
-    PPlot.whichGrid(data)
-    return render_template('index.html')
-
+    gps_t, fix_time, Lat, Lon, z = getGPS_Position()
+    LatDeg,LatMin,LatSec = MySM.Format(Lat)
+    LonDeg,LonMin,LonSec = MySM.Format(Lon)
+    templateData = {
+        'time': time.ctime(fix_time),
+        'LatDeg' : LatDeg,
+        'LatMin' : LatMin,
+        'LatSec' : LatSec,
+        'LonDeg' : LonDeg,
+        'LonMin' : LonMin,
+        'LonSec' : LonSec,
+        'Alt' : round(z,2),
+    }
+    return render_template('index.html', **templateData)
 
 @app.route('/plot/scat')
 def plot_scat():
