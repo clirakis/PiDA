@@ -18,7 +18,7 @@
                 the sizing of the label/numberical entry and set button.
                 
   13-Nov-22 CBL condensed the way of handling callbacks/button pushes etc. 
- 
+                Added in bootstrap for menus and template inheritance
   References:
   -----------
    https://medium.com/@rovai/from-data-to-graph-a-web-jorney-with-flask-and-sqlite-6c2ec9c0ad0
@@ -29,15 +29,22 @@
 
  ===============================================================
  """
+import os
 from flask import (
     Flask, render_template, send_file, make_response, request, redirect,
     url_for
     )
 import numpy as np
+from flask_bootstrap import Bootstrap
+from flask_moment import Moment
+from datetime import datetime
+
+#from jinja2.ext import Extension
+#from jinja2 import Template
 from threading import Thread
 import time
 import signal
-#
+#  ===============================================================
 # My methods
 #
 # access shared memory for lassen GPS (on linux box Rod)
@@ -45,9 +52,20 @@ from PySM.TSIPosition import TSIPosition
 # My plotting tools. 
 from Plotting.ProjectedPlot import ProjectedPlot
 
+#  ===============================================================
 # instantiate the Flask app
 app = Flask(__name__)
 
+#  ===============================================================
+# bootstrap allows us to have some standard templates to operate with. 
+bootstrap = Bootstrap(app)
+
+#  ===============================================================
+# date formatting etc. 
+moment = Moment(app)
+
+
+#  ===============================================================
 # put my initialization in here. This one attaches to the
 # time position shared memory if it exists.
 # This is based on POSIX shared memory and is tightly linked
@@ -64,6 +82,8 @@ PPlot = ProjectedPlot(41.3,-73.83)
 SleepTime = 1 # seconds between signals.
 global t0
 t0 = time.time()
+
+#  ===============================================================
 
 def getGPS_Position():
     """
@@ -114,6 +134,21 @@ def SignalHandler(signum, frame):
         PPlot.addPoint(x,y)
         # make it happen again. 
         signal.alarm(1)
+
+@app.errorhandler(404)
+def page_not_found(e):
+    """
+    our own handler for 404. The resulting page is found in
+    templates/404.html
+    """
+    return render_template('404.html'), 404
+
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    return render_template('500.html'), 500
+
+
 
 # main route
 @app.route("/", methods=['POST', 'GET'])
