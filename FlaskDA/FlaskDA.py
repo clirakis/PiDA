@@ -120,6 +120,9 @@ def SignalHandler(signum, frame):
 def index():
     """
     Parent form data. handle index.html at top.
+    Make sure the form action="/" and it will be processed here.
+    First determine if it is a post or get, then switch on response based
+    on the determination. 
     """
     if request.method == 'POST':
         val = request.form.get('Submit')
@@ -149,6 +152,7 @@ def index():
         'LonMin' : LonMin,
         'LonSec' : LonSec,
         'Alt' : round(z,2),
+        'gridtype' : 'LatLon',
     }
     return render_template('index.html', **templateData)
 
