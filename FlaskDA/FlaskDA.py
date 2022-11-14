@@ -131,7 +131,7 @@ def SignalHandler(signum, frame):
         #print("Timeout: ", dt)
         x = np.rad2deg(Lon)
         y = np.rad2deg(Lat)
-        PPlot.PPaddPoint(x,y)
+        PPlot.addPoint(x,y)
         # make it happen again. 
         signal.alarm(1)
 
@@ -146,6 +146,15 @@ def page_not_found(e):
 @app.errorhandler(500)
 def internal_server_error(e):
     return render_template('500.html'), 500
+
+@app.route("/about")
+def about():
+    """
+    Tell the user about the application.
+    """
+    print("ABOUT")
+    return render_template('about.html')
+    
 
 # main route - home page
 @app.route("/", methods=['POST', 'GET'])
