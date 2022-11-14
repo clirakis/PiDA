@@ -185,6 +185,7 @@ def index():
         'LonSec' : LonSec,
         'Alt' : round(z,2),
         'gridtype' : PPlot.whichGrid(),
+        'fscale' : PPlot.whichScale(),
     }
     return render_template('index.html', **templateData)
 

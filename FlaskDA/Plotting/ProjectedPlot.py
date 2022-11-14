@@ -86,7 +86,7 @@ class ProjectedPlot(PositionPlot):
         """
         Return a string for use by web page based on current scale.
         """
-        val = np.trunc(self.__scale)
+        val = np.trunc(self.__scale).astype(int)
         rv = str(val)
         print("which Scale:", rv)
         return rv
