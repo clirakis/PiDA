@@ -50,6 +50,9 @@ class ProjectedPlot(PositionPlot):
         self.__Y0 = 0
         self.Center(Lat, Lon)
 
+        # debug code
+        self.count = 0
+
     def Scale(self):
         """@brief method for retrieving the scale in meters.
         No input
@@ -74,27 +77,30 @@ class ProjectedPlot(PositionPlot):
         """
         Return a string value for the web page based on the current
         grid selected.
+        Tested 13-Nov-22
         """
         if self.__PlotLL :
             str = "LatLon"
         else:
             str = "XY"
-        print("Which Grid: ", str)
+        #print("Which Grid: ", str)
         return str
 
     def whichScale(self):
         """
         Return a string for use by web page based on current scale.
+        Tested 13-Nov-22
         """
         val = np.trunc(self.__scale).astype(int)
         rv = str(val)
-        print("which Scale:", rv)
+        #print("which Scale:", rv)
         return rv
 
     def setGrid(self, stringval):
         """
         Method to input string value from HTML webpage and
         make the selection.
+        Tested 13-Nov-22
         """
         if ("XY" in stringval):
             grd = "XY"
@@ -103,7 +109,7 @@ class ProjectedPlot(PositionPlot):
             grd = "LL"
             self.ToggleGrid(True)
             
-        if(self.debug):
+        if(True):
             print("Which Grid? ", grd)
 
     def Scale(self, val):
@@ -181,15 +187,20 @@ class ProjectedPlot(PositionPlot):
         """
         x = 0
         y = 0
+        
         if (self.__PlotLL):
             ptype = "LL"
-            PositionPlot.addPoint(self,inX, inY)
+            x = inX
+            y = inY
+            #print("A")
+            self.count = 0
         else:
-            x,y = self.__geo.ToXY(inX,inY)
+            #print("B")
+            x,y = self.__geo.ToXY(inY,inX)
             ptype = "XY"
-            PositionPlot.addPoint(self,x,y)
-            
+
+        PositionPlot.addPoint(self,inX, inY)
         if (self.debug):
-            print("ProjectedPlot:", inX, " ", inY, "-----------------------",
-                  ptype, " ", x, " " , y)
-            
+            print("ProjP:", inX, " ", inY, ptype, " ", x, " " , y)
+            self.count = self.count + 1
+            print("PP addPoint -------------------------------------------", self.count)

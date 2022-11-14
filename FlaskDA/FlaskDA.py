@@ -131,7 +131,7 @@ def SignalHandler(signum, frame):
         #print("Timeout: ", dt)
         x = np.rad2deg(Lon)
         y = np.rad2deg(Lat)
-        PPlot.addPoint(x,y)
+        PPlot.PPaddPoint(x,y)
         # make it happen again. 
         signal.alarm(1)
 
