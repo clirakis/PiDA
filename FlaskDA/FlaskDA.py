@@ -128,12 +128,17 @@ def SignalHandler(signum, frame):
         dt = t1-t0
         t0 = t1
         gps_t, fix_time, Lat, Lon, z = getGPS_Position()
-        #print("Timeout: ", dt)
+        print("Timeout: ", t1)
+        # Timeout varies a shade depending on how long the processing takes
         x = np.rad2deg(Lon)
         y = np.rad2deg(Lat)
         PPlot.addPoint(x,y)
-        # make it happen again. 
-        signal.alarm(1)
+        # make it happen again. DONT NEED TO DO THIS. yes/no???
+        signal.alarm(2)
+    elif (signum == signal.SIGINT):
+        print("CTRL-C")
+        signal.alarm(0)
+        exit(0)
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -220,6 +225,7 @@ if __name__ == "__main__":
     """
     PPlot.Center(41.308385, -73.893)
     signal.signal(signal.SIGALRM, SignalHandler)
+    signal.signal(signal.SIGINT, SignalHandler)
     signal.alarm(1)
     moment.init_app(app)
-    app.run(host='0.0.0.0', port=8050, debug=True)
+    app.run(host='0.0.0.0', port=8050, debug=True,threaded=True)

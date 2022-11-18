@@ -62,6 +62,7 @@ class ProjectedPlot(PositionPlot):
     def ToggleGrid(self, val):
         """@ToggleGrid - toggle between L/L - True and XY - False
         """
+        #print("Toggle Grid: ", val)
         self.__PlotLL = val
         # should redo the limits on the graph.
         self.clear()
@@ -83,7 +84,7 @@ class ProjectedPlot(PositionPlot):
             str = "LatLon"
         else:
             str = "XY"
-        #print("Which Grid: ", str)
+        print("Which Grid: ", str)
         return str
 
     def whichScale(self):
@@ -200,7 +201,7 @@ class ProjectedPlot(PositionPlot):
             ptype = "XY"
 
         PositionPlot.addPoint(self,inX, inY)
-        if (self.debug):
+        if (True):
             print("ProjP:", inX, " ", inY, ptype, " ", x, " " , y)
             self.count = self.count + 1
             print("PP addPoint -------------------------------------------", self.count)
