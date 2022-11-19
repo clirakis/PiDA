@@ -19,6 +19,9 @@
                 
   13-Nov-22 CBL condensed the way of handling callbacks/button pushes etc. 
                 Added in bootstrap for menus and template inheritance
+
+  17-Nov-22 CBL I don't think using an alarm funciton is the correct way to
+                add points to the graph, changing to thread. 
   References:
   -----------
    https://medium.com/@rovai/from-data-to-graph-a-web-jorney-with-flask-and-sqlite-6c2ec9c0ad0
@@ -41,7 +44,7 @@ from datetime import datetime
 
 #from jinja2.ext import Extension
 #from jinja2 import Template
-from threading import Thread
+import threading 
 import time
 import signal
 #  ===============================================================
@@ -66,77 +69,69 @@ moment = Moment(app)
 
 
 #  ===============================================================
-# put my initialization in here. This one attaches to the
-# time position shared memory if it exists.
-# This is based on POSIX shared memory and is tightly linked
-# to a binary data acquisition module I have called lassen. 
-MySM = TSIPosition()
-#
-# Plotting tools.
-#
-PPlot = ProjectedPlot(41.3,-73.83)
-
 #
 # Global variables.
 #
-SleepTime = 1 # seconds between signals.
-global t0
-t0 = time.time()
+global running
+global MySM
+global PPlot
 
 #  ===============================================================
 
-def getGPS_Position():
-    """
-    This interfaces to the shared memory of the lassen GPS using POSIX
-    shared memory and semaphores. This is all managed by PySharedMem2.py
-    return the
-    time of fix in gps seconds
-    time of fix read in seconds since epoch
-    latitude in radians
-    longitude in radians
-    altitude in meters from the mean geoid
-    """
-    # Initialize variables
-    gps_time = 0
-    lat = 0.0
-    lon = 0.0
-    z = 0.0
-    
-    if (MySM.NoError()):
-        MySM.Read()
-        gps_time = MySM.fSec  # This isn't really the time
-        fix_time = MySM.LastRead_Time_tv_sec
-        lat  = MySM.fLatitude
-        lon  = MySM.fLongitude
-        z    = MySM.fAltitude
-    else:
-        print('Error in reading from SM.')
-        gps_time = 0
-        fix_time = time.time()
-        lat = np.deg2rad(41.5)
-        lon = np.deg2rad(-71.2)
-        z = 0.0
-    return gps_time, fix_time, lat, lon, z
 
-def SignalHandler(signum, frame):
+def dataThread(pp):
     """
-    Wake up and check for new GPS data for the plots. 
+    Loop and check for new GPS data for the plots. 
     """
-    global t0
-    if (signum == signal.SIGALRM) :
+    global running
+    global MySM
+    global PPlot
+
+    t0 = time.time()
+    running = True
+
+    
+    """
+    attaches to the
+    time position shared memory if it exists.
+    This is based on POSIX shared memory and is tightly linked
+    to a binary data acquisition module I have called lassen.
+    """
+    MySM = TSIPosition()
+
+    while running:
+        """
+        Look at the loop time, make sure we aren't doing anything
+        radically wrong.
+        """
         t1 = time.time()
         dt = t1-t0
         t0 = t1
-        gps_t, fix_time, Lat, Lon, z = getGPS_Position()
-        print("Timeout: ", t1)
+        """
+        Get the fix if there is new data.
+        """
+        if (MySM.NoError()):
+            MySM.Read()
+        else:
+            print('Error in reading from SM.')
+        
+        print("get fix: ", dt)
         # Timeout varies a shade depending on how long the processing takes
-        x = np.rad2deg(Lon)
-        y = np.rad2deg(Lat)
+        x = np.rad2deg(MySM.fLongitude)
+        y = np.rad2deg(MySM.fLatitude)
         PPlot.addPoint(x,y)
-        # make it happen again. DONT NEED TO DO THIS. yes/no???
-        signal.alarm(2)
+        time.sleep(0.9)
+        
+def SignalHandler(signum, frame):
+    """
+    Handle any signals here
+    """
+    global running
+    if (signum == signal.SIGALRM) :
+        print ('Alarm')
     elif (signum == signal.SIGINT):
         print("CTRL-C")
+        running = False
         signal.alarm(0)
         exit(0)
 
@@ -160,7 +155,6 @@ def about():
     print("ABOUT")
     return render_template('about.html')
     
-
 # main route - home page
 @app.route("/", methods=['POST', 'GET'])
 def index():
@@ -170,6 +164,9 @@ def index():
     First determine if it is a post or get, then switch on response based
     on the determination. 
     """
+    global PPlot
+    global MySM
+    
     if request.method == 'POST':
         val = request.form.get('Submit')
         print("POST!", val)
@@ -185,19 +182,20 @@ def index():
         
     elif request.method == 'GET':
         print("GET!")
-    
-    gps_t, fix_time, Lat, Lon, z = getGPS_Position()
-    LatDeg,LatMin,LatSec = MySM.Format(Lat)
-    LonDeg,LonMin,LonSec = MySM.Format(Lon)
+
+    LatDeg,LatMin,LatSec = MySM.Format(MySM.fLatitude)
+    LonDeg,LonMin,LonSec = MySM.Format(MySM.fLongitude)
+
+    #gps_t, fix_time, Lat, Lon, z = getGPS_Position()
     templateData = {
-        'time': time.ctime(fix_time),
+        'time': time.ctime(MySM.fSec),
         'LatDeg' : LatDeg,
         'LatMin' : LatMin,
         'LatSec' : LatSec,
         'LonDeg' : LonDeg,
         'LonMin' : LonMin,
         'LonSec' : LonSec,
-        'Alt' : round(z,2),
+        'Alt' : round(MySM.fAltitude,2),
         'gridtype' : PPlot.whichGrid(),
         'fscale' : PPlot.whichScale(),
     }
@@ -211,6 +209,7 @@ def plot_scat():
     Gets an inline png to plot from Position Plot and returns it
     to be rendered. 
     """
+    global PPlot
     output = PPlot.InlinePlot()
     response = make_response(output.getvalue())
     response.mimetype = 'image/png'
@@ -223,9 +222,22 @@ if __name__ == "__main__":
     This is our main entry point. I wonder if I could define all the
     classes here.
     """
+    # put my initialization in here. This one  
+    #
+    # Plotting tools.
+    #
+    """
+    Initialize the ploting package.
+    """
+    PPlot = ProjectedPlot(41.3,-73.83)
     PPlot.Center(41.308385, -73.893)
+    """
+    Setup signals.
+    """
     signal.signal(signal.SIGALRM, SignalHandler)
     signal.signal(signal.SIGINT, SignalHandler)
-    signal.alarm(1)
+    #signal.alarm(1)
+    x = threading.Thread(target=dataThread, args=(1,))
+    x.start()
     moment.init_app(app)
     app.run(host='0.0.0.0', port=8050, debug=True,threaded=True)
