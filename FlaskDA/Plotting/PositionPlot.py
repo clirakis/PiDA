@@ -107,6 +107,7 @@ class PositionPlot(object):
         #
         self.__ax_histy = self.__fig.add_axes(rect_histy, sharey=self.__ax)
         self.__ax_histy.grid(True)
+        print("Position Plot Constructor.")
 
     def setXLabel(self, label):
         self.__ax.set_xlabel(label)

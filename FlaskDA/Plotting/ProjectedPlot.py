@@ -20,8 +20,10 @@
 import numpy as np
 from Plotting.PositionPlot import PositionPlot
 from Geodetic import Geodetic
+import inspect
+import sys
 
-class ProjectedPlot(PositionPlot):
+class ProjectedPlot(PositionPlot):        
     def __init__(self, Lat, Lon):
         """@brief using geodetic projections we can create x-y plots.
         no input now
@@ -49,7 +51,8 @@ class ProjectedPlot(PositionPlot):
         self.__X0 = 0
         self.__Y0 = 0
         self.Center(Lat, Lon)
-
+        print("Projected Plot constructor.", inspect.stack()[1][3])
+        print( sys._getframe().f_back.f_code.co_name )
         # debug code
         self.count = 0
 
