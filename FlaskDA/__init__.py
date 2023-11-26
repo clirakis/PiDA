@@ -57,6 +57,7 @@ def create_app(test_config=None):
     """
     PPlot = ProjectedPlot(41.3,-73.83)
     PPlot.Center(41.308385, -73.893)
+    PPlot.debug = False
 
     """
     Attaches to the time position shared memory if it exists.
@@ -87,9 +88,8 @@ def create_app(test_config=None):
         """
         t0 = time.time()
         print("THREAD STARTS: ", t0)
-        running = True
-        count = 0
-    
+        running  = True
+        count    = 0
         while running:
             """
             Look at the loop time, make sure we aren't doing anything
@@ -105,9 +105,14 @@ def create_app(test_config=None):
                 MySM.Read()
             else:
                 print('Error in reading from SM.')
+
+            # do some weird checks.
+            if ((dt<0.9) or (dt>1.06)):
+                print("dt weird.", dt)
         
-            print("get fix: ", t1, " ", count)
-            count = count + 1
+            #print("get fix: ", t1, " ", count)
+            count    = count + 1
+            
             # Timeout varies a shade depending on how long the processing takes
             x = np.rad2deg(MySM.fLongitude)
             y = np.rad2deg(MySM.fLatitude)
@@ -156,7 +161,6 @@ def create_app(test_config=None):
         First determine if it is a post or get, then switch on response based
         on the determination. 
         """
-    
         if request.method == 'POST':
             val = request.form.get('Submit')
             print("POST!", val)

@@ -25,7 +25,7 @@
 
    06-Feb-22 CBL  Modifying how we create and present plots.
    12-Nov-22 CBL  Clean up on documentation. Issues with scaling. 
-
+   21-Nov-22 CBL  add more panes to the figure. 
    
    References:
    -----------
@@ -33,7 +33,6 @@
    https://matplotlib.org/3.3.1/gallery/animation/strip_chart.html#sphx-glr-gallery-animation-strip-chart-py
    
 """
-
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas

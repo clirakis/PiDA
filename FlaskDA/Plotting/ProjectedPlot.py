@@ -204,7 +204,7 @@ class ProjectedPlot(PositionPlot):
             ptype = "XY"
 
         PositionPlot.addPoint(self,inX, inY)
-        if (True):
+        if (self.debug):
             print("ProjP:", inX, " ", inY, ptype, " ", x, " " , y)
             self.count = self.count + 1
             print("PP addPoint -------------------------------------------", self.count)
