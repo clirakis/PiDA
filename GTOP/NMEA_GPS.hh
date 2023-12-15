@@ -232,7 +232,7 @@ public:
 
     /*! Return the overall data size for the structure. */
     inline static size_t DataSize(void) 
-	{return (4*sizeof(float)+sizeof(char) + NMEA_POSITION::DataSize());};
+	{return (4*sizeof(float)+4*sizeof(char) + NMEA_POSITION::DataSize());};
 
     /*! operator overload to output contents of class for inspection
      * this data is in character format. 
@@ -258,6 +258,7 @@ private:
      * FIX MODE
      */
     char   fMode;
+    char   fPlaceholder[3];
 };
 
 // Active satellites in solution.
