@@ -28,7 +28,7 @@ class IMU(SharedMem2):
         super().__init__(params)
         
         # VTG Specific
-        self.fAcc        = np.Zeros(3)
+        self.fAcc        = np.zeros(3)
         self.fMagnetic   = np.zeros(3)
         self.fGyro       = np.zeros(3)
         self.fTemperature= 0.0
@@ -44,8 +44,10 @@ class IMU(SharedMem2):
         See ICM-20948 
         """
         super().Read()
-        
-        # VTG specific
+        # dump the timestamp.
+        tv_sec           = self.Unpack('l')
+        tv_nsec          = self.Unpack('l')
+        # IMU specific
         self.fAcc[0]     = self.Unpack('d')
         self.fAcc[1]     = self.Unpack('d')
         self.fAcc[2]     = self.Unpack('d')
@@ -60,7 +62,7 @@ class IMU(SharedMem2):
         
         self.UnpackDone()
         if (self.debug):
-s            print("SELF: ",self)
+            print("SELF: ",self)
 
     def Print(self):
         print('IMU')
@@ -75,10 +77,10 @@ s            print("SELF: ",self)
 
     def __str__(self):
         rep  = "IMU --------------------------------------------" + "\n"
-        rep += "     Acceleration: " + str(self.fAcc[0]) + str(self.fAcc[1]) + str(self.fAcc[2])+ "\n"
-        rep += "         Magnetic: " + str(self.fMagnetic[0]) + str(self.fMagnetic[1]) + str(self.fMagnetic[2])+ "\n"
-        rep += "             Gyro: " + str(self.fGyro[0]) + str(self.fGyro[1]) + str(self.fGyro[2])+ "\n"
-        rep += "      Temperature: " + str(self.fTemperature) << "\n"
-        rep += " ------------------------------------------------" << "\n"
+        rep += "     Acceleration X:" + str(self.fAcc[0]) + " Y:" + str(self.fAcc[1]) + " Z: " + str(self.fAcc[2])+ "\n"
+        rep += "         Magnetic X: " + str(self.fMagnetic[0]) + " Y: " + str(self.fMagnetic[1]) + " Z: " + str(self.fMagnetic[2])+ "\n"
+        rep += "             Gyro X: " + str(self.fGyro[0]) + " Y: " + str(self.fGyro[1]) + " Z: " + str(self.fGyro[2])+ "\n"
+        rep += "      Temperature: " + str(self.fTemperature) + "\n"
+        rep += " ------------------------------------------------" + "\n"
         return rep
         
