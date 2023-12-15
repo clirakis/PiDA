@@ -41,21 +41,23 @@ class NMEA_GSA(SharedMem2):
     def Read(self):
         """
         Read the data and put it into the local structure.
-        The GSA message is a subclass to NMEA_POSITION.
+        The GSA stands alone. 
         See GTOP/NMEA_GPS.hh
         """
         super().Read()
         
         # GSA specific
+        self.fPDOP      = self.Unpack('f')
+        self.fHDOP      = self.Unpack('f')
+        self.fVDOP      = self.Unpack('f')
+        space           = self.Unpack('f')
         self.fMode1     = self.Unpack('b')
         self.fMode2     = self.Unpack('b')
         space1          = self.Unpack('b')
         space2          = self.Unpack('b')
-        for index in range(10):
-            fSatellites[index] = self.Unpack('b')
-        self.fPDOP      = self.Unpack('f')
-        self.fHDOP      = self.Unpack('f')
-        self.fVDOP      = self.Unpack('f')
+        # While not all fileds used, 12 are presented. 
+        for index in range(12):
+            self.fSatellites[index] = self.Unpack('b')
         
         self.UnpackDone()
         if (self.debug):
@@ -67,7 +69,7 @@ class NMEA_GSA(SharedMem2):
         print('Mode 1: ', self.fMode1)
         print('Mode 2: ', self.fMode2)
         print('Satellites:', end=' ')
-        for index in range(10):
+        for index in range(12):
             print(self.fSatellites[index],end=' ')
         print(" ")
         print("PDOP: ", self.fPDOP)
@@ -79,7 +81,7 @@ class NMEA_GSA(SharedMem2):
         rep += " Mode 1: " + str(self.fMode1) + "\n"
         rep += " Mode 2: " + str(self.fMode2) + "\n"
         rep += " Satellites: "
-        for index in range(10):
+        for index in range(12):
             rep += str(self.fSatellites[index]) + " "
         rep += "\n"
         rep += "PDOP: " + str(self.fPDOP) + "\n"

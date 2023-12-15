@@ -267,9 +267,6 @@ void GPS_IPC::Update(void)
 	SET_DEBUG_STACK;
 	if (pGGA && pSM_PositionData)
 	{
-	    // DEBUG!!
-	    double tmp = pGGA->HDOP();
-	    pSM_PositionData->PutData(tmp);
 	    pSM_PositionData->PutData(pGGA->DataPointer());
 	}
 

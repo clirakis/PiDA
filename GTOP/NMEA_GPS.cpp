@@ -583,6 +583,22 @@ bool GSA::Decode(const char *line)
     SET_DEBUG_STACK;
     return true;
 }
+ostream& operator<<(ostream& output, const GSA &n)
+{
+    output << "GSA data ================================= " << endl
+	   << "  PDOP: " << n.fPDOP << endl
+	   << "  HDOP: " << n.fHDOP << endl
+	   << "  VDOP: " << n.fVDOP << endl
+	   << " Mode1: " << n.fMode1 << endl
+	   << " Mode2: " << n.fMode2 << endl;
+    for (int i=0;i<12;i++)
+    {
+	output << (unsigned int) n.fSatellite[i] << " ";
+    }
+    output << endl
+	   << " ========================================= " << endl;
+    return output;
+}
 
 
 /**

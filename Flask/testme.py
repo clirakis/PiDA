@@ -3,12 +3,17 @@ import numpy as np
 import time
 
 from PySM.NMEA_GGA import NMEA_GGA
+from PySM.NMEA_RMC import NMEA_RMC
+from PySM.NMEA_GSA import NMEA_GSA
+from PySM.NMEA_VTG import NMEA_VTG
+
 
 # put my initialization in here. This one attaches to the
 # time position shared memory if it exists.
 # This is based on POSIX shared memory and is tightly linked
 # to a binary data acquisition module I have called lassen. 
-MySM = NMEA_GGA()
+#MySM = NMEA_GGA()
+MySM = NMEA_GSA()
 MySM.debug = True
 
 #
@@ -78,7 +83,10 @@ if __name__ == "__main__":
     
     
     for i in range(5):
-        gps_t, fix_time, Lat, Lon, z = getGPS_Position()
+        #gps_t, fix_time, Lat, Lon, z = getGPS_Position()
+        # Test GSA
+        MySM.Read()
+        print(MySM)
         t1 = time.time()
         dt = t1-t0
         t0 = t1

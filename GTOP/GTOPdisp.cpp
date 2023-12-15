@@ -314,7 +314,7 @@ void GTOP_Display::Update(NMEA_GPS *pGPS)
 	    pGSA = pGPS->pGSA();
 	    display_rp(pGSA->Mode1(), NSAT, 
 		       pGSA->Mode2(), pGSA->IDS(), 
-		       pGSA->PDOP(), pGSA->HDOP(), pGSA->VDOP(), 0.0);
+		       pGSA->PDOP(), pGSA->HDOP(), pGSA->VDOP(), pGSA->TDOP());
 	    break;
 	case NMEA_GPS::MESSAGE_RMC:
 	    pRMC = pGPS->pRMC();
@@ -383,9 +383,9 @@ void GTOP_Display::display_time(time_t gpstime, double delta)
  *
  *******************************************************************
  */
-void GTOP_Display::display_rp(unsigned char manual_mode, unsigned char nsvs, 
-		unsigned char ndim, const unsigned char *sv_prn,
-		float pdop, float hdop, float vdop, float tdop)
+void GTOP_Display::display_rp(unsigned char mode1, unsigned char nsvs, 
+			      unsigned char mode2, const unsigned char *sv_prn,
+			      float pdop, float hdop, float vdop, float tdop)
 {
     SET_DEBUG_STACK;
     char sv[40], tmp[8];
@@ -394,7 +394,7 @@ void GTOP_Display::display_rp(unsigned char manual_mode, unsigned char nsvs,
     int col = RIGHT_AREA;
     int i;
     wmove  (fVin, row, col);
-    wprintw(fVin, "%c", manual_mode);
+    wprintw(fVin, "%c", mode1);
     row++;
 
     wmove  (fVin, row, col);
