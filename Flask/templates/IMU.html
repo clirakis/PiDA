@@ -1,0 +1,83 @@
+<!--
+13-Dec-23 This makes it's own tab page. 
+Setting up a grid format 
+Flask bootstrap is v3.3.7.1
+IMU page
+-->
+{% extends "base.html" %}
+
+{% block title %}Flasky{% endblock %}
+
+{% block page_content %}
+<div class="page-header">
+<hr>
+  <h1> IMU Data </h1>
+    {{ moment.include_moment()}}
+    <p> Local Computer time: {{moment(current_time).format('LLL')}}.</p>
+</div>
+<div class="container">
+  {{ moment.include_moment()}}
+  <style> 
+     table, th, td {
+        border: 4px solid black
+     }
+  </style>
+  <!-- Top Row Time Frac and temperature -->
+  <div class="row">
+    <div class="col-md-1">
+      IMU Time:
+    </div>
+    <div class="col-md-3">
+      {{moment(IMUTime).format('LLL')}}
+    </div>
+    <div class="col-md-1">
+      Fraction:
+    </div>
+    <div class="col-md-2">
+      {{ Fraction}} Sec
+    </div>
+    <div class="col-md-1">
+      Temperature:
+    </div>
+    <div class="col-md-2">
+      {{ Temperature}} C
+    </div>
+  </div>
+  <table sytle="width:100%">
+    <tr>
+      <th width="25%"> Title </th>
+      <th width="25%"> X: </th>
+      <th width="25%"> Y: </th>
+      <th width="25%"> Z: </th>
+    </tr>
+    <!-- row -->
+    <tr> 
+      <td> Acceleration(G) </td>
+      <td> {{AX}} </td>
+      <td> {{AY}} </td>
+      <td> {{AZ}} </td>
+    </tr>
+    <!-- row -->
+    <tr>
+      <td> Gyro (rad/sec) </td>
+      <td> {{GX}} </td>
+      <td> {{GY}} </td>
+      <td> {{GZ}} </td>
+    </tr>
+  <!-- row -->
+    <tr>
+      <td> Magnetic </td> 
+      <td> {{MX}} </td>
+      <td> {{MY}} </td> 
+      <td> {{MZ}} </td>
+    </tr>
+  </table>
+</div> 
+<hr>
+<div class="container">
+  <form method = "post" action="/imu">
+    <input type="submit" value="Refresh" name="refresh"/>
+  </form>
+</div>
+
+{% endblock %}

@@ -1,0 +1,107 @@
+<!--
+
+10-Dec-23 This makes it's own tab page. 
+Setting up a grid format 
+Flask bootstrap is v3.3.7.1
+You have to specify the column width col-md-4
+
+-->
+{% extends "base.html" %}
+
+{% block title %}Flasky{% endblock %}
+
+{% block page_content %}
+<div class="page-header">
+<h1> GPS Data </h1>
+    {{ moment.include_moment()}}
+    <p> Local Computer time: {{moment(current_time).format('LLL')}}.</p>
+</div>
+<div class="container">
+  <div class="row">
+    <div class="col-md-2">
+      Latitude:
+    </div>
+    <div class="col-md-2">
+      {{Latitude}}
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-2">
+      Longitude: 
+    </div>
+    <div class="col-md-2">
+      {{Longitude}}
+    </div>  
+  </div>
+  <div class="row">
+    <div class="col-md-2">
+    Altitude: 
+    </div>
+    <div class="col-md-2">
+      {{Altitude}}
+    </div>  
+  </div>
+  <div class="row">
+    <div class="col-md-2">
+    Geoid Sep: 
+    </div>
+    <div class="col-md-2">
+      {{Geiod}}
+    </div>  
+  </div>
+  <div class="row">
+    <div class="col-md-2">
+      Fix Time: 
+    </div>
+    <div class="col-md-2">
+      {{FixTime}}
+    </div>  
+  </div>
+  <div class="row">
+    <div class="col-md-2">
+      Speed: 
+    </div>
+    <div class="col-md-2">
+      {{Speed}}
+    </div>  
+  </div>
+  <div class="row">
+    <div class="col-md-2">
+    Course(True): 
+    </div>
+    <div class="col-md-2">
+      {{CompassTrue}}
+    </div>  
+  </div>
+  <div class="row">
+    <div class="col-md-2">
+      Course(Mag): 
+    </div>
+    <div class="col-md-2">
+      {{CompassMagnetic}}
+    </div>  
+  </div>
+  <div class="row">
+    <div class="col-md-2">
+      Frequency Offset: 
+    </div>
+    <div class="col-md-2">
+      {{FOffset}}
+    </div>  
+  </div>
+  <div class="row">
+    <div class="col-md-2">
+      Fix Type: 
+    </div>
+    <div class="col-md-2">
+      {{FixType}}
+    </div>  
+  </div>
+</div> 
+<hr>
+<div class="container">
+  <form method = "post" action="/gps">
+    <input type="submit" value="Refresh" name="refresh"/>
+  </form>
+</div>
+{% endblock %}

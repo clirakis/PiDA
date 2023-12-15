@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Flasky{% endblock %}
+
+{% block page_content %}
+<div class="page-header">
+    {{ moment.include_moment()}}
+    <h1>PiDA</h1>
+    <p> The current local time is: {{moment(current_time).format('LLL')}}.</p>
+    <meta http-equiv="refresh" content="10">
+</div>
+<div class="container">
+This allows remote access of the Raspberry-Pi Data Acquisition system. <br>
+Use the menu bar to navigate to the sensor you would like to display. <br> 
+<!--
+THIS DOES NOT INCLUDE CORRECTLY
+<iframe src="./templates/GPS.html" style="height:200px;width:300px;" title="Iframe Example"></iframe>
+-->
+</div>
+<div class="container">
+  <hr> 
+  This page was last modified on: 13-Dec-23. By: CBL <br> 
+</div>
+
+{% endblock %}
