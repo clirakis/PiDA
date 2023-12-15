@@ -124,7 +124,7 @@ public:
     inline void* DataPointer(void) {return (void*)&fPCTime;};
     /*! Return the overall data size for the structure. */
     inline static size_t DataSize(void) 
-	{return (sizeof(struct timespec)+3*sizeof(float)+sizeof(time_t));};
+	{return (sizeof(struct timespec)+3*sizeof(float)+2*sizeof(time_t));};
 
     /*! operator overload to output contents of class for inspection
      * this data is in character format. 
@@ -178,9 +178,11 @@ public:
     /*! Get a pointer to the beginning of the data storage. */
     inline void* DataPointer(void) {return (void*)&fPCTime;};
 
-    /*! Return the overall data size for the structure. */
+    /*! 
+     * Return the overall data size for the structure. 
+     */
     inline static size_t DataSize(void) 
-	{return (2*sizeof(uint8_t)+3*sizeof(float) + NMEA_POSITION::DataSize());};
+	{return (4*sizeof(uint8_t)+4*sizeof(float) + NMEA_POSITION::DataSize());};
 
     /*! operator overload to output contents of class for inspection
      * this data is in character format. 
@@ -189,8 +191,8 @@ public:
 
 private:
     /** Height of Geoid above mean sea level WGS84 */
-    float   fGeoidheight; 
-    /** altitude above MSL */ 
+    float   fGeoidheight;  
+    /** altitude relative to mean geoid */ 
     float   fAltitude;
     /** 
      * Fix Indicator made up of:
@@ -206,6 +208,8 @@ private:
      */
     uint8_t fFixIndicator; 
     uint8_t fSatellites;   // number in fix.
+    uint8_t fspace1;
+    uint8_t fspace2;
     float   fHDOP;
 };
 

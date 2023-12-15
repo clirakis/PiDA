@@ -13,6 +13,7 @@
  * 06-Feb-22    CBL    Modified to add the current data file name 
  *                     into shared memory. '
  * 20-Feb-22    CBL    NMEA GPS
+ * 15-Dec-23    CBL    Put in some logging to show that SM was connected
  *
  * Classification : Unclassified
  *
@@ -258,7 +259,6 @@ void GPS_IPC::Update(void)
 
     if (pGPS)
     {
-
 	GGA* pGGA = pGPS->pGGA();   // Full position
 	VTG* pVTG = pGPS->pVTG();   // course and speed
 	GSA* pGSA = pGPS->pGSA();   // Active satellites
@@ -267,6 +267,9 @@ void GPS_IPC::Update(void)
 	SET_DEBUG_STACK;
 	if (pGGA && pSM_PositionData)
 	{
+	    // DEBUG!!
+	    double tmp = pGGA->HDOP();
+	    pSM_PositionData->PutData(tmp);
 	    pSM_PositionData->PutData(pGGA->DataPointer());
 	}
 

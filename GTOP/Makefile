@@ -23,7 +23,7 @@ TARGET = GTOP
 INCLUDE = -I$(DRIVE)/common/utility -I$(DRIVE)/common/iolib \
 	-I/usr/include/hdf5/serial
 
-
+EXT_CFLAGS = -DSM_IPC
 
 #HDF5LIB setup as part of shell file. 
 #

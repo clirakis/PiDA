@@ -558,7 +558,7 @@ GSA::GSA(void)
 bool GSA::Decode(const char *line)
 {
     SET_DEBUG_STACK;
-    int i;
+    int  i;
     char *p = (char *) line;
 
     p = strchr(p, ',')+1;

@@ -1,5 +1,13 @@
 *.pyc
 __pycache__/
 *.sav
-log
+*.log
+*.d
+make.depend
+*.o
+*.a
 *~
+*.cfg
+GTOP
+IMU
+IMU.cfg

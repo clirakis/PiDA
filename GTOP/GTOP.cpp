@@ -54,8 +54,6 @@ using namespace libconfig;
 #include "debug.h"
 #include "smIPC.hh"
 
-#define SM_IPC 0
-
 GTOP* GTOP::fGTOP;
 
 const char *SensorName="GPS";     // Sensor name. 

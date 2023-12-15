@@ -21,10 +21,10 @@ import math
 class NMEA_GGA(SharedMem2):
     def __init__(self):
         # GGA class inherits from NMEA_POSITION - 
-        # 58 total bytes used for base class
+        # 66 total bytes used for base class
         # PC time is the first 16 bytes, don't care.
         #
-        params = {'name':'GGA', 'size': 58, 'server': False}
+        params = {'name':'GGA', 'size': 66, 'server': False}
         #SharedMem2.__init__(self, params)
         # self is implied when using super.
         super().__init__(params)
@@ -34,13 +34,14 @@ class NMEA_GGA(SharedMem2):
         # Altitude, not sure of reference in meters
         self.fAltitude  = 0.0  
         # Time of Fix. 
-        self.fSec       = 0.0
+        self.fSec       = 0
         self.fMilli     = 0.0
         self.fUTC       = 0.0
         # Add on from GGA message
         self.fFix       = 0
         self.fNSat      = 0
-        self.fHDOP      = 0
+        self.fHDOP      = 0.0
+        self.fGeoidSep  = 0.0 
 
 
     def __del__(self):
@@ -48,24 +49,33 @@ class NMEA_GGA(SharedMem2):
 
     def Read(self):
         """
-        Read the data and put it into the local structure. 
+        Read the data and put it into the local structure.
+        The GGA message is a subclass to NMEA_POSITION.
+        See GTOP/NMEA_GPS.hh
         """
         super().Read()
-        pCTime_Sec      = self.unpack('l')
-        pCTime_nSec     = self.unpack('l')
+        pCTime_Sec      = self.Unpack('l')  # ok
+        pCTime_nSec     = self.Unpack('l')  # ok
         
-        self.fLatitude  = self.Unpack('d')
-        self.fLongitude = self.Unpack('d')
-        self.fAltitude  = self.Unpack('d')
-        self.fSec       = self.Unpack('l')
-        self.fUTC       = self.Unpack('l')
-        self.fMilli     = self.Unpack('f')
+        self.fLatitude  = self.Unpack('f')  # ok
+        self.fLongitude = self.Unpack('f')  # ok
+        self.fSec       = self.Unpack('l')  # ok, this is indeed 0 for GGA. 
+        self.fUTC       = self.Unpack('l')  # ok
+        self.fMilli     = self.Unpack('f')  # ok
+        
         # GGA add on. 
-        self.fFix       = self.Unpack('b') # fix indicator
-        self.fNSat      = self.Unpack('b')
-        self.fHDOP      = self.Unpack('f')
-        
+        self.fGeoidSep  = self.Unpack('f') # ok
+        self.fAltitude  = self.Unpack('f') # ok
+        self.fFix       = self.Unpack('b') # fix indicator, ok
+        self.fNSat      = self.Unpack('b') # ok
+        space1          = self.Unpack('b') # 
+        space2          = self.Unpack('b') # 
+        self.fHDOP      = self.Unpack('f') # ???
+        placeholder     = self.Unpack('f')
+        print("PLACEHOLDER: ",placeholder)
         self.UnpackDone()
+        if (self.debug):
+            print("SELF: ",self)
 
     def Format(self, val):
         """
@@ -90,23 +100,26 @@ class NMEA_GGA(SharedMem2):
         print(' Latitude:', deg, " ", min, " ", sec)        
         deg,min,sec = self.Format(self.fLongitude)
         print('Longigude:', deg, " ", min, " ", sec) 
-        print('Altitude:',round(self.fAltitude,3))
-        print('Seconds:',self.fSec)
+        print('Altitude:', round(self.fAltitude,3))
+        print('Seconds:',  self.fSec)
         print('UTC (day):',self.fUTC)
-        print('mSeconds:',self.fMilli)
-        print('FIX TYPE:',self.fFix)
-        print('N Sat:',self.fNSat)
-        print('HDOP:',self.fHDOP)
+        print('mSeconds:', self.fMilli)
+        print('FIX TYPE:', self.fFix)
+        print('N Sat:',    self.fNSat)
+        print('HDOP:',     self.fHDOP)
 
     def __str__(self):
-        rep  = "TSIP Position, Latitude: " + str(math.degrees(self.fLatitude))
-        rep += " Longigude: " + str(math.degrees(self.fLongitude))
-        rep += " Altitude: " + str(self.fAltitude) + "\n"
-        rep += " Seconds: " + str(self.fSec)
-        rep += " milli: " + str(self.fMilli)
-        rep += " UTC (day) " + str(self.fUTC)
-        rep += " Fix type: " + str(self.fFix)
-        rep += " N Satellite: " + str(self.fNSat)
-        rep += " HDOP: " + str(self.fHDOP)
+        rep  = "NMEA_GGA --------------------------------------------" + "\n"
+        rep += " Latitude: "    + str(math.degrees(self.fLatitude)) 
+        rep += " Longigude: "   + str(math.degrees(self.fLongitude)) + "\n"
+        rep += " Altitude: "    + str(self.fAltitude)
+        rep += " Geoid Sep: "   + str(self.fGeoidSep) + "\n"
+        rep += " Seconds: "     + str(self.fSec) 
+        rep += " milli: "       + str(self.fMilli) +"\n"
+        rep += " UTC (day) "    + str(self.fUTC) +"\n"
+        rep += " Fix type: "    + str(self.fFix) +"\n"
+        rep += " N Satellite: " + str(self.fNSat) +"\n"
+        rep += " HDOP: "        + str(self.fHDOP) +"\n"
+        rep += " ------------------------------------------------------"
         return rep
         

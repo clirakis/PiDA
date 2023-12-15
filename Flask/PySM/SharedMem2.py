@@ -51,7 +51,7 @@ class SharedMem2:
 
         # reset all the class variables.
         # Length is size_t
-        self.Length                 = 0
+        self.Length                  = 0
         # the next two are unsigned long
         self.LastUpdate_Time_tv_sec  = 0
         self.LastUpdate_Time_tv_nsec = 0
@@ -61,8 +61,8 @@ class SharedMem2:
         self.LAM                     = 0
 
         # updated on read. 
-        self.LastRead_Time_tv_sec  = 0
-        self.LastRead_Time_tv_nsec = 0
+        self.LastRead_Time_tv_sec    = 0
+        self.LastRead_Time_tv_nsec   = 0
 
         # input buffer. Pass back to super class.
         self.inb = None
@@ -201,6 +201,7 @@ class SharedMem2:
         Lock the semaphore and read the data.
         """
         if (self.debug):
+            print('SharedMem2 debug ================================')
             print('Acquiring semaphore.')
         self.semaphore.acquire()
         # read the header info from the memory map
@@ -218,11 +219,11 @@ class SharedMem2:
         #
         # Unpack the header information.
         #
-        self.Length = self.Unpack('l')
+        self.Length                  = self.Unpack('l')
         self.LastUpdate_Time_tv_sec  = self.Unpack('l')
         self.LastUpdate_Time_tv_nsec = self.Unpack('l')
-        self.DoubleData = self.Unpack('d')
-        self.LAM = self.Unpack('l')
+        self.DoubleData              = self.Unpack('d')
+        self.LAM                     = self.Unpack('l')
 
         #
         # Update this if the data is new.
@@ -235,11 +236,13 @@ class SharedMem2:
             #print ('Update: ', self.TimeSinceLastUpdate())
 
         if (self.debug):
+            print ("bytes used: ", self.bytes)
             print ("Length: ", self.Length)
-            print ("Sec: ", self.LastUpdate_Time_tv_sec)
-            print ("nsec: ", self.LastUpdate_Time_tv_nsec)
+            print ("Sec: ",    self.LastUpdate_Time_tv_sec)
+            print ("nsec: ",   self.LastUpdate_Time_tv_nsec)
             print ("double: ", self.DoubleData)
-            print ("bool: ", self.LAM)
+            print ("bool: ",   self.LAM)
+            print ('SharedMem2 debug end ============================ ')
         #time.sleep(1)
 
     def TimeSinceLastUpdate(self):

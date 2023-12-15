@@ -279,6 +279,7 @@ void GTOP_Display::Update(NMEA_GPS *pGPS)
 {
     SET_DEBUG_STACK;
 
+    static unsigned char NSAT = 0;
     float t;
     GGA* pGGA;
     VTG* pVTG;
@@ -302,14 +303,17 @@ void GTOP_Display::Update(NMEA_GPS *pGPS)
 	    t += pGGA->Milli();
 	    display_position(pGGA->Latitude(), pGGA->Longitude(), 
 			     pGGA->Altitude(), pGGA->Geoid(), t, pGGA->Fix());
+	    NSAT = pGGA->Satellites();
 	    break;
 	case NMEA_GPS::MESSAGE_VTG:
 	    pVTG = pGPS->pVTG();
-	    display_velocity( pVTG->True(), pVTG->Mag(), pVTG->Knots(), pVTG->KPH());
+	    display_velocity( pVTG->True(), pVTG->Mag(), pVTG->Knots(), 
+			      pVTG->KPH());
 	    break;
 	case NMEA_GPS::MESSAGE_GSA:
 	    pGSA = pGPS->pGSA();
-	    display_rp(pGSA->Mode1(), 12, pGSA->Mode2(), pGSA->IDS(), 
+	    display_rp(pGSA->Mode1(), NSAT, 
+		       pGSA->Mode2(), pGSA->IDS(), 
 		       pGSA->PDOP(), pGSA->HDOP(), pGSA->VDOP(), 0.0);
 	    break;
 	case NMEA_GPS::MESSAGE_RMC:
@@ -537,8 +541,9 @@ void GTOP_Display::display_velocity(  float ctrue, float cmag, float speedN, flo
  *
  *******************************************************************
  */
-void GTOP_Display::display_position(double lat, double lon, double alt, double geoid, 
-		      float time, uint8_t fix)
+void GTOP_Display::display_position(double lat, double lon, double alt, 
+				    double geoid, 
+				    float time, uint8_t fix)
 {
     static const char* Fix[3] = {"NONE","GPS ", "DIFF"}; // FIXME
     SET_DEBUG_STACK;

@@ -8,17 +8,13 @@ from PySM.NMEA_GGA import NMEA_GGA
 # time position shared memory if it exists.
 # This is based on POSIX shared memory and is tightly linked
 # to a binary data acquisition module I have called lassen. 
-MySM = TSIPosition()
-
-MySMName = NMEA_GGA()
+MySM = NMEA_GGA()
+MySM.debug = True
 
 #
 SleepTime = 1 # seconds between signals.
 global t0
 t0 = time.time()
-
-global X0, Y0
-
 
 
 def getGPS_Position():
@@ -68,7 +64,6 @@ def SignalHandler(signum, frame):
         print("Timeout: ", dt)
         x = np.rad2deg(Lon)
         y = np.rad2deg(Lat)
-        PPlot.update(x,y)
         # make it happen again. 
         signal.alarm(1)
 
@@ -78,11 +73,11 @@ if __name__ == "__main__":
     classes here.
     """
 
-    MySMName.Read()
-    MySMName.Print()
+#    MySMName.Read()
+#    MySMName.Print()
     
     
-    for i in range(10):
+    for i in range(5):
         gps_t, fix_time, Lat, Lon, z = getGPS_Position()
         t1 = time.time()
         dt = t1-t0
