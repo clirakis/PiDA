@@ -288,7 +288,8 @@ public:
     friend ostream& operator<<(ostream& output, const GSA &n); 
 
 private:
-    char   fMode1, fMode2;
+    char          fMode1, fMode2;
+    char          fSpace1, fSpace2; // Placeholders
     unsigned char fSatellite[12]; 
     float  fPDOP, fHDOP, fVDOP;
 };
