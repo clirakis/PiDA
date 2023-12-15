@@ -393,10 +393,11 @@ protected:
     uint8_t   ReadReg8(uint8_t SlaveAddress, uint8_t Register);
     int       ReadBlock(uint8_t SlaveAddress, unsigned char Register, 
 			size_t  size,  void* data);
-    bool      WriteByte(uint8_t SlaveAddress, unsigned char Register, 
+    bool      WriteReg8(uint8_t SlaveAddress, unsigned char Register, 
 			unsigned char value);
     int       ReadWord(uint8_t SlaveAddress, unsigned char Register);
-    bool WriteWord(uint8_t SlaveAddress, uint8_t Register, uint16_t value);
+    bool      WriteWord(uint8_t SlaveAddress, uint8_t Register, 
+			uint16_t value);
 
     // Set initial input parameters
     /*

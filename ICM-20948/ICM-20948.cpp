@@ -95,11 +95,7 @@ ICM20948::ICM20948 (uint8_t IMU_address, uint8_t Mag_address) : CObject(), IMUDa
     fAres = getAres();
     fIMU_address = IMU_address;
     fMag_address = Mag_address;
-#if 0
-    /* not sure I need these anymore. */
-    fd_IMU = 0;
-    fd_Mag = 0;
-#endif
+
     fGMTOffset = lt.tm_gmtoff;
     //cout << "GMT OFFSET: " << fGMTOffset << endl;
 
@@ -110,16 +106,16 @@ ICM20948::ICM20948 (uint8_t IMU_address, uint8_t Mag_address) : CObject(), IMUDa
 	SetError(-1, __LINE__);
 	return;
     }
-#if 0
-    if(!InitICM20948(IMU_address))
+
+    if(!InitICM20948())
     {
 	return;
     }
-
+#if 0
     /*
      * Second argument is the mode to acquire data. 
      */
-    if(!InitAK09916(Mag_address, 0x08))
+    if(!InitAK09916(0x08))
     {
 	return;
     }
@@ -187,25 +183,13 @@ bool ICM20948::InitICM20948(void)
     }
     log->LogTime(" Attempting to attach to I2C network. \n");
 
-    // Initalize the IMU at the specified address.
-    // the ioctl points us at the correct address. 
-    if (ioctl(fdI2C, I2C_SLAVE, fIMU_address) < 0)
-    {
-	SetError(-2, __LINE__);
- 	log->LogTime(" Error opening ICM20948, address 0x%2X\n", fIMU_address);
-	return false;
-    }
-    else
-    {
-	log->LogTime(" Opened ICM20948, address 0x%2X\n", fIMU_address);
-    }
-#if 0
+
     /*
      * According to the datasheet the power management (CLKSEL[2:0])
      * has to be set to 001 to achieve the performance in the datasheet.
      * Also look at power modes in 4.22
      */
-    int rv = wiringPiI2CWriteReg8( fd_IMU, PWR_MGMT_1, 0x01);  
+    int rv = WriteReg8( fIMU_address, PWR_MGMT_1, 0x01);  
   
     /*
      *  Switch to user bank 2 - registers for setup
@@ -214,7 +198,7 @@ bool ICM20948::InitICM20948(void)
      * more detail in section 8
      * 8.65 - bits 5:4 select the bank, here it is bank 2
      */
-    rv = wiringPiI2CWriteReg8( fd_IMU, REG_BANK_SEL, 0x20);
+    rv = WriteReg8( fIMU_address, REG_BANK_SEL, 0x20);
 
     /*
      * Configure Gyro and Thermometer
@@ -247,8 +231,8 @@ bool ICM20948::InitICM20948(void)
      *        7         7932     9
      *
      */
-    rv = wiringPiI2CWriteReg8( fd_IMU, GYRO_CONFIG_1, 0x19); 
-    rv = wiringPiI2CWriteReg8( fd_IMU, TEMP_CONFIG, 0x03);
+    rv = WriteReg8( fIMU_address, GYRO_CONFIG_1, 0x19); 
+    rv = WriteReg8( fIMU_address, TEMP_CONFIG, 0x03);
 
     /*
      * Set sample rate = gyroscope output rate(1.1kHz)/(1 + GYRO_SMPLRT_DIV)
@@ -259,7 +243,7 @@ bool ICM20948::InitICM20948(void)
      * Gyro sample rate divider Section 10.1
      *  
      */
-    rv = wiringPiI2CWriteReg8( fd_IMU, GYRO_SMPLRT_DIV, 0x04);
+    rv = WriteReg8( fIMU_address, GYRO_SMPLRT_DIV, 0x04);
 
     /*
      *
@@ -280,7 +264,7 @@ bool ICM20948::InitICM20948(void)
      *          11 16g
      *   0      1 Enable, 0 Disable DLPF
      */
-    uint8_t c = wiringPiI2CReadReg8(fd_IMU, ACCEL_CONFIG);
+    uint8_t c = ReadReg8( fIMU_address, ACCEL_CONFIG);
 
     // c = c & ~0xE0;    // Clear self-test bits [7:5]
     c = c & ~0x06;       // Clear AFS bits [4:3]
@@ -289,7 +273,7 @@ bool ICM20948::InitICM20948(void)
     c = c | 0x18;        // and set DLFPFCFG to 50.4 hz (table 18)
 
     // Write new ACCEL_CONFIG register value
-    rv = wiringPiI2CWriteReg8( fd_IMU, ACCEL_CONFIG, c);
+    rv = WriteReg8( fIMU_address, ACCEL_CONFIG, c);
 
     /*
      * Set accelerometer sample rate configuration
@@ -299,12 +283,12 @@ bool ICM20948::InitICM20948(void)
      * 
      * Section 10.12 (LSB for sample rate) 1.125kHz/(1+ACCEL_SSMPLRT_DIV[11:0]
      */
-    rv = wiringPiI2CWriteReg8( fd_IMU, ACCEL_SMPLRT_DIV_2, 0x04);
+    rv = WriteReg8( fIMU_address, ACCEL_SMPLRT_DIV_2, 0x04);
 
     /*
      * Do we neet to set MSB too - lets be complete, CBL addition
      */
-    rv = wiringPiI2CWriteReg8( fd_IMU, ACCEL_SMPLRT_DIV_1, 0x0);
+    rv = WriteReg8( fIMU_address, ACCEL_SMPLRT_DIV_1, 0x0);
 
     /*
      * The accelerometer, gyro, and thermometer are set to 1 kHz sample rates,
@@ -314,7 +298,7 @@ bool ICM20948::InitICM20948(void)
      * Switch to user bank 0 to access this. Section 7.1
      * Bank 0 is also where all the registers for reading data are. 
      */
-    rv = wiringPiI2CWriteReg8( fd_IMU, REG_BANK_SEL, 0x00);
+    rv = WriteReg8( fIMU_address, REG_BANK_SEL, 0x00);
 
     /*
      *
@@ -338,11 +322,11 @@ bool ICM20948::InitICM20948(void)
      *
      *    0x22 --- Hold interrupt until cleared, Bypass enabled
      */
-    rv = wiringPiI2CWriteReg8( fd_IMU, INT_PIN_CFG, 0x22);
+    rv = WriteReg8( fIMU_address, INT_PIN_CFG, 0x22);
 
     // Enable data ready (bit 0) interrupt
-    rv = wiringPiI2CWriteReg8( fd_IMU, INT_ENABLE_1, 0x01);
-#endif
+    rv = WriteReg8( fIMU_address, INT_ENABLE_1, 0x01);
+
     SET_DEBUG_STACK;
     return true;
 }
@@ -420,16 +404,16 @@ bool ICM20948::InitAK09916(uint8_t MagMode)
 
 #if 0
     /* attach to Magnetometer device*/
-    fd_Mag = wiringPiI2CSetup(MAG_address);
-    if (fd_Mag>0)
+    fMag_Address = wiringPiI2CSetup(MAG_address);
+    if (fMag_Address>0)
     {
 	log->LogTime(" Opened AK09916, address 0x%2X, FD: %d\n",
-		     MAG_address, fd_Mag);
+		     MAG_address, fMag_Address);
     }
     else
     {
  	log->LogTime(" Error opening AK09916, address 0x%2X\n", MAG_address);
-	fd_Mag = 0;
+	fMag_Address = 0;
 	SetError(-1,__LINE__);
 	return false;
     }
@@ -455,7 +439,7 @@ bool ICM20948::InitAK09916(uint8_t MagMode)
      * CNTL2 0x31 Control (R/W) for magnetometer. 
      * 
      */
-    wiringPiI2CWriteReg8(fd_Mag, AK09916_CNTL2, fMagMode);
+    WriteReg8(fMag_Address, AK09916_CNTL2, fMagMode);
 #endif
     SET_DEBUG_STACK;
     return true;
@@ -572,7 +556,7 @@ double ICM20948::getAres(void)
  *
  * Error Conditions : NONE
  * 
- * Unit Tested on: 26-Feb-22
+ * Unit Tested on: 
  *
  * Unit Tested by: CBL
  *
@@ -595,9 +579,9 @@ double ICM20948::readTempData(void)
 	uint16_t itemp;
 
 	// Read out temperature sensor data Hi order byte
-	//Hi = wiringPiI2CReadReg8(fd_IMU, TEMP_OUT_H);
+	//Hi = wiringPiI2CReadReg8(fIMU_address, TEMP_OUT_H);
 	// Read out temperature sensor data Low order byte
-	//Lo = wiringPiI2CReadReg8(fd_IMU, TEMP_OUT_L);
+	//Lo = wiringPiI2CReadReg8(fIMU_address, TEMP_OUT_L);
 
 	// Turn the MSB and LSB into a 16-bit value
 	Hi = ReadReg8( fIMU_address, TEMP_OUT_H);
@@ -609,7 +593,7 @@ double ICM20948::readTempData(void)
 	 * I think RoomTemp_Offset is wrong. 
 	 */
 	fTemp = ((double)itemp - RoomTemp_Offset)/Temp_Sensitivity + 21.0;
-#if 1
+#if 0
 	cout << " Hi: " << (int) Hi
 	     << " Lo: " << (int) Lo
 	     << " itemp: " << itemp
@@ -674,37 +658,37 @@ bool ICM20948::Read(void)
 bool ICM20948::readAccelData(void)
 {
     SET_DEBUG_STACK;
-#if 0
-    if (fd_IMU>0)
+
+    if (fIMU_address>0)
     {
 	uint8_t *ptr;
 	ptr = (uint8_t *)&itemp;
 
 	// Read out sensor data Hi order byte
-	*(ptr+1) = wiringPiI2CReadReg8(fd_IMU, ACCEL_XOUT_H);
+	*(ptr+1) = ReadReg8(fIMU_address, ACCEL_XOUT_H);
 	// Read out sensor data Low order byte
-	*ptr = wiringPiI2CReadReg8(fd_IMU, ACCEL_XOUT_L);
+	*ptr = ReadReg8(fIMU_address, ACCEL_XOUT_L);
 
 	fAcc[0] = (double)itemp * fAres;
 
 	// Read out sensor data Hi order byte
-	*(ptr+1) = wiringPiI2CReadReg8(fd_IMU, ACCEL_YOUT_H);
+	*(ptr+1) = ReadReg8(fIMU_address, ACCEL_YOUT_H);
 	// Read out sensor data Low order byte
-	*ptr = wiringPiI2CReadReg8(fd_IMU, ACCEL_YOUT_L);
+	*ptr = ReadReg8(fIMU_address, ACCEL_YOUT_L);
 
 	fAcc[1] = (double)itemp * fAres;
 
 	// Read out sensor data Hi order byte
-	*(ptr+1) = wiringPiI2CReadReg8(fd_IMU, ACCEL_ZOUT_H);
+	*(ptr+1) = ReadReg8(fIMU_address, ACCEL_ZOUT_H);
 	// Read out sensor data Low order byte
-	*ptr = wiringPiI2CReadReg8(fd_IMU, ACCEL_ZOUT_L);
+	*ptr = ReadReg8(fIMU_address, ACCEL_ZOUT_L);
 
 	fAcc[2] = (double)itemp * fAres;
 
 	SET_DEBUG_STACK;
 	return true;
     }
-#endif
+
     return false;
 }
 
@@ -732,29 +716,29 @@ bool ICM20948::readGyroData(void)
 {
     SET_DEBUG_STACK;
 #if 0
-    if (fd_IMU>0)
+    if (fIMU_address>0)
     {
 	uint8_t *ptr;
 	ptr = (uint8_t *)&itemp;
 
 	// Read out sensor data Hi order byte
-	*(ptr+1) = wiringPiI2CReadReg8(fd_IMU, GYRO_XOUT_H);
+	*(ptr+1) = ReadReg8(fIMU_address, GYRO_XOUT_H);
 	// Read out sensor data Low order byte
-	*ptr = wiringPiI2CReadReg8(fd_IMU, GYRO_XOUT_L);
+	*ptr = ReadReg8(fIMU_address, GYRO_XOUT_L);
 
 	fGyro[0] = (double)itemp * fGres;
 
 	// Read out sensor data Hi order byte
-	*(ptr+1) = wiringPiI2CReadReg8(fd_IMU, GYRO_YOUT_H);
+	*(ptr+1) = ReadReg8(fIMU_address, GYRO_YOUT_H);
 	// Read out sensor data Low order byte
-	*ptr = wiringPiI2CReadReg8(fd_IMU, GYRO_YOUT_L);
+	*ptr = ReadReg8(fIMU_address, GYRO_YOUT_L);
 
 	fGyro[1] = (double)itemp * fGres;
 
 	// Read out sensor data Hi order byte
-	*(ptr+1) = wiringPiI2CReadReg8(fd_IMU, GYRO_ZOUT_H);
+	*(ptr+1) = ReadReg8(fIMU_address, GYRO_ZOUT_H);
 	// Read out sensor data Low order byte
-	*ptr = wiringPiI2CReadReg8(fd_IMU, GYRO_ZOUT_L);
+	*ptr = ReadReg8(fIMU_address, GYRO_ZOUT_L);
 
 	fGyro[2] = (double)itemp * fGres;
 
@@ -793,7 +777,7 @@ bool ICM20948::readMagData(int16_t *results)
     ClearError(__LINE__);
     uint8_t rv;
 #if 0
-    if(fd_Mag>0)
+    if(fMag_Address>0)
     {
 	uint8_t *ptr;
 	ptr = (uint8_t *)&itemp;
@@ -811,7 +795,7 @@ bool ICM20948::readMagData(int16_t *results)
 	 * or measurement data register (HXL to TMPS) is read.
 	 */
 	if (fMagMode == 0x01)
-	    rv = wiringPiI2CReadReg8(fd_Mag, AK09916_ST1);
+	    rv = ReadReg8(fMag_Address, AK09916_ST1);
 	else
 	    rv = 0x01;
 
@@ -821,25 +805,25 @@ bool ICM20948::readMagData(int16_t *results)
 	    // Read the six raw data and ST2 registers sequentially into data array
 
 	    // Read out sensor data Hi order byte
-	    *(ptr+1) = wiringPiI2CReadReg8(fd_Mag, AK09916_XOUT_H);
+	    *(ptr+1) = ReadReg8(fMag_Address, AK09916_XOUT_H);
 	    // Read out sensor data Low order byte
-	    *ptr = wiringPiI2CReadReg8(fd_Mag, AK09916_XOUT_L);
+	    *ptr = ReadReg8(fMag_Address, AK09916_XOUT_L);
 
 	    if(results) results[0] = itemp;
 	    fMag[0] = (double)itemp * kMagRes;
 
 	    // Read out sensor data Hi order byte
-	    *(ptr+1) = wiringPiI2CReadReg8(fd_Mag, AK09916_YOUT_H);
+	    *(ptr+1) = ReadReg8(fMag_Address, AK09916_YOUT_H);
 	    // Read out sensor data Low order byte
-	    *ptr = wiringPiI2CReadReg8(fd_Mag, AK09916_YOUT_L);
+	    *ptr = ReadReg8(fMag_Address, AK09916_YOUT_L);
 
 	    if(results) results[1] = itemp;
 	    fMag[1] = (double)itemp * kMagRes;
 
 	    // Read out sensor data Hi order byte
-	    *(ptr+1) = wiringPiI2CReadReg8(fd_Mag, AK09916_ZOUT_H);
+	    *(ptr+1) = ReadReg8(fMag_Address, AK09916_ZOUT_H);
 	    // Read out sensor data Low order byte
-	    *ptr = wiringPiI2CReadReg8(fd_Mag, AK09916_ZOUT_L);
+	    *ptr = ReadReg8(fMag_Address, AK09916_ZOUT_L);
 
 	    if(results) results[2] = itemp;
 	    fMag[2] = (double)itemp * kMagRes;
@@ -864,13 +848,13 @@ bool ICM20948::readMagData(int16_t *results)
 	     * Therefore, when any of measurement data is read, be sure to 
 	     * read ST2 register at the end.
 	     */
-	    uint8_t st2 = wiringPiI2CReadReg8(fd_Mag, AK09916_ST2);
+	    uint8_t st2 = ReadReg8(fMag_Address, AK09916_ST2);
 	    if (st2 & 0x08)
 	    {
 		cout << "OVERFLOW IN MAGNETOMETER." << endl;
 	    }
 
-	    //uint8_t int_status = wiringPiI2CReadReg8(fd_Mag, INT_STATUS);
+	    //uint8_t int_status = ReadReg8(fMag_Address, INT_STATUS);
 	    fMagRead = true;
 #if 0
 	    // Something is not quite write with this code. 8
@@ -955,23 +939,23 @@ bool ICM20948::ICM20948SelfTest(double * destination)
 #if 0
     // Get stable time source
     // Auto select clock source to be PLL gyroscope reference if ready else
-    wiringPiI2CWriteReg8( fd_IMU,  PWR_MGMT_1, 0x01);
+    WriteReg8( fIMU_address,  PWR_MGMT_1, 0x01);
   
     // Switch to user bank 2
-    wiringPiI2CWriteReg8( fd_IMU, REG_BANK_SEL, 0x20);
+    WriteReg8( fIMU_address, REG_BANK_SEL, 0x20);
 
     // Set gyro sample rate to 1 kHz
-    wiringPiI2CWriteReg8( fd_IMU, GYRO_SMPLRT_DIV, 0x00);
+    WriteReg8( fIMU_address, GYRO_SMPLRT_DIV, 0x00);
 
     // Set gyro sample rate to 1 kHz, DLPF to 119.5 Hz and FSR to 250 dps
-    wiringPiI2CWriteReg8( fd_IMU, GYRO_CONFIG_1, 0x11);
+    WriteReg8( fIMU_address, GYRO_CONFIG_1, 0x11);
 
     // Set accelerometer rate to 1 kHz and bandwidth to 111.4 Hz
     // Set full scale range for the accelerometer to 2 g
-    wiringPiI2CWriteReg8( fd_IMU, ACCEL_CONFIG, 0x11);
+    WriteReg8( fIMU_address, ACCEL_CONFIG, 0x11);
 
     // Switch to user bank 0
-    wiringPiI2CWriteReg8( fd_IMU, REG_BANK_SEL, 0x00);
+    WriteReg8( fIMU_address, REG_BANK_SEL, 0x00);
 
     // Hang out a bit, wait for the chip to stablize. 
     nanosleep(&sleeptime, NULL);
@@ -1002,24 +986,24 @@ bool ICM20948::ICM20948SelfTest(double * destination)
     }
   
     // Switch to user bank 2
-    wiringPiI2CWriteReg8( fd_IMU, REG_BANK_SEL, 0x20);
+    WriteReg8( fIMU_address, REG_BANK_SEL, 0x20);
 
     /*
      * Configure the accelerometer for self-test
      * Enable self test on all three axes and set accelerometer 
      * range to +/- 2 g
      */
-    wiringPiI2CWriteReg8( fd_IMU, ACCEL_CONFIG_2, 0x1C);
+    WriteReg8( fIMU_address, ACCEL_CONFIG_2, 0x1C);
 
     /*
      * Enable self test on all three axes and set gyro range 
      * to +/- 250 degrees/s
      */
-    wiringPiI2CWriteReg8( fd_IMU, GYRO_CONFIG_2,  0x38);
+    WriteReg8( fIMU_address, GYRO_CONFIG_2,  0x38);
 
   
     // Switch to user bank 0
-    wiringPiI2CWriteReg8( fd_IMU, REG_BANK_SEL, 0x00);
+    WriteReg8( fIMU_address, REG_BANK_SEL, 0x00);
 
     // Hang out a bit, wait for the chip to stablize. 
     nanosleep(&sleeptime, NULL);
@@ -1047,34 +1031,34 @@ bool ICM20948::ICM20948SelfTest(double * destination)
     }
   
     // Switch to user bank 2
-    wiringPiI2CWriteReg8( fd_IMU, REG_BANK_SEL, 0x20);
+    WriteReg8( fIMU_address, REG_BANK_SEL, 0x20);
 
     // Configure the gyro and accelerometer for normal operation
-    wiringPiI2CWriteReg8( fd_IMU, ACCEL_CONFIG_2, 0x00);
-    wiringPiI2CWriteReg8( fd_IMU, GYRO_CONFIG_2,  0x00);
+    WriteReg8( fIMU_address, ACCEL_CONFIG_2, 0x00);
+    WriteReg8( fIMU_address, GYRO_CONFIG_2,  0x00);
     
   
     // Switch to user bank 1
-    wiringPiI2CWriteReg8( fd_IMU, REG_BANK_SEL, 0x10);
+    WriteReg8( fIMU_address, REG_BANK_SEL, 0x10);
 
     /*
      * Retrieve accelerometer and gyro factory Self-Test Code from USR_Reg
      * X-axis accel self-test results
      */
-    selfTest[0] = wiringPiI2CReadReg8( fd_IMU, SELF_TEST_X_ACCEL);
+    selfTest[0] = ReadReg8( fIMU_address, SELF_TEST_X_ACCEL);
     // Y-axis accel self-test results
-    selfTest[1] = wiringPiI2CReadReg8( fd_IMU, SELF_TEST_Y_ACCEL);
+    selfTest[1] = ReadReg8( fIMU_address, SELF_TEST_Y_ACCEL);
     // Z-axis accel self-test results
-    selfTest[2] = wiringPiI2CReadReg8( fd_IMU, SELF_TEST_Z_ACCEL);
+    selfTest[2] = ReadReg8( fIMU_address, SELF_TEST_Z_ACCEL);
     // X-axis gyro self-test results
-    selfTest[3] = wiringPiI2CReadReg8( fd_IMU, SELF_TEST_X_GYRO);
+    selfTest[3] = ReadReg8( fIMU_address, SELF_TEST_X_GYRO);
     // Y-axis gyro self-test results
-    selfTest[4] = wiringPiI2CReadReg8( fd_IMU, SELF_TEST_Y_GYRO);
+    selfTest[4] = ReadReg8( fIMU_address, SELF_TEST_Y_GYRO);
     // Z-axis gyro self-test results
-    selfTest[5] = wiringPiI2CReadReg8( fd_IMU, SELF_TEST_Z_GYRO);
+    selfTest[5] = ReadReg8( fIMU_address, SELF_TEST_Z_GYRO);
   
     // Switch to user bank 0
-    wiringPiI2CWriteReg8( fd_IMU, REG_BANK_SEL, 0x00);
+    WriteReg8( fIMU_address, REG_BANK_SEL, 0x00);
     // Hang out a bit, wait for the chip to stablize. 
     nanosleep(&sleeptime, NULL);
 
@@ -1302,62 +1286,62 @@ void ICM20948::calibrateICM20948(float * gyroBias, float * accelBias)
 	
     // reset device
     // Write a one to bit 7 reset bit; toggle reset device
-    wiringPiI2CWriteReg8( fd_IMU, PWR_MGMT_1, READ_FLAG);
+    WriteReg8( fIMU_address, PWR_MGMT_1, READ_FLAG);
     delay(200);
 
     // get stable time source; Auto select clock source to be PLL gyroscope
     // reference if ready else use the internal oscillator, bits 2:0 = 001
-    wiringPiI2CWriteReg8( fd_IMU, PWR_MGMT_1, 0x01);
+    WriteReg8( fIMU_address, PWR_MGMT_1, 0x01);
     delay(200);
 
     // Configure device for bias calculation
     // Disable all interrupts
-    wiringPiI2CWriteReg8( fd_IMU, INT_ENABLE, 0x00);
+    WriteReg8( fIMU_address, INT_ENABLE, 0x00);
     // Disable FIFO
-    wiringPiI2CWriteReg8( fd_IMU, FIFO_EN_1, 0x00);
-    wiringPiI2CWriteReg8( fd_IMU, FIFO_EN_2, 0x00);
+    WriteReg8( fIMU_address, FIFO_EN_1, 0x00);
+    WriteReg8( fIMU_address, FIFO_EN_2, 0x00);
     // Turn on internal clock source
-    wiringPiI2CWriteReg8( fd_IMU, PWR_MGMT_1, 0x00);
+    WriteReg8( fIMU_address, PWR_MGMT_1, 0x00);
     // Disable I2C master
-    //wiringPiI2CWriteReg8( fd_IMU, I2C_MST_CTRL, 0x00); Already disabled
+    //WriteReg8( fIMU_address, I2C_MST_CTRL, 0x00); Already disabled
     // Disable FIFO and I2C master modes
-    wiringPiI2CWriteReg8( fd_IMU, USER_CTRL, 0x00);
+    WriteReg8( fIMU_address, USER_CTRL, 0x00);
     // Reset FIFO and DMP
-    wiringPiI2CWriteReg8( fd_IMU, USER_CTRL, 0x08);
-    wiringPiI2CWriteReg8( fd_IMU, FIFO_RST, 0x1F);
+    WriteReg8( fIMU_address, USER_CTRL, 0x08);
+    WriteReg8( fIMU_address, FIFO_RST, 0x1F);
     delay(10);
-    wiringPiI2CWriteReg8( fd_IMU, FIFO_RST, 0x00);
+    WriteReg8( fIMU_address, FIFO_RST, 0x00);
     delay(15);
 
     // Set FIFO mode to snapshot
-    wiringPiI2CWriteReg8( fd_IMU, FIFO_MODE, 0x1F);
+    WriteReg8( fIMU_address, FIFO_MODE, 0x1F);
     // Switch to user bank 2
-    wiringPiI2CWriteReg8( fd_IMU, REG_BANK_SEL, 0x20);
+    WriteReg8( fIMU_address, REG_BANK_SEL, 0x20);
     // Configure ICM20948 gyro and accelerometer for bias calculation
     // Set low-pass filter to 188 Hz
-    wiringPiI2CWriteReg8( fd_IMU, GYRO_CONFIG_1, 0x01);
+    WriteReg8( fIMU_address, GYRO_CONFIG_1, 0x01);
     // Set sample rate to 1 kHz
-    wiringPiI2CWriteReg8( fd_IMU, GYRO_SMPLRT_DIV, 0x00);
+    WriteReg8( fIMU_address, GYRO_SMPLRT_DIV, 0x00);
     // Set gyro full-scale to 250 degrees per second, maximum sensitivity
-    wiringPiI2CWriteReg8( fd_IMU, GYRO_CONFIG_1, 0x00);
+    WriteReg8( fIMU_address, GYRO_CONFIG_1, 0x00);
     // Set accelerometer full-scale to 2 g, maximum sensitivity
-    wiringPiI2CWriteReg8( fd_IMU, ACCEL_CONFIG, 0x00);
+    WriteReg8( fIMU_address, ACCEL_CONFIG, 0x00);
 
     uint16_t  gyrosensitivity  = 131;   // = 131 LSB/degrees/sec
     uint16_t  accelsensitivity = 16384; // = 16384 LSB/g
 
     // Switch to user bank 0
-    wiringPiI2CWriteReg8( fd_IMU, REG_BANK_SEL, 0x00);
+    WriteReg8( fIMU_address, REG_BANK_SEL, 0x00);
     // Configure FIFO to capture accelerometer and gyro data for bias calculation
-    wiringPiI2CWriteReg8( fd_IMU, USER_CTRL, 0x40);  // Enable FIFO
+    WriteReg8( fIMU_address, USER_CTRL, 0x40);  // Enable FIFO
     // Enable gyro and accelerometer sensors for FIFO  (max size 512 bytes in
     // ICM20948)
-    wiringPiI2CWriteReg8( fd_IMU, FIFO_EN_2, 0x1E);
+    WriteReg8( fIMU_address, FIFO_EN_2, 0x1E);
     delay(40);  // accumulate 40 samples in 40 milliseconds = 480 bytes
 
     // At end of sample accumulation, turn off FIFO sensor read
     // Disable gyro and accelerometer sensors for FIFO
-    wiringPiI2CWriteReg8( fd_IMU, FIFO_EN_2, 0x00);
+    WriteReg8( fIMU_address, FIFO_EN_2, 0x00);
     // Read FIFO sample count
     readBytes(ICM20948_ADDRESS, FIFO_COUNTH, 2, &data[0]);
     fifo_count = ((uint16_t)data[0] << 8) | data[1];
@@ -1417,15 +1401,15 @@ void ICM20948::calibrateICM20948(float * gyroBias, float * accelBias)
     data[5] = (-gyro_bias[2]/4)       & 0xFF;
   
     // Switch to user bank 2
-    wiringPiI2CWriteReg8( fd_IMU, REG_BANK_SEL, 0x20);
+    WriteReg8( fIMU_address, REG_BANK_SEL, 0x20);
 
     // Push gyro biases to hardware registers
-    wiringPiI2CWriteReg8( fd_IMU, XG_OFFSET_H, data[0]);
-    wiringPiI2CWriteReg8( fd_IMU, XG_OFFSET_L, data[1]);
-    wiringPiI2CWriteReg8( fd_IMU, YG_OFFSET_H, data[2]);
-    wiringPiI2CWriteReg8( fd_IMU, YG_OFFSET_L, data[3]);
-    wiringPiI2CWriteReg8( fd_IMU, ZG_OFFSET_H, data[4]);
-    wiringPiI2CWriteReg8( fd_IMU, ZG_OFFSET_L, data[5]);
+    WriteReg8( fIMU_address, XG_OFFSET_H, data[0]);
+    WriteReg8( fIMU_address, XG_OFFSET_L, data[1]);
+    WriteReg8( fIMU_address, YG_OFFSET_H, data[2]);
+    WriteReg8( fIMU_address, YG_OFFSET_L, data[3]);
+    WriteReg8( fIMU_address, ZG_OFFSET_H, data[4]);
+    WriteReg8( fIMU_address, ZG_OFFSET_L, data[5]);
 
     // Output scaled gyro biases for display in the main program
     gyroBias[0] = (float) gyro_bias[0]/(float) gyrosensitivity;
@@ -1441,7 +1425,7 @@ void ICM20948::calibrateICM20948(float * gyroBias, float * accelBias)
     // the accelerometer biases calculated above must be divided by 8.
   
     // Switch to user bank 1
-    wiringPiI2CWriteReg8( fd_IMU, REG_BANK_SEL, 0x10);
+    WriteReg8( fIMU_address, REG_BANK_SEL, 0x10);
     // A place to hold the factory accelerometer trim biases
     int32_t accel_bias_reg[3] = {0, 0, 0};
     // Read factory accelerometer trim values
@@ -1494,19 +1478,19 @@ void ICM20948::calibrateICM20948(float * gyroBias, float * accelBias)
     // Apparently this is not working for the acceleration biases in the ICM-20948
     // Are we handling the temperature correction bit properly?
     // Push accelerometer biases to hardware registers
-    wiringPiI2CWriteReg8( fd_IMU, XA_OFFSET_H, data[0]);
-    wiringPiI2CWriteReg8( fd_IMU, XA_OFFSET_L, data[1]);
-    wiringPiI2CWriteReg8( fd_IMU, YA_OFFSET_H, data[2]);
-    wiringPiI2CWriteReg8( fd_IMU, YA_OFFSET_L, data[3]);
-    wiringPiI2CWriteReg8( fd_IMU, ZA_OFFSET_H, data[4]);
-    wiringPiI2CWriteReg8( fd_IMU, ZA_OFFSET_L, data[5]);
+    WriteReg8( fIMU_address, XA_OFFSET_H, data[0]);
+    WriteReg8( fIMU_address, XA_OFFSET_L, data[1]);
+    WriteReg8( fIMU_address, YA_OFFSET_H, data[2]);
+    WriteReg8( fIMU_address, YA_OFFSET_L, data[3]);
+    WriteReg8( fIMU_address, ZA_OFFSET_H, data[4]);
+    WriteReg8( fIMU_address, ZA_OFFSET_L, data[5]);
 
     // Output scaled accelerometer biases for display in the main program
     accelBias[0] = (float)accel_bias[0]/(float)accelsensitivity;
     accelBias[1] = (float)accel_bias[1]/(float)accelsensitivity;
     accelBias[2] = (float)accel_bias[2]/(float)accelsensitivity;
     // Switch to user bank 0
-    wiringPiI2CWriteReg8( fd_IMU, REG_BANK_SEL, 0x00);
+    WriteReg8( fIMU_address, REG_BANK_SEL, 0x00);
 }
 
 
@@ -1668,7 +1652,7 @@ int ICM20948::ReadBlock(uint8_t SlaveAddress, unsigned char Register,
 /**
  ******************************************************************
  *
- * Function Name : WriteByte
+ * Function Name : WriteReg8
  *
  * Description :
  *     SlaveAddress - address of the subsystem on the bus.
@@ -1688,8 +1672,8 @@ int ICM20948::ReadBlock(uint8_t SlaveAddress, unsigned char Register,
  *
  *******************************************************************
  */
-bool ICM20948::WriteByte(uint8_t SlaveAddress, 
-				  unsigned char Register, unsigned char value)
+bool ICM20948::WriteReg8(uint8_t SlaveAddress, 
+			 unsigned char Register, unsigned char value)
 {
     SET_DEBUG_STACK;
     CLogger *log = CLogger::GetThis();
