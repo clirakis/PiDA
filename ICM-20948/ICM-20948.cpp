@@ -4,6 +4,10 @@
  *
  * Author/Date : C.B. Lirakis / 24-Feb-22
  *
+ * Modified   BY   Reason
+ * --------   --   ------
+ * 15-Dec-23  CBL  stopped using wiring-pi
+ *
  * Description : Generic ICM-20948
  *
  * Restrictions/Limitations :
@@ -19,6 +23,9 @@
  * http://wiringpi.com
  * http://wiringpi.com/reference/i2c-library/
  * https://github.com/drcpattison/ICM-20948/  - USED A LOT OF CODE FROM THIS
+ * https://raspberry-projects.com/pi/programming-in-c/i2c/using-the-i2c-interface
+ * This is particularly helpful:
+ * https://github.com/danjperron/A2D_PIC_RPI/blob/master/I2CWrapper.c
  *
  ********************************************************************/
 // System includes.
@@ -30,6 +37,12 @@ using namespace std;
 #include <cmath>
 #include <unistd.h>
 #include <limits.h>
+
+// specific to talking to I2C
+#include <fcntl.h>
+#include <sys/ioctl.h>
+#include <linux/i2c-dev.h>
+#include <linux/i2c.h>
 
 // Local Includes.
 #include "debug.h"
@@ -80,12 +93,24 @@ ICM20948::ICM20948 (uint8_t IMU_address, uint8_t Mag_address) : CObject(), IMUDa
 
     fGres = getGres();
     fAres = getAres();
-
+    fIMU_address = IMU_address;
+    fMag_address = Mag_address;
+#if 0
+    /* not sure I need these anymore. */
     fd_IMU = 0;
     fd_Mag = 0;
+#endif
     fGMTOffset = lt.tm_gmtoff;
     //cout << "GMT OFFSET: " << fGMTOffset << endl;
 
+    // Open the chip. 
+    fdI2C = open(kICMDeviceName, O_RDWR);
+    if (fdI2C<0)
+    {
+	SetError(-1, __LINE__);
+	return;
+    }
+#if 0
     if(!InitICM20948(IMU_address))
     {
 	return;
@@ -98,7 +123,7 @@ ICM20948::ICM20948 (uint8_t IMU_address, uint8_t Mag_address) : CObject(), IMUDa
     {
 	return;
     }
-
+#endif
     SET_DEBUG_STACK;
 }
 
@@ -125,6 +150,7 @@ ICM20948::ICM20948 (uint8_t IMU_address, uint8_t Mag_address) : CObject(), IMUDa
 ICM20948::~ICM20948 (void)
 {
     SET_DEBUG_STACK;
+    close(fdI2C);
 }
 
 /**
@@ -148,34 +174,32 @@ ICM20948::~ICM20948 (void)
  *
  *******************************************************************
  */
-bool ICM20948::InitICM20948(uint8_t IMU_address)
+bool ICM20948::InitICM20948(void)
 {
     SET_DEBUG_STACK;
     CLogger *log = CLogger::GetThis();
     ClearError(__LINE__);
 
-    fd_IMU = 0;
-    if (IMU_address <= 0)
+    if (fIMU_address <= 0)
     {
 	log->Log("# IMU subsystem off.\n");
 	return true;
     }
+    log->LogTime(" Attempting to attach to I2C network. \n");
 
-    /* attach to IMU device*/
-    fd_IMU = wiringPiI2CSetup(IMU_address);
-    if (fd_IMU>0)
+    // Initalize the IMU at the specified address.
+    // the ioctl points us at the correct address. 
+    if (ioctl(fdI2C, I2C_SLAVE, fIMU_address) < 0)
     {
-	log->LogTime(" Opened ICM20948, address 0x%2X, FD: %d\n",
-		     IMU_address, fd_IMU);
+	SetError(-2, __LINE__);
+ 	log->LogTime(" Error opening ICM20948, address 0x%2X\n", fIMU_address);
+	return false;
     }
     else
     {
- 	log->LogTime(" Error opening ICM20948, address 0x%2X\n", IMU_address);
-	SetError(-1,__LINE__);
-	fd_IMU = 0;
-	return false;
+	log->LogTime(" Opened ICM20948, address 0x%2X\n", fIMU_address);
     }
-
+#if 0
     /*
      * According to the datasheet the power management (CLKSEL[2:0])
      * has to be set to 001 to achieve the performance in the datasheet.
@@ -318,6 +342,7 @@ bool ICM20948::InitICM20948(uint8_t IMU_address)
 
     // Enable data ready (bit 0) interrupt
     rv = wiringPiI2CWriteReg8( fd_IMU, INT_ENABLE_1, 0x01);
+#endif
     SET_DEBUG_STACK;
     return true;
 }
@@ -369,19 +394,31 @@ bool ICM20948::InitICM20948(uint8_t IMU_address)
  *
  *******************************************************************
  */
-bool ICM20948::InitAK09916(uint8_t MAG_address, uint8_t MagMode)
+bool ICM20948::InitAK09916(uint8_t MagMode)
 {
     SET_DEBUG_STACK;
     CLogger *log = CLogger::GetThis();
     ClearError(__LINE__);
-    fd_Mag = 0;
 
-    if (MAG_address<0)
+    if (fMag_address<0)
     {
 	log->Log("# Mag subsystem off.\n");
 	return true;
     }
+    // Initalize the mag sensor at the specified address.
+    // the ioctl points us at the correct address. 
+    if (ioctl(fdI2C, I2C_SLAVE, fMag_address) < 0)
+    {
+	SetError(-2, __LINE__);
+ 	log->LogTime(" Error opening AK09916, address 0x%2X\n", fMag_address);
+	return false;
+    }
+    else
+    {
+	log->LogTime(" Opened AK09916, address 0x%2X\n", fMag_address);
+    }
 
+#if 0
     /* attach to Magnetometer device*/
     fd_Mag = wiringPiI2CSetup(MAG_address);
     if (fd_Mag>0)
@@ -419,6 +456,7 @@ bool ICM20948::InitAK09916(uint8_t MAG_address, uint8_t MagMode)
      * 
      */
     wiringPiI2CWriteReg8(fd_Mag, AK09916_CNTL2, fMagMode);
+#endif
     SET_DEBUG_STACK;
     return true;
 }
@@ -544,33 +582,40 @@ double ICM20948::getAres(void)
 double ICM20948::readTempData(void)
 {
     SET_DEBUG_STACK;
-    const double RoomTemp_Offset  = 0.0;
+    const double RoomTemp_Offset  = 40.0;    // lower end of temperature scale
     const double Temp_Sensitivity = 333.87;  // LSB/C
+    CLogger *log = CLogger::GetThis();
+    char buf[4];
+    size_t rv;
 
     fTemp = 0.0;
-    if (fd_IMU>0)
+    if (fdI2C>=0)
     {
 	uint8_t  Hi, Lo;
 	uint16_t itemp;
 
 	// Read out temperature sensor data Hi order byte
-	Hi = wiringPiI2CReadReg8(fd_IMU, TEMP_OUT_H);
+	//Hi = wiringPiI2CReadReg8(fd_IMU, TEMP_OUT_H);
 	// Read out temperature sensor data Low order byte
-	Lo = wiringPiI2CReadReg8(fd_IMU, TEMP_OUT_L);
+	//Lo = wiringPiI2CReadReg8(fd_IMU, TEMP_OUT_L);
 
 	// Turn the MSB and LSB into a 16-bit value
+	Hi = ReadReg8( fIMU_address, TEMP_OUT_H);
+	Lo = ReadReg8( fIMU_address,TEMP_OUT_L);
 	itemp = ((int16_t)Hi << 8) | Lo;
-#if 0
-	cout << " Hi: " << Hi
-	     << " Lo: " << Lo
-	     << " itemp: " << itemp
-	     << endl;
-#endif
 
 	/*
 	 * Temp C = ((TempOut - RoomTemp_Offset)/Temp_Sensitivity)+21.0
+	 * I think RoomTemp_Offset is wrong. 
 	 */
 	fTemp = ((double)itemp - RoomTemp_Offset)/Temp_Sensitivity + 21.0;
+#if 1
+	cout << " Hi: " << (int) Hi
+	     << " Lo: " << (int) Lo
+	     << " itemp: " << itemp
+	     << " ftemp: " << fTemp
+	     << endl;
+#endif
     }
     SET_DEBUG_STACK;
     return fTemp;
@@ -629,6 +674,7 @@ bool ICM20948::Read(void)
 bool ICM20948::readAccelData(void)
 {
     SET_DEBUG_STACK;
+#if 0
     if (fd_IMU>0)
     {
 	uint8_t *ptr;
@@ -658,6 +704,7 @@ bool ICM20948::readAccelData(void)
 	SET_DEBUG_STACK;
 	return true;
     }
+#endif
     return false;
 }
 
@@ -684,6 +731,7 @@ bool ICM20948::readAccelData(void)
 bool ICM20948::readGyroData(void)
 {
     SET_DEBUG_STACK;
+#if 0
     if (fd_IMU>0)
     {
 	uint8_t *ptr;
@@ -713,6 +761,7 @@ bool ICM20948::readGyroData(void)
 	SET_DEBUG_STACK;
 	return true;
     }
+#endif
     return false;
 }
 
@@ -743,7 +792,7 @@ bool ICM20948::readMagData(int16_t *results)
     fMagRead = false;  // Assume read fails. 
     ClearError(__LINE__);
     uint8_t rv;
-
+#if 0
     if(fd_Mag>0)
     {
 	uint8_t *ptr;
@@ -844,6 +893,7 @@ bool ICM20948::readMagData(int16_t *results)
 #endif
 	}
     }
+#endif
     SET_DEBUG_STACK;
     return fMagRead;
 }
@@ -902,7 +952,7 @@ bool ICM20948::ICM20948SelfTest(double * destination)
     memset(gAvg,   0, 3*sizeof(double));
     memset(aSTAvg, 0, 3*sizeof(double));
     memset(gSTAvg, 0, 3*sizeof(double));
-
+#if 0
     // Get stable time source
     // Auto select clock source to be PLL gyroscope reference if ready else
     wiringPiI2CWriteReg8( fd_IMU,  PWR_MGMT_1, 0x01);
@@ -1064,6 +1114,7 @@ bool ICM20948::ICM20948SelfTest(double * destination)
 	     destination[0], destination[1], destination[2]);
     log->Log("#    gyro: %f %f %f \n", 
 	     destination[3], destination[4], destination[5]);
+#endif
     return true;
 }
 /**
@@ -1463,3 +1514,338 @@ void ICM20948::calibrateICM20948(float * gyroBias, float * accelBias)
 
 
 #endif
+/**
+ ******************************************************************
+ *
+ * Function Name : ReadReg8
+ *
+ * Description :
+ *     Read a single byte of data from the specified register. eg. 
+ *     8 bit wide register.
+ *
+ * Inputs : Register to read from 
+ *
+ * Returns : true on success
+ *
+ * Error Conditions :
+ * 
+ * Unit Tested on: 
+ *
+ * Unit Tested by: CBL
+ *
+ *
+ *******************************************************************
+ */
+uint8_t ICM20948::ReadReg8(uint8_t SlaveAddress, uint8_t Register)
+{
+    SET_DEBUG_STACK;
+    CLogger *log = CLogger::GetThis();
+    ClearError(__LINE__);
+    uint8_t rv = 0;
+    uint8_t buf[2];
+    uint8_t rc;
+    struct i2c_smbus_ioctl_data blk;
+    union  i2c_smbus_data i2cdata;
+
+    blk.read_write = 1;
+    blk.command    = Register;
+    blk.size       = I2C_SMBUS_BYTE_DATA;
+    blk.data       = &i2cdata;
+
+    if (fdI2C>=0)
+    {
+	/*
+	 * Sequence
+	 * 1) Select slave I2C address with write bit 0
+	 * 2) Send internal register address. 
+	 * 3) Select slave I2C address with read bit 1
+	 * 4) Read the data.  no ack
+	 */
+	
+	// We are pointing at the "slave" on the I2C bus. 
+	if (ioctl(fdI2C, I2C_SLAVE, SlaveAddress) < 0)
+	{
+	    SetError(-2, __LINE__);
+	    log->LogTime(" Error selecting ICM20948 for read, address 0x%2X\n",
+			 SlaveAddress);
+	    return false;
+	}
+
+	if(ioctl(fdI2C, I2C_SMBUS, &blk) < 0)
+	{
+	    SetError(-3, __LINE__);
+	    return rv;
+	}
+	rv = (uint8_t) i2cdata.byte;
+    }
+
+    SET_DEBUG_STACK;
+    return rv;
+}
+/**
+ ******************************************************************
+ *
+ * Function Name : ReadBlock
+ *
+ * Description : Read N byte from the I2C (maximum of 31 bytes possible)
+ *     
+ *
+ * Inputs : 
+ *     SlaveAddress - address of the subsystem on the bus.
+ *     Register - to read from
+ *     size     - number of bytes to read
+ *     data     - user provided data array to store data. 
+ *
+ * Returns : 
+ *
+ * Error Conditions :
+ * 
+ * Unit Tested on: 
+ *
+ * Unit Tested by: CBL
+ *
+ *
+ *******************************************************************
+ */
+int ICM20948::ReadBlock(uint8_t SlaveAddress, unsigned char Register, 
+			size_t  size,  void* data)
+{
+    SET_DEBUG_STACK;
+    CLogger *log = CLogger::GetThis();
+    ClearError(__LINE__);
+    struct i2c_smbus_ioctl_data  blk;
+    union i2c_smbus_data         i2cdata;
+
+    // We are pointing at the "slave" on the I2C bus. 
+    if (ioctl(fdI2C, I2C_SLAVE, SlaveAddress) < 0)
+    {
+	SetError(-2, __LINE__);
+	log->LogTime(" Error selecting ICM20948 for read, address 0x%2X\n",
+		     SlaveAddress);
+	return -1;
+    }
+
+    blk.read_write   = 1;
+    blk.command      = Register;
+    blk.size         = I2C_SMBUS_I2C_BLOCK_DATA;
+    blk.data         = &i2cdata;
+    i2cdata.block[0] = size;
+
+    if(ioctl(fdI2C, I2C_SMBUS, &blk) < 0)
+    {
+	SetError(-4, __LINE__);
+	return -1;
+    }
+
+    memcpy( data, &i2cdata.block[1], size);
+    SET_DEBUG_STACK;
+    return   i2cdata.block[0];
+}
+
+/**
+ ******************************************************************
+ *
+ * Function Name : 
+ *
+ * Description :
+ *     
+ *
+ * Inputs : NONE
+ *
+ * Returns : true on success
+ *
+ * Error Conditions :
+ * 
+ * Unit Tested on: 
+ *
+ * Unit Tested by: CBL
+ *
+ *
+ *******************************************************************
+ */
+
+
+/**
+ ******************************************************************
+ *
+ * Function Name : WriteByte
+ *
+ * Description :
+ *     SlaveAddress - address of the subsystem on the bus.
+ *     Register - to read from
+ *     value    - value to write to 8 bit wide register
+ *
+ * Inputs : NONE
+ *
+ * Returns : true on success
+ *
+ * Error Conditions :
+ * 
+ * Unit Tested on: 
+ *
+ * Unit Tested by: CBL
+ *
+ *
+ *******************************************************************
+ */
+bool ICM20948::WriteByte(uint8_t SlaveAddress, 
+				  unsigned char Register, unsigned char value)
+{
+    SET_DEBUG_STACK;
+    CLogger *log = CLogger::GetThis();
+    ClearError(__LINE__);
+    struct i2c_smbus_ioctl_data  blk;
+    union i2c_smbus_data         i2cdata;
+
+    // We are pointing at the "slave" on the I2C bus. 
+    if (ioctl(fdI2C, I2C_SLAVE, SlaveAddress) < 0)
+    {
+	SetError(-2, __LINE__);
+	log->LogTime(" Error selecting ICM20948 for read, address 0x%2X\n",
+		     SlaveAddress);
+	return -1;
+    }
+
+
+    i2cdata.byte   = value;
+    blk.read_write = 0;
+    blk.command    = Register;
+    blk.size       = I2C_SMBUS_BYTE_DATA;
+    blk.data       = &i2cdata;
+
+    if(ioctl(fdI2C, I2C_SMBUS, &blk)<0)
+    {
+	log->LogTime(" Unable to write I2C byte data\n");
+	SET_DEBUG_STACK;
+	SetError(-4, __LINE__);
+        return false;
+    }
+    SET_DEBUG_STACK;
+    return true;
+}
+
+
+/**
+ ******************************************************************
+ *
+ * Function Name : ReadWord
+ *
+ * Description : Read a 16 bit word on the I2C bus. 
+ *     SlaveAddress - address of the subsystem on the bus.
+ *     Register - to read from
+ *     
+ *
+ * Inputs : NONE
+ *
+ * Returns : true on success
+ *
+ * Error Conditions :
+ * 
+ * Unit Tested on: 
+ *
+ * Unit Tested by: CBL
+ *
+ *
+ *******************************************************************
+ */
+int ICM20948::ReadWord(uint8_t SlaveAddress, unsigned char Register)
+{
+    SET_DEBUG_STACK;
+    CLogger *log = CLogger::GetThis();
+    ClearError(__LINE__);
+    struct i2c_smbus_ioctl_data  blk;
+    union i2c_smbus_data         i2cdata;
+
+    // We are pointing at the "slave" on the I2C bus. 
+    if (ioctl(fdI2C, I2C_SLAVE, SlaveAddress) < 0)
+    {
+	SetError(-2, __LINE__);
+	log->LogTime(" Error selecting ICM20948 for read, address 0x%2X\n",
+		     SlaveAddress);
+	return -1;
+    }
+
+    blk.read_write = 1;
+    blk.command    = Register;
+    blk.size       = I2C_SMBUS_WORD_DATA;
+    blk.data       = &i2cdata;
+
+    if(ioctl( fdI2C, I2C_SMBUS, &blk)<0)
+    {
+	SetError(-5, __LINE__);
+	log->LogTime(" Error ICM20948 for readword\n");
+	return -1;
+    }
+    return  (int) i2cdata.word;
+}
+
+
+/**
+ ******************************************************************
+ *
+ * Function Name : WriteWord
+ *
+ * Description :
+ *     SlaveAddress - address of the subsystem on the bus.
+ *     Register - to read from
+ *     value    - value to write to 8 bit wide register
+ *     
+ *
+ * Inputs : NONE
+ *
+ * Returns : true on success
+ *
+ * Error Conditions :
+ * 
+ * Unit Tested on: 
+ *
+ * Unit Tested by: CBL
+ *
+ *
+ *******************************************************************
+ */
+////////////////////////////////////   I2CWrapperWriteWord
+//
+//    Write 2 bytes  to the I2C device
+//
+//     inputs,
+//
+//     handle:   IO handle
+//     cmd:  Specify which is the device command (more or less the device function or register)
+//     value:    byte value
+//    Return   number of byte written if <0 error
+//
+//    Check I2CWrapperErrorFlag for error
+//
+bool ICM20948::WriteWord(uint8_t SlaveAddress, uint8_t Register, 
+			 uint16_t value)
+{
+    SET_DEBUG_STACK;
+    CLogger *log = CLogger::GetThis();
+    ClearError(__LINE__);
+    struct i2c_smbus_ioctl_data  blk;
+    union i2c_smbus_data         i2cdata;
+
+    // We are pointing at the "slave" on the I2C bus. 
+    if (ioctl(fdI2C, I2C_SLAVE, SlaveAddress) < 0)
+    {
+	SetError(-2, __LINE__);
+	log->LogTime(" Error selecting ICM20948, WriteWord, address 0x%2X\n",
+		     SlaveAddress);
+	return false;
+    }
+
+    i2cdata.word   = value;
+    blk.read_write = 0;
+    blk.command    = Register;
+    blk.size       = I2C_SMBUS_WORD_DATA;
+    blk.data       = &i2cdata;
+
+    if(ioctl( fdI2C, I2C_SMBUS, &blk)<0)
+    {
+	SetError(-6, __LINE__);
+	log->LogTime(" Error ICM20948 for WriteWord\n");
+	return false;
+    }
+    return true;
+}

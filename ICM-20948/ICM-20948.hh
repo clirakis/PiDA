@@ -32,7 +32,6 @@
 #define __ICM20948_hh_
 #   include <inttypes.h>
 #   include <time.h>
-#   include <wiringPiI2C.h>
 #   include "CObject.hh"
 #   include "IMUData.hh"    // Keep all the IMU data in one class
 
@@ -377,6 +376,28 @@ public:
     friend std::ostream& operator<<(std::ostream& output, const ICM20948 &n);
 
 protected:
+    /*
+     * Always make sure this is still true by searching using
+     * sudo i2cdetect -y 1
+     * You should see a device 69 if this works. 
+     */
+    const char *kICMDeviceName = "/dev/i2c-1";
+    // File decriptor if opens correctly. 
+    int fdI2C;
+
+    // Sub component addresses on the I2C bus.
+    uint8_t fIMU_address;
+    uint8_t fMag_address;
+
+    // Helper functions for reading and writing to I2C. 
+    uint8_t   ReadReg8(uint8_t SlaveAddress, uint8_t Register);
+    int       ReadBlock(uint8_t SlaveAddress, unsigned char Register, 
+			size_t  size,  void* data);
+    bool      WriteByte(uint8_t SlaveAddress, unsigned char Register, 
+			unsigned char value);
+    int       ReadWord(uint8_t SlaveAddress, unsigned char Register);
+    bool WriteWord(uint8_t SlaveAddress, uint8_t Register, uint16_t value);
+
     // Set initial input parameters
     /*
      * Permmisable range limits for the accelerometer
@@ -435,11 +456,9 @@ protected:
     double     fAres;    // resulting resolution for acceleration.
 
     // 2 for 8 Hz, 6 for 100 Hz continuous magnetometer data read
-    uint8_t   fMmode;
+    uint8_t    fMmode;
 
 private:
-    uint32_t  fd_IMU;     /*! File descriptor for I2C read/writes */
-    uint32_t  fd_Mag;     /*! File descriptor for I2C read/writes */
 
     int16_t   itemp;
     uint8_t   fMagMode;   /* Bit field to set magnetic readout mode. */
@@ -449,12 +468,12 @@ private:
      * Setup the primary registers on the IMU unit.
      * Also open the I2C channel
      */
-    bool InitICM20948(uint8_t IMU_address );
+    bool InitICM20948(void);
 
     /*!
      * Setup the primary registers on the Mag unit.
      * Also open the I2C channel
      */
-    bool InitAK09916(uint8_t MAG_address, uint8_t MagMode);
+    bool InitAK09916(uint8_t MagMode);
 };
 #endif

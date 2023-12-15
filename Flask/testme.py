@@ -6,14 +6,17 @@ from PySM.NMEA_GGA import NMEA_GGA
 from PySM.NMEA_RMC import NMEA_RMC
 from PySM.NMEA_GSA import NMEA_GSA
 from PySM.NMEA_VTG import NMEA_VTG
-
+from PySM.IMU      import IMU
 
 # put my initialization in here. This one attaches to the
 # time position shared memory if it exists.
 # This is based on POSIX shared memory and is tightly linked
 # to a binary data acquisition module I have called lassen. 
 #MySM = NMEA_GGA()
-MySM = NMEA_GSA()
+#MySM = NMEA_GSA()
+#MySM = NMEA_GSA()
+#MySM = NMEA_VTG()
+MySM  = IMU()
 MySM.debug = True
 
 #
