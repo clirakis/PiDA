@@ -111,7 +111,7 @@ ICM20948::ICM20948 (uint8_t IMU_address, uint8_t Mag_address) : CObject(), IMUDa
     {
 	return;
     }
-#if 0
+
     /*
      * Second argument is the mode to acquire data. 
      */
@@ -119,7 +119,7 @@ ICM20948::ICM20948 (uint8_t IMU_address, uint8_t Mag_address) : CObject(), IMUDa
     {
 	return;
     }
-#endif
+
     SET_DEBUG_STACK;
 }
 
@@ -402,22 +402,6 @@ bool ICM20948::InitAK09916(uint8_t MagMode)
 	log->LogTime(" Opened AK09916, address 0x%2X\n", fMag_address);
     }
 
-#if 0
-    /* attach to Magnetometer device*/
-    fMag_Address = wiringPiI2CSetup(MAG_address);
-    if (fMag_Address>0)
-    {
-	log->LogTime(" Opened AK09916, address 0x%2X, FD: %d\n",
-		     MAG_address, fMag_Address);
-    }
-    else
-    {
- 	log->LogTime(" Error opening AK09916, address 0x%2X\n", MAG_address);
-	fMag_Address = 0;
-	SetError(-1,__LINE__);
-	return false;
-    }
-
     fMagMode = MagMode;
     /*
      *      CNTL2 - Control 2 (R/W)
@@ -439,8 +423,8 @@ bool ICM20948::InitAK09916(uint8_t MagMode)
      * CNTL2 0x31 Control (R/W) for magnetometer. 
      * 
      */
-    WriteReg8(fMag_Address, AK09916_CNTL2, fMagMode);
-#endif
+    WriteReg8(fMag_address, AK09916_CNTL2, fMagMode);
+
     SET_DEBUG_STACK;
     return true;
 }
@@ -568,9 +552,6 @@ double ICM20948::readTempData(void)
     SET_DEBUG_STACK;
     const double RoomTemp_Offset  = 40.0;    // lower end of temperature scale
     const double Temp_Sensitivity = 333.87;  // LSB/C
-    CLogger *log = CLogger::GetThis();
-    char buf[4];
-    size_t rv;
 
     fTemp = 0.0;
     if (fdI2C>=0)
@@ -715,7 +696,7 @@ bool ICM20948::readAccelData(void)
 bool ICM20948::readGyroData(void)
 {
     SET_DEBUG_STACK;
-#if 0
+
     if (fIMU_address>0)
     {
 	uint8_t *ptr;
@@ -745,7 +726,7 @@ bool ICM20948::readGyroData(void)
 	SET_DEBUG_STACK;
 	return true;
     }
-#endif
+
     return false;
 }
 
@@ -776,8 +757,8 @@ bool ICM20948::readMagData(int16_t *results)
     fMagRead = false;  // Assume read fails. 
     ClearError(__LINE__);
     uint8_t rv;
-#if 0
-    if(fMag_Address>0)
+
+    if(fMag_address>0)
     {
 	uint8_t *ptr;
 	ptr = (uint8_t *)&itemp;
@@ -795,7 +776,7 @@ bool ICM20948::readMagData(int16_t *results)
 	 * or measurement data register (HXL to TMPS) is read.
 	 */
 	if (fMagMode == 0x01)
-	    rv = ReadReg8(fMag_Address, AK09916_ST1);
+	    rv = ReadReg8(fMag_address, AK09916_ST1);
 	else
 	    rv = 0x01;
 
@@ -805,25 +786,25 @@ bool ICM20948::readMagData(int16_t *results)
 	    // Read the six raw data and ST2 registers sequentially into data array
 
 	    // Read out sensor data Hi order byte
-	    *(ptr+1) = ReadReg8(fMag_Address, AK09916_XOUT_H);
+	    *(ptr+1) = ReadReg8(fMag_address, AK09916_XOUT_H);
 	    // Read out sensor data Low order byte
-	    *ptr = ReadReg8(fMag_Address, AK09916_XOUT_L);
+	    *ptr = ReadReg8(fMag_address, AK09916_XOUT_L);
 
 	    if(results) results[0] = itemp;
 	    fMag[0] = (double)itemp * kMagRes;
 
 	    // Read out sensor data Hi order byte
-	    *(ptr+1) = ReadReg8(fMag_Address, AK09916_YOUT_H);
+	    *(ptr+1) = ReadReg8(fMag_address, AK09916_YOUT_H);
 	    // Read out sensor data Low order byte
-	    *ptr = ReadReg8(fMag_Address, AK09916_YOUT_L);
+	    *ptr = ReadReg8(fMag_address, AK09916_YOUT_L);
 
 	    if(results) results[1] = itemp;
 	    fMag[1] = (double)itemp * kMagRes;
 
 	    // Read out sensor data Hi order byte
-	    *(ptr+1) = ReadReg8(fMag_Address, AK09916_ZOUT_H);
+	    *(ptr+1) = ReadReg8(fMag_address, AK09916_ZOUT_H);
 	    // Read out sensor data Low order byte
-	    *ptr = ReadReg8(fMag_Address, AK09916_ZOUT_L);
+	    *ptr = ReadReg8(fMag_address, AK09916_ZOUT_L);
 
 	    if(results) results[2] = itemp;
 	    fMag[2] = (double)itemp * kMagRes;
@@ -848,13 +829,13 @@ bool ICM20948::readMagData(int16_t *results)
 	     * Therefore, when any of measurement data is read, be sure to 
 	     * read ST2 register at the end.
 	     */
-	    uint8_t st2 = ReadReg8(fMag_Address, AK09916_ST2);
+	    uint8_t st2 = ReadReg8(fMag_address, AK09916_ST2);
 	    if (st2 & 0x08)
 	    {
 		cout << "OVERFLOW IN MAGNETOMETER." << endl;
 	    }
 
-	    //uint8_t int_status = ReadReg8(fMag_Address, INT_STATUS);
+	    //uint8_t int_status = ReadReg8(fMag_address, INT_STATUS);
 	    fMagRead = true;
 #if 0
 	    // Something is not quite write with this code. 8
@@ -877,7 +858,7 @@ bool ICM20948::readMagData(int16_t *results)
 #endif
 	}
     }
-#endif
+
     SET_DEBUG_STACK;
     return fMagRead;
 }
@@ -936,7 +917,7 @@ bool ICM20948::ICM20948SelfTest(double * destination)
     memset(gAvg,   0, 3*sizeof(double));
     memset(aSTAvg, 0, 3*sizeof(double));
     memset(gSTAvg, 0, 3*sizeof(double));
-#if 0
+
     // Get stable time source
     // Auto select clock source to be PLL gyroscope reference if ready else
     WriteReg8( fIMU_address,  PWR_MGMT_1, 0x01);
@@ -1098,7 +1079,7 @@ bool ICM20948::ICM20948SelfTest(double * destination)
 	     destination[0], destination[1], destination[2]);
     log->Log("#    gyro: %f %f %f \n", 
 	     destination[3], destination[4], destination[5]);
-#endif
+
     return true;
 }
 /**
@@ -1493,10 +1474,6 @@ void ICM20948::calibrateICM20948(float * gyroBias, float * accelBias)
     WriteReg8( fIMU_address, REG_BANK_SEL, 0x00);
 }
 
-
-
-
-
 #endif
 /**
  ******************************************************************
@@ -1526,10 +1503,8 @@ uint8_t ICM20948::ReadReg8(uint8_t SlaveAddress, uint8_t Register)
     CLogger *log = CLogger::GetThis();
     ClearError(__LINE__);
     uint8_t rv = 0;
-    uint8_t buf[2];
-    uint8_t rc;
     struct i2c_smbus_ioctl_data blk;
-    union  i2c_smbus_data i2cdata;
+    union  i2c_smbus_data       i2cdata;
 
     blk.read_write = 1;
     blk.command    = Register;
