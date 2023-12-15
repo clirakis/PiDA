@@ -333,7 +333,7 @@ public:
 
     /*! Return the overall data size for the structure. */
     inline static size_t DataSize(void) 
-	{return (4*sizeof(float)+sizeof(char));};
+	{return (4*sizeof(float)+4*sizeof(char));};
 
     /*! operator overload to output contents of class for inspection
      * this data is in character format. 
@@ -346,6 +346,7 @@ private:
     float fSpeedKnots;
     float fSpeedKPH; 
     char  fMode;      // Autonomous, Differential, Estimated
+    char  fSpace[3];  // round out to even 4 byte boundry
 };
 
 
