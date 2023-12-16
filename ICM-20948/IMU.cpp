@@ -197,7 +197,7 @@ IMU::~IMU(void)
  *
  * Function Name : Do
  *
- * Description :
+ * Description : The main loop for the program, do the operations. 
  *
  * Inputs : NONE
  *
@@ -216,8 +216,12 @@ void IMU::Do(void)
 {
     SET_DEBUG_STACK;
     fRun = true;
+    int32_t i = 0;
 
-    for (uint32_t i=0;i<fNSamples; i++)
+    /*
+     * if fNSamples is negative, means infinite.
+     */
+    do 
     {
 	/* Read everything. */
 	fICM20948->Read();
@@ -225,8 +229,13 @@ void IMU::Do(void)
 	    cout << *fICM20948;
 	Update();
 	nanosleep(&fSampleTime, NULL);
+	if (fNSamples>0)
+	{
+	    i++;
+	    if (i>fNSamples) fRun = false;
+	}
 	
-    }
+    } while (fRun);
     SET_DEBUG_STACK;
 }
 

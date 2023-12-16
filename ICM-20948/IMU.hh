@@ -111,7 +111,7 @@ private:
     /*! Collection of configuration parameters. */
     bool         fLogging;       /*! Turn logging on. */
     uint32_t     fSampleRate;    /*! Integer Hz. */
-    uint32_t     fNSamples;      /*! Number of Samples to take before quit. */
+    int32_t      fNSamples;      /*! Number of Samples to take before quit. */
     struct timespec fSampleTime;  /*! Time for the above. */
 
 
