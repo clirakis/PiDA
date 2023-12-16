@@ -41,6 +41,28 @@ MyGGA = NMEA_GGA()
 #MySM = NMEA_RMC()
 MyVTG = NMEA_VTG()
 MyIMU  = IMU()
+def FixStr(fixType):
+    """
+    @param fixType - numerical value of fix
+    @return fixstr - string representing type of fix. 
+    """
+    if (fixType == 0):
+        fixstr = 'INVALID'
+    elif (fixType == 1):
+        fixstr = 'GPS'
+    elif (fixType == 2):
+        fixstr = 'DGPS'
+    elif (fixType == 3):
+        fixstr = 'N/A'
+    elif (fixType == 4):
+        fixstr = 'RTK Fixed'
+    elif (fixType == 5):
+        fixstr = 'RTK FLOAT'
+    elif (fixType == 6):
+        fixstr = 'INS DR'
+    else:
+        fixstr = 'UNKOWN'
+    return fixstr
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -84,18 +106,27 @@ def gps():
     # speed is in Knots.
     #
     speed = MyVTG.fSpeedKnots * 1852.0/3600.0
-    
+    #
+    # format the data into strings. Too many digits otherwise.
+    #
+    slat   = '{:06.6f}'.format(np.rad2deg(MyGGA.fLatitude))
+    slon   = '{:06.6f}'.format(np.rad2deg(MyGGA.fLongitude))
+    salt   = '{:06.2f}'.format(MyGGA.fAltitude)
+    sgeo   = '{:04.2f}'.format(MyGGA.fGeoidSep)
+    sspeed = '{:03.2f}'.format(speed)
+    sTrue  = '{:03.1f}'.format(MyVTG.fTrue)
+    sMag   = '{:03.1f}'.format(MyVTG.fMagnetic)
     return render_template('GPS.html',current_time=datetime.utcnow(),
-                           Latitude=np.rad2deg(MyGGA.fLatitude),
-                           Longitude=np.rad2deg(MyGGA.fLongitude),
-                           Altitude=MyGGA.fAltitude,
-                           Geiod=MyGGA.fGeoidSep,
+                           Latitude=slat,
+                           Longitude=slon,
+                           Altitude=salt,
+                           Geiod=sgeo,
                            FixTime=MyGGA.fSec,
-                           Speed=speed,
-                           CompassTrue=MyVTG.fTrue,
-                           CompassMagnetic=MyVTG.fMagnetic,
+                           Speed=sspeed,
+                           CompassTrue=sTrue,
+                           CompassMagnetic=sMag,
                            FOffset=0.0,
-                           FixType=MyGGA.fFix
+                           FixType=FixStr(MyGGA.fFix)
                            )
 
 @app.route('/imu', methods=['GET','POST'])
@@ -113,17 +144,27 @@ def imu():
         # GET is a give me some data
         print('IMU GET')
     MyIMU.Read()
-        
+
+    sTemperature = '{:03.1f}'.format(MyIMU.fTemperature)
+    sAx = '{:06.6f}'.format(MyIMU.fAcc[0])
+    sAy = '{:06.6f}'.format(MyIMU.fAcc[1])
+    sAz = '{:06.6f}'.format(MyIMU.fAcc[2])
+    sGx = '{:06.6f}'.format(MyIMU.fGyro[0])
+    sGy = '{:06.6f}'.format(MyIMU.fGyro[1])
+    sGz = '{:06.6f}'.format(MyIMU.fGyro[2])
+    sMx = '{:06.6f}'.format(MyIMU.fMagnetic[0])
+    sMy = '{:06.6f}'.format(MyIMU.fMagnetic[1])
+    sMz = '{:06.6f}'.format(MyIMU.fMagnetic[2])
+
+    
     return render_template('IMU.html',
                            current_time=datetime.utcnow(),
                            IMUTime=datetime.utcnow(),
                            Fraction=0.1,
-                           Temperature=MyIMU.fTemperature,
-                           AX=MyIMU.fAcc[0],AY=MyIMU.fAcc[1],AZ=MyIMU.fAcc[2],
-                           GX=MyIMU.fGyro[0],GY=MyIMU.fGyro[1],
-                           GZ=MyIMU.fGyro[2],
-                           MX=MyIMU.fMagnetic[0],MY=MyIMU.fMagnetic[1],
-                           MZ=MyIMU.fMagnetic[2],
+                           Temperature=sTemperature,
+                           AX=sAx,AY=sAy,AZ=sAz,
+                           GX=sGx,GY=sGy,GZ=sGz,
+                           MX=sMx,MY=sMy,MZ=sMz,
                            )
 
 @app.route('/testme')
