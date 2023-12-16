@@ -20,12 +20,27 @@ from flask_bootstrap import Bootstrap
 from flask_moment import Moment
 from datetime import datetime
 import os
+import numpy as np
+
+# My local imports
+from PySM.NMEA_GGA import NMEA_GGA
+from PySM.NMEA_RMC import NMEA_RMC
+from PySM.NMEA_GSA import NMEA_GSA
+from PySM.NMEA_VTG import NMEA_VTG
+from PySM.IMU      import IMU
+
 
 app = Flask(__name__)
 
 # This is straight from the documentation and should work. 
 bootstrap = Bootstrap(app)
 moment    = Moment(app)
+# create the classes
+MyGGA = NMEA_GGA()
+#MySM = NMEA_GSA()
+#MySM = NMEA_RMC()
+MyVTG = NMEA_VTG()
+MyIMU  = IMU()
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -48,6 +63,7 @@ def user():
 
 @app.route('/gps',methods=['GET','POST'])
 def gps():
+
     if request.method == 'POST':
         # POST is the form sent some data. 
         print('GPS POST')
@@ -60,8 +76,27 @@ def gps():
     elif request.method == 'GET':
         # GET is a give me some data
         print('GPS GET')
+
+    MyGGA.Read()
+    MyVTG.Read()
+
+    #
+    # speed is in Knots.
+    #
+    speed = MyVTG.fSpeedKnots * 1852.0/3600.0
+    
     return render_template('GPS.html',current_time=datetime.utcnow(),
-                           Latitude=41.5,Longitude=71.3)
+                           Latitude=np.rad2deg(MyGGA.fLatitude),
+                           Longitude=np.rad2deg(MyGGA.fLongitude),
+                           Altitude=MyGGA.fAltitude,
+                           Geiod=MyGGA.fGeoidSep,
+                           FixTime=MyGGA.fSec,
+                           Speed=speed,
+                           CompassTrue=MyVTG.fTrue,
+                           CompassMagnetic=MyVTG.fMagnetic,
+                           FOffset=0.0,
+                           FixType=MyGGA.fFix
+                           )
 
 @app.route('/imu', methods=['GET','POST'])
 def imu():
@@ -77,11 +112,19 @@ def imu():
     elif request.method == 'GET':
         # GET is a give me some data
         print('IMU GET')
+    MyIMU.Read()
         
-    return render_template('IMU.html',current_time=datetime.utcnow(),
+    return render_template('IMU.html',
+                           current_time=datetime.utcnow(),
                            IMUTime=datetime.utcnow(),
                            Fraction=0.1,
-                           Temperature=26.5,MX=0.1,MY=0.6,MZ=0.01)
+                           Temperature=MyIMU.fTemperature,
+                           AX=MyIMU.fAcc[0],AY=MyIMU.fAcc[1],AZ=MyIMU.fAcc[2],
+                           GX=MyIMU.fGyro[0],GY=MyIMU.fGyro[1],
+                           GZ=MyIMU.fGyro[2],
+                           MX=MyIMU.fMagnetic[0],MY=MyIMU.fMagnetic[1],
+                           MZ=MyIMU.fMagnetic[2],
+                           )
 
 @app.route('/testme')
 def testme():

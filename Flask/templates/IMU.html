@@ -14,6 +14,7 @@ IMU page
   <h1> IMU Data </h1>
     {{ moment.include_moment()}}
     <p> Local Computer time: {{moment(current_time).format('LLL')}}.</p>
+    <meta http-equiv="refresh" content="5">
 </div>
 <div class="container">
   {{ moment.include_moment()}}
@@ -66,7 +67,7 @@ IMU page
     </tr>
   <!-- row -->
     <tr>
-      <td> Magnetic </td> 
+      <td> Magnetic (uT) </td> 
       <td> {{MX}} </td>
       <td> {{MY}} </td> 
       <td> {{MZ}} </td>
