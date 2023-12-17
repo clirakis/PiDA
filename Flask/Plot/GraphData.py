@@ -48,6 +48,10 @@ class GraphData(object):
             self.__ybins = np.roll(self.__ybins, -1)
             self.__xbins[self.__NPoints] = x
             self.__ybins[self.__NPoints] = y
+        elif(self.__NPoints==0):
+            self.__xbins[0] = x
+            self.__ybins[0] = y
+            self.__NPoints = self.__NPoints + 1            
         else:
             self.__xbins = np.append(self.__xbins, x)
             self.__ybins = np.append(self.__ybins, y)
@@ -101,5 +105,6 @@ class GraphData(object):
         rep += "     Mean X: " + str(xn) + " Y: " + str(yn) + "\n"
         xn,yn = self.Std()
         rep += "      Std X: " + str(xn) + " Y: " + str(yn) + "\n"
+        rep += "       X[0]: " + str(self.__xbins[0]) + " Y[0]: " + str(self.__ybins[0]) + "\n"
         rep += " -------------------------------------------  \n"
         return rep
