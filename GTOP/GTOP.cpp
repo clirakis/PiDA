@@ -104,7 +104,7 @@ GTOP::GTOP(const char* ConfigFile) : CObject()
     fLongitude = -73.893;
     fAltitude  = 88.73;
     fReset     = false;
-    fDbeug     = 0;
+    fDebug     = 0;
     fLogging   = true;
     fDisplay   = false;
     fResetType = 0;
