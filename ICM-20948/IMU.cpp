@@ -264,10 +264,14 @@ void IMU::Do(void)
 void IMU::Update(void)
 {
     SET_DEBUG_STACK;
+    GGA *pGGA = NULL;
 
     // Do IPC
     if (fIPC)
+    {
     	fIPC->Update();
+	pGGA = fIPC->GetPosition();
+    }
 
     // Any user code or logging belongs here. 
     if (f5Logger!=NULL)
@@ -285,6 +289,18 @@ void IMU::Update(void)
 	f5Logger->FillInternalVector(  fICM20948->MagY(),  8);
 	f5Logger->FillInternalVector(  fICM20948->MagZ(),  9);
 	f5Logger->FillInternalVector(  fICM20948->Temp(), 10);
+	if (pGGA)
+	{
+	    f5Logger->FillInternalVector(pGGA->Latitude()*RadToDeg, 11);
+	    f5Logger->FillInternalVector(pGGA->Longitude()*RadToDeg, 12);
+	    f5Logger->FillInternalVector(pGGA->Altitude(), 13);
+	}
+	else
+	{
+	    f5Logger->FillInternalVector(0.0, 11);
+	    f5Logger->FillInternalVector(0.0, 12);
+	    f5Logger->FillInternalVector(0.0, 13);
+	}
 
 	f5Logger->Fill();
     }    
@@ -315,7 +331,7 @@ bool IMU::OpenLogFile(void)
     SET_DEBUG_STACK;
 
     // USER TO FILL IN.
-    const char *Names = "Time:Ax:Ay:Az:Rx:Ry:Rz:Mx:My:Mz:T";
+    const char *Names = "Time:Ax:Ay:Az:Rx:Ry:Rz:Mx:My:Mz:T:Lat:Lon:Z";
     CLogger *pLogger = CLogger::GetThis();
 
     /* Give me a file name.  */

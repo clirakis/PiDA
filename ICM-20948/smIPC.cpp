@@ -67,7 +67,9 @@ IMU_IPC::IMU_IPC(void) : CObject()
     plogger->LogCommentTimestamp("IPC Initialize, shared memory.");
 
     pSM          = NULL;
+    pSM_Position = NULL;
     fSM_Filename = NULL;
+    fGGA         = NULL;
 
     pSM = new SharedMem2("IMU", IMUData::DataSize(), true);
     if (pSM->CheckError())
@@ -97,6 +99,23 @@ IMU_IPC::IMU_IPC(void) : CObject()
 	plogger->Log("# %s %d Filename shared memory attached: IMU_Filename\n",
 		     __FILE__,  __LINE__);
     }
+
+    // Connect to GGA message if available. 
+    pSM_Position = new SharedMem2("GGA"); 
+    if (pSM_Position->CheckError())
+    {
+	plogger->LogError(__FILE__, __LINE__, 'W',
+			 "GGA data SM failed.");
+	delete pSM_Position;
+	pSM_Position = 0;
+	SET_DEBUG_STACK;
+	SetError(-1);
+    }
+    else
+    {
+	plogger->Log("# GGA SM successfully attached.\n");
+    }
+    fGGA = new GGA();
 
     SET_DEBUG_STACK;
 }
@@ -132,6 +151,42 @@ void IMU_IPC::Update(void)
     }
     SET_DEBUG_STACK;
 }
+/**
+ ******************************************************************
+ *
+ * Function Name :  GetPosition
+ *
+ * Description : Get the GGA message if available. 
+ *
+ * Inputs : none
+ *
+ * Returns : none
+ *
+ * Error Conditions : none
+ *
+ * Unit Tested on: 21-Feb-22
+ *
+ * Unit Tested by: CBL
+ *
+ *
+ *******************************************************************
+ */
+GGA* IMU_IPC::GetPosition(void) const
+{
+    SET_DEBUG_STACK;
+    if (fGGA && pSM_Position)
+    {
+	/* Is the data "new" */
+	if (pSM_Position->GetLAM())
+	{
+	    pSM_Position->GetData(fGGA->DataPointer());
+	    pSM_Position->ClearLAM();
+	}
+    }
+    SET_DEBUG_STACK;
+    return fGGA;
+}
+
 /**
  ******************************************************************
  *
@@ -193,6 +248,8 @@ IMU_IPC::~IMU_IPC(void)
     SET_DEBUG_STACK;
     delete pSM;
     delete fSM_Filename;
+    delete pSM_Position;
+    delete fGGA;
     SET_DEBUG_STACK;
 }
 

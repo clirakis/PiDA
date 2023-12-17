@@ -16,10 +16,11 @@ TARGET = IMU
 #
 # Compile time resolution.
 #
-INCLUDE = -I$(DRIVE)/common/utility -I$(DRIVE)/common/iolib \
+INCLUDE = -I../GTOP -I$(DRIVE)/common/utility -I$(DRIVE)/common/iolib \
 	-I/usr/include/hdf5/serial
-LIBS = -lwiringPi -lIMUData -lio -lutility -lhdf5_cpp -lhdf5
-LIBS += -L. -L$(HDF5LIB) -lconfig++
+
+LIBS = -L. -L../GTOP -L$(HDF5LIB) 
+LIBS += -lNMEA -lIMUData -lio -lutility -lhdf5_cpp -lhdf5 -lconfig++
 
 
 # Rules to make the object files depend on the sources.

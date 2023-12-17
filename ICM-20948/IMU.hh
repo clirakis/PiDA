@@ -79,7 +79,7 @@ public:
     static const unsigned int kVerboseMax      = 0x8000;
  
 protected:
-    const size_t kNVar = 11;
+    const size_t kNVar = 14;
 
 private:
 
