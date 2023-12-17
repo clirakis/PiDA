@@ -5,6 +5,8 @@ Modified    By    Reason
 08-Dec-23   CBL   Commenting
 13-Dec-23   CBL   Basic layout done, adding in some buttons. 
 14-Dec-23   CBL   Moved over to PiDA and implementing.
+17-Dec-23   CBL   Added in the potential for plotting, also made this a python
+                  start
 
 Bootstrap has a lot of stuff in it, basic templates
 moment is for dealing with time 
@@ -15,12 +17,16 @@ https://flask-moment.readthedocs.io/en/latest/quickstart.html#rendering-timestam
 
  ===============================================================
 """
-from flask import Flask, render_template, request
+from flask import (
+    Flask, render_template, send_file, make_response, request, redirect,
+    url_for
+    )
 from flask_bootstrap import Bootstrap
 from flask_moment import Moment
 from datetime import datetime
 import os
 import numpy as np
+from Plot.Graph import Graph
 
 # My local imports
 from PySM.NMEA_GGA import NMEA_GGA
@@ -32,6 +38,10 @@ from PySM.IMU      import IMU
 
 app = Flask(__name__)
 
+"""
+Everything is global, probably ought to tighten this up.
+"""
+
 # This is straight from the documentation and should work. 
 bootstrap = Bootstrap(app)
 moment    = Moment(app)
@@ -41,6 +51,13 @@ MyGGA = NMEA_GGA()
 #MySM = NMEA_RMC()
 MyVTG = NMEA_VTG()
 MyIMU  = IMU()
+
+"""
+Initialize the ploting package.
+"""
+MyGraph = Graph()
+
+
 def FixStr(fixType):
     """
     @param fixType - numerical value of fix
@@ -68,16 +85,13 @@ def FixStr(fixType):
 def page_not_found(e):
     return render_template('404.html'), 404
 
-
 @app.errorhandler(500)
 def internal_server_error(e):
     return render_template('500.html'), 500
 
-
 @app.route('/')
 def index():
     return render_template('index.html',current_time=datetime.utcnow()) 
-
 
 @app.route('/user')
 def user():
@@ -109,13 +123,19 @@ def gps():
     #
     # format the data into strings. Too many digits otherwise.
     #
-    slat   = '{:06.6f}'.format(np.rad2deg(MyGGA.fLatitude))
-    slon   = '{:06.6f}'.format(np.rad2deg(MyGGA.fLongitude))
+    lat    = np.rad2deg(MyGGA.fLatitude)
+    lon    = np.rad2deg(MyGGA.fLongitude)
+    slat   = '{:06.6f}'.format(lat)
+    slon   = '{:06.6f}'.format(lon)
     salt   = '{:06.2f}'.format(MyGGA.fAltitude)
     sgeo   = '{:04.2f}'.format(MyGGA.fGeoidSep)
     sspeed = '{:03.2f}'.format(speed)
     sTrue  = '{:03.1f}'.format(MyVTG.fTrue)
     sMag   = '{:03.1f}'.format(MyVTG.fMagnetic)
+
+    if (lat>0.0):
+        MyGraph.AddPoint( lon, lat)
+
     return render_template('GPS.html',current_time=datetime.utcnow(),
                            Latitude=slat,
                            Longitude=slon,
@@ -170,3 +190,23 @@ def imu():
 @app.route('/testme')
 def testme():
     return render_template('testme.html')
+
+@app.route('/plotGPS')
+def plotGPS():
+    global MyGraph
+    graphdata = MyGraph.InlinePlot()
+    response = make_response(graphdata.getvalue())
+    response.mimetype = 'image/png'
+    return response
+
+if __name__ == "__main__":
+    """
+    This is our main entry point. I wonder if I could define all the
+    classes here.
+    """
+    # put my initialization in here. This one  
+    #
+    # Plotting tools.
+    #
+    moment.init_app(app)
+    app.run(host='0.0.0.0', port=5000, debug=True)
