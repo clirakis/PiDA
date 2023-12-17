@@ -11,6 +11,8 @@
  * Restrictions/Limitations : none
  *
  * Change Descriptions : 
+ * 17-Dec-23    CBL The place where we are getting time
+ *              is always zero. 
  *
  * Classification : Unclassified
  *
@@ -102,7 +104,7 @@ GTOP::GTOP(const char* ConfigFile) : CObject()
     fLongitude = -73.893;
     fAltitude  = 88.73;
     fReset     = false;
-    fDebug     = 0;
+    fDbeug     = 0;
     fLogging   = true;
     fDisplay   = false;
     fResetType = 0;
@@ -318,7 +320,7 @@ void GTOP::Update(void)
 	f5Logger->FillInternalVector(pGSA->PDOP(), 5);
 	f5Logger->FillInternalVector(pGSA->HDOP(), 6);
 	f5Logger->FillInternalVector(pGSA->VDOP(), 7);
-	f5Logger->FillInternalVector(pVTG->True(), 8);  // TDOP
+	f5Logger->FillInternalVector(pVTG->True(), 8);
 	f5Logger->FillInternalVector(pVTG->Mag(), 9);
 	f5Logger->FillInternalVector(pVTG->KPH()*KPH2MPS,10);
 	f5Logger->FillInternalVector(pVTG->Mode(),11);

@@ -12,6 +12,10 @@ All text above must be included in any redistribution
 * CBL Modified to run on PI. Also, I want to read the sentances
 * elsewhere and pass them in to be parsed. 
 *
+*
+* Modified BY Reason
+* 17-Dec-23 CBL Time not quite right. 
+*
 ****************************************/
 #include <iostream>
 using namespace std;
@@ -50,9 +54,10 @@ static bool inStandbyMode;
 /**
  ******************************************************************
  *
- * Function Name :  DecodeTime
+ * Function Name :  DecodeUTCFixTime
  *
- * Description : return a time_t structure based on GPS fix time
+ * Description : decode time based on UTC HHMMSS.mm format and
+ *               return a time_t structure based on GPS fix time
  *
  * Inputs : 
  *    p - character string input of fix time in format of HHMMSS.ss
@@ -70,35 +75,49 @@ static bool inStandbyMode;
  *
  *******************************************************************
  */
-static time_t DecodeTime(const char *p, float *ms, struct tm *now)
+static time_t DecodeUTCFixTime(const char *p, float *ms, struct tm *now)
 {
     SET_DEBUG_STACK;
-    // Just GPS epoch.
+    /*
+     * We don't quite have MMDDYY so we can't convert this to epoch. 
+     * lets assume the system clock is ok. 
+     */
+    time_t current;
+    time(&current);
+    struct tm *tmnow = gmtime(&current);
+
+    /*
+     * Input format should be of the string format HHMMSS.mm
+     * Override items in tmnow
+     */
     float    timef   = atof(p);   // UTC time reference to current day
     uint32_t time    = timef;
     uint8_t  hour    = time / 10000;
     uint8_t  minute  = (time % 10000) / 100;
     uint8_t  seconds = (time % 100);
+
     if (ms)
     {
 	*ms =  fmod(timef, 1.0) * 1000;
     }
+
+    tmnow->tm_sec  = seconds;
+    tmnow->tm_min  = minute;
+    tmnow->tm_hour = hour;
+    
     if (now)
     {
-	memset( now, 0, sizeof(struct tm));
-	now->tm_sec  = seconds;
-	now->tm_min  = minute;
-	now->tm_hour = hour;
+	memcpy(now, tmnow, sizeof(struct tm));
     }
     SET_DEBUG_STACK;
-    return (seconds + 60.0*(minute + 60.0*hour));
+    return mktime(tmnow);
 }
 /**
  ******************************************************************
  *
- * Function Name :  DecodeUTC
+ * Function Name :  DecodeDate
  *
- * Description : Decode date field from RMC message
+ * Description : Decode Time field that contains Day Month Year
  *
  * Inputs : 
  *     p   - charcter string containing date in the format DDMMYY
@@ -109,16 +128,17 @@ static time_t DecodeTime(const char *p, float *ms, struct tm *now)
  *
  * Error Conditions : none
  *
- * Unit Tested on:
+ * Unit Tested on: NOT SURE THIS IS WORKING!!
  *
  * Unit Tested by: CBL
  *
  *
  *******************************************************************
  */
-static time_t DecodeUTC(const char *p, struct tm *now)
+static time_t DecodeDate(const char *p, struct tm *now)
 {
     /*
+     * 
      * Full epoch. assume previous function was used first. 
      * also assum input for p is ddmmyy
      * tm_sec 0-59
@@ -226,11 +246,12 @@ GGA::GGA(void) : NMEA_POSITION()
 /**
  ******************************************************************
  *
- * Function Name :  
+ * Function Name :  GGA::Decode
  *
- * Description : 
+ * Description : given a GGA line of data decode it into the proper 
+ *               fields
  *
- * Inputs : NONE
+ * Inputs : GGA data stream. 
  *
  * Returns : none
  *
@@ -252,8 +273,12 @@ bool GGA::Decode(const char *line)
 
     // get time
     p = strchr(p, ',')+1;
-    fSeconds = 0;
-    fUTC     = DecodeTime( p, &fMilliseconds, NULL);
+
+    // Changing this up a bit
+    // use fUTC as original format. 
+    // 
+    fUTC     = atof(p);
+    fSeconds = DecodeUTCFixTime( p, &fMilliseconds, NULL);
 
     // parse out latitude
     p = strchr(p, ',')+1;
@@ -381,7 +406,7 @@ RMC::RMC(void) : NMEA_POSITION()
  *
  * Error Conditions : none
  *
- * Unit Tested on:
+ * Unit Tested on: NOT TESTED
  *
  * Unit Tested by: CBL
  *
@@ -407,7 +432,8 @@ bool RMC::Decode(const char *line)
      * fill H,M,S portion of struct time.
      * The remainder will be filled below 
      */
-    fUTC = DecodeTime( p, &fMilliseconds, &now);
+    fUTC     = atof(p);
+    fSeconds = DecodeUTCFixTime( p, &fMilliseconds, &now);
 
     p = strchr(p, ',')+1;
     fMode = p[0];
@@ -466,7 +492,7 @@ bool RMC::Decode(const char *line)
 	 * H,M,S should be filled. 
 	 * This decode should provide DDMMYY
 	 */
-	fSeconds = DecodeUTC(p, &now);
+	fSeconds = DecodeDate(p, &now);
 	/* PC Time is local, convert to UTC */
 	float dt   = (float) (fPCTime.tv_sec - fSeconds + timezone);
 	dt  -= fMilliseconds/100.0;

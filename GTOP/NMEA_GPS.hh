@@ -134,7 +134,7 @@ public:
 protected:
     struct timespec fPCTime;
     float  fLatitude, fLongitude; // In radians. 
-    time_t fSeconds;              // seconds in epoch
+    time_t fSeconds;              // epoch if decoded correctly
     time_t fUTC;                  // seconds in current day, UTC
     float  fMilliseconds;         // ms on time of fix
 };

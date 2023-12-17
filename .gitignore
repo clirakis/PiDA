@@ -8,6 +8,4 @@ make.depend
 *.a
 *~
 *.cfg
-GTOP
-IMU
 IMU.cfg
