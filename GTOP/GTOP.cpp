@@ -13,7 +13,7 @@
  * Change Descriptions : 
  * 17-Dec-23    CBL The place where we are getting time
  *              is always zero. 
- *
+ *              Adding in system time as a parameter as well. 
  * Classification : Unclassified
  *
  * References : 
@@ -59,7 +59,7 @@ using namespace libconfig;
 GTOP* GTOP::fGTOP;
 
 const char *SensorName="GPS";     // Sensor name. 
-const size_t NVar = 12;
+const size_t NVar = 13;
 
 /**
  ******************************************************************
@@ -291,7 +291,10 @@ void GTOP::Do(void)
 void GTOP::Update(void)
 {
     SET_DEBUG_STACK;
-    const double KPH2MPS = 1000.0/3600.0;
+    // Knots per Hour to Meters per second. 
+    // 1852 meters per nautical mile
+    // 3600 seconds per hour
+    const double KPH2MPS = 1852.0/3600.0;
     float t;
     GGA*  pGGA;
     VTG*  pVTG;
@@ -324,98 +327,16 @@ void GTOP::Update(void)
 	f5Logger->FillInternalVector(pVTG->Mag(), 9);
 	f5Logger->FillInternalVector(pVTG->KPH()*KPH2MPS,10);
 	f5Logger->FillInternalVector(pVTG->Mode(),11);
+
+	time_t now;
+	time(&now);
+
+	f5Logger->FillInternalVector(now, 12);
 	f5Logger->Fill();
     }
     SET_DEBUG_STACK;
 }
 
-#if 0
-/**
- ******************************************************************
- *
- * Function Name :  Talk2Receiver
- *
- * Description : Do any setup that I would like. 
- *
- * Inputs : none
- *
- * Returns : none
- *
- * Error Conditions : none
- *
- * Unit Tested on:
- *
- * Unit Tested by: CBL
- *
- *
- *******************************************************************
- */
-void GTOP::Talk2Receiver(bool Reset)
-{
-    const unsigned char Position = kLLA|kPREC; // LLA and double precision
-    const unsigned char Velocity = kENU;  // Enable ENU
-    const unsigned char Timing   = kUTC;  // Enable UTC 
-    const unsigned char AuxPR    = 0x00;  // Enable 0x5A raw and dBHz
-
-    const unsigned char *cmd;
-
-    size_t N;
-    CLogger *Logger = CLogger::GetThis();
-
-    SET_DEBUG_STACK;
-    if (Logger->GetVerbose()&GTOP::kVerboseBasic)
-	Logger->Log("# Talk2Receiver.\n");
-
-#if 0
-    switch(fResetType)
-    {
-    case 1:
-	SoftReset();
-	// the above command only makes the command string. 
-	// we then need to send it. 
-	cmd = GetCommandBuffer();
-	N   = GetCommandSize();
-	write(Rx.serial_fd, cmd, N);
-	CLogger::GetThis()->Log("# Issued soft reset.");
-	return;
-	break;
-    case 2:
-	HardReset();
-	// the above command only makes the command string. 
-	// we then need to send it. 
-	cmd = Rx.gps->GetCommandBuffer();
-	N   = Rx.gps->GetCommandSize();
-	write(Rx.serial_fd, cmd, N);
-	CLogger::GetThis()->Log("# Issued hard reset.");
-	return;
-	break;
-    default:
-	return;
-	break;
-    }
-#endif
-    if (Debug(1))
-    {
-	OpenBinary();
-    }
-    if (Debug(2))
-    {
-        OpenHex();
-    }
-
-    /*
-     * Send a setup word for message format etc.
-     * 0x35
-     */
-    SetIO_Options ( Position, Velocity, Timing, AuxPR);
-    cmd = GetCommandBuffer();
-    N   = GetCommandSize();
-    write(fSerial_fd, cmd, N);
-    Logger->Log("# Issued format setup command. \n");
-
-    SET_DEBUG_STACK;
-}
-#endif
 
 /**
  ******************************************************************
@@ -441,7 +362,7 @@ bool GTOP::OpenLogFile(void)
 {
     SET_DEBUG_STACK;
 //    const char *Names = "Time:Lat:Lon:Z:NSV:PDOP:HDOP:VDOP:TDOP:VE:VN:VZ";
-    const char *Names = "Time:Lat:Lon:Z:NSV:PDOP:HDOP:VDOP:TRUE:MAG:SMPS:MODE";
+    const char *Names = "Time:Lat:Lon:Z:NSV:PDOP:HDOP:VDOP:TRUE:MAG:SMPS:MODE:CTime";
     CLogger *pLogger  = CLogger::GetThis();
     /* Give me a file name.  */
     const char* name  = fn->GetUniqueName();
