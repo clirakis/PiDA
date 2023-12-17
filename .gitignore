@@ -9,3 +9,5 @@ make.depend
 *~
 *.cfg
 IMU.cfg
+.#*
+#*
