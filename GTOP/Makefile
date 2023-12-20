@@ -11,6 +11,7 @@
 #       20-Feb-22       CBL     Logfile enabled, smIPC enabled.  
 #       23-Feb-22       CBL     v1.3 made library for consumer
 #
+#       20-Dec-23       CBL     Added a counter function
 #
 ######################################################################
 # Machine specific stuff
@@ -32,11 +33,12 @@ LIBS += -L./ -L$(HDF5LIB) -lconfig++
 
 # Rules to make the object files depend on the sources.
 SRC     = GTOP_utilities.c 
-SRCCPP  = main.cpp GTOP.cpp GTOPdisp.cpp smIPC.cpp UserSignals.cpp
+SRCCPP  = main.cpp GTOP.cpp GTOPdisp.cpp smIPC.cpp EventCounter.cpp \
+	UserSignals.cpp
 SRCS    = $(SRC) $(SRCCPP)
 
-HEADERS = GTOP.hh GTOPdisp.hh GTOP_utilities.h smIPC.hh serial.h \
-	 UserSignals.hh Version.hh
+HEADERS = GTOP.hh GTOPdisp.hh GTOP_utilities.h EventCounter.hh \
+	smIPC.hh serial.h UserSignals.hh Version.hh
 
 
 # When we build all, what do we build?

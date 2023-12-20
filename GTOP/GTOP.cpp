@@ -36,18 +36,6 @@ using namespace std;
 #include <cstring>
 #include <cmath>
 #include <csignal>
-#include <ctime>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <limits.h>
-#include <unistd.h>
-#include <semaphore.h>
-#include <sys/resource.h>
-#include <errno.h>
-#include <fstream>
-#include <cstdlib>
 #include <libconfig.h++>
 using namespace libconfig;
 
@@ -58,11 +46,12 @@ using namespace libconfig;
 #include "tools.h"
 #include "debug.h"
 #include "smIPC.hh"
+#include "EventCounter.hh"
 
 GTOP* GTOP::fGTOP;
 
 const char *SensorName="GPS";     // Sensor name. 
-const size_t NVar = 13;
+const size_t NVar = 14;
 
 /**
  ******************************************************************
@@ -158,8 +147,22 @@ GTOP::GTOP(const char* ConfigFile) : CObject()
 	SetError(-2); 
 	return;
     }
+    fEVCounter = new EventCounter(true);
+    if(fEVCounter->Error() != 0)
+    {
+	CLogger::GetThis()->LogError(__FILE__, __LINE__,'W',
+				     "Could not initialize EventCounter.");
+	fEVCounter = NULL;
+	SetError(-3); 
+	return;
+    }
+    else
+    {
+	CLogger::GetThis()->LogTime("# Event Counter Started! \n");
+    }
 #else
-    fIPC = 0;
+    fIPC       = NULL;
+    fEVCounter = NULL;
 #endif
 
     if (fLogging)
@@ -323,11 +326,19 @@ void GTOP::Update(void)
     GGA*  pGGA;
     VTG*  pVTG;
     GSA*  pGSA;
+    uint32_t Count; 
     //RMC*  pRMC;
 
     // Do IPC
     if (fIPC)
     	fIPC->Update();
+
+    if(fEVCounter)
+    {
+	fEVCounter->Increment();
+	Count = fEVCounter->Count();
+    }
+
 
     // Any user code or logging belongs here. 
     if (f5Logger!=NULL)
@@ -356,6 +367,7 @@ void GTOP::Update(void)
 	time(&now);
 
 	f5Logger->FillInternalVector(now, 12);
+	f5Logger->FillInternalVector(Count, 13);
 	f5Logger->Fill();
     }
     SET_DEBUG_STACK;
@@ -386,7 +398,7 @@ bool GTOP::OpenLogFile(void)
 {
     SET_DEBUG_STACK;
 //    const char *Names = "Time:Lat:Lon:Z:NSV:PDOP:HDOP:VDOP:TDOP:VE:VN:VZ";
-    const char *Names = "Time:Lat:Lon:Z:NSV:PDOP:HDOP:VDOP:TRUE:MAG:SMPS:MODE:CTime";
+    const char *Names = "Time:Lat:Lon:Z:NSV:PDOP:HDOP:VDOP:TRUE:MAG:SMPS:MODE:CTime:EVCount";
     CLogger *pLogger  = CLogger::GetThis();
     /* Give me a file name.  */
     const char* name  = fn->GetUniqueName();

@@ -29,6 +29,7 @@
 #  include "smIPC.hh"
 #  include "H5Logger.hh"
 #  include "filename.hh"
+class EventCounter;
 
 class GTOP : public CObject
 {
@@ -113,6 +114,11 @@ private:
      * Configuration file name. 
      */
     char   *fConfigFileName;
+
+    /*!
+     * Event counter 
+     */
+    EventCounter *fEVCounter;
 
     /* Collection of configuration parameters. */
     /*!
