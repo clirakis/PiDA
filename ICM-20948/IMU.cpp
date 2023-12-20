@@ -10,6 +10,7 @@
  * Restrictions/Limitations : none
  *
  * Change Descriptions : 
+ * 20-Dec-23   CBL   was not changing filenames on the chosen interval. 
  *
  * Classification : Unclassified
  *
@@ -223,6 +224,28 @@ void IMU::Do(void)
      */
     do 
     {
+	/* Check to see if the logging interval has rolled over. */
+	if (fn->ChangeNames())
+	{
+	    /*
+	     * flush and close existing file
+	     * get a new unique filename
+	     * reset the timer
+	     * and go!
+	     *
+	     * Check to see that logging is enabled. 
+	     */
+	    if(f5Logger)
+	    {
+		// This will close and flush the existing logfile. 
+		delete f5Logger;
+		f5Logger = NULL;
+		// Now reopen
+		OpenLogFile();
+	    }
+
+	}
+
 	/* Read everything. */
 	fICM20948->Read();
 	if (fDebug>0)

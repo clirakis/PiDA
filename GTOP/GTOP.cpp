@@ -14,6 +14,9 @@
  * 17-Dec-23    CBL The place where we are getting time
  *              is always zero. 
  *              Adding in system time as a parameter as well. 
+ * 
+ * 20-Dec-23    Never changed filenames. 
+ * 
  * Classification : Unclassified
  *
  * References : 
@@ -249,6 +252,27 @@ void GTOP::Do(void)
     fRun = true;
     while( fRun)
     {
+	/* Check to see if the logging interval has rolled over. */
+	if (fn->ChangeNames())
+	{
+	    /*
+	     * flush and close existing file
+	     * get a new unique filename
+	     * reset the timer
+	     * and go!
+	     *
+	     * Check to see that logging is enabled. 
+	     */
+	    if(f5Logger)
+	    {
+		// This will close and flush the existing logfile. 
+		delete f5Logger;
+		f5Logger = NULL;
+		// Now reopen
+		OpenLogFile();
+	    }
+
+	}
 	if(fNMEA_GPS->Read())
 	{
 	    // This is the last message in the read sequence. 
