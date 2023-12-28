@@ -317,12 +317,14 @@ void IMU::Update(void)
 	    f5Logger->FillInternalVector(pGGA->Latitude()*RadToDeg, 11);
 	    f5Logger->FillInternalVector(pGGA->Longitude()*RadToDeg, 12);
 	    f5Logger->FillInternalVector(pGGA->Altitude(), 13);
+	    f5Logger->FillInternalVector(pGGA->UTC(), 14);
 	}
 	else
 	{
 	    f5Logger->FillInternalVector(0.0, 11);
 	    f5Logger->FillInternalVector(0.0, 12);
 	    f5Logger->FillInternalVector(0.0, 13);
+	    f5Logger->FillInternalVector(0.0, 14);
 	}
 
 	f5Logger->Fill();
