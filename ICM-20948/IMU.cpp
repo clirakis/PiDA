@@ -354,7 +354,7 @@ bool IMU::OpenLogFile(void)
     SET_DEBUG_STACK;
 
     // USER TO FILL IN.
-    const char *Names = "Time:Ax:Ay:Az:Rx:Ry:Rz:Mx:My:Mz:T:Lat:Lon:Z";
+    const char *Names = "Time:Ax:Ay:Az:Rx:Ry:Rz:Mx:My:Mz:T:Lat:Lon:Z:UTC";
     CLogger *pLogger = CLogger::GetThis();
 
     /* Give me a file name.  */
