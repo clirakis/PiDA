@@ -350,7 +350,15 @@ void GTOP::Update(void)
 	t  = pGGA->Seconds();
 	t += pGGA->Milli();
 	struct timespec PCTime = pGGA->PCTime();
-	double dt = (double) PCTime.tv_sec + 1.0e-9 * (double)PCTime.tv_nsec;
+	/*
+	 * PC time is time since epoch, 
+	 * GPS time is time into day. need to deal with that. 
+	 */
+	struct tm *tmnow = localtime(&PCTime.tv_sec);
+	double sec = tmnow->tm_sec + tmnow->tm_min*60.0 + 
+	    tmnow->tm_hour*3600.0;
+//	double dt = (double) PCTime.tv_sec + 1.0e-9 * (double)PCTime.tv_nsec;
+	double dt = sec + 1.0e-9*(double)PCTime.tv_nsec;
 	dt -= t;
 
 	pVTG = fNMEA_GPS->pVTG();
