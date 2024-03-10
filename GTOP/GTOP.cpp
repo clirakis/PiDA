@@ -369,14 +369,13 @@ void GTOP::Update(void)
 	f5Logger->FillInternalVector(pVTG->Mag(), 9);
 	f5Logger->FillInternalVector(pVTG->KPH()*KPH2MPS,10);
 	f5Logger->FillInternalVector(pVTG->Mode(),11);
-	f5Logger->FillInternalVector(dt,12);
-
 
 	time_t now;
 	time(&now);
 
 	f5Logger->FillInternalVector(now, 12);
 	f5Logger->FillInternalVector(Count, 13);
+	f5Logger->FillInternalVector(dt,14);
 	f5Logger->Fill();
     }
     SET_DEBUG_STACK;
