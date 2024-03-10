@@ -16,6 +16,7 @@
  *              Adding in system time as a parameter as well. 
  * 
  * 20-Dec-23    Never changed filenames. 
+ * 10-Mar-24    Added in GPS-pc time delta. 
  * 
  * Classification : Unclassified
  *
@@ -318,9 +319,11 @@ void GTOP::Do(void)
 void GTOP::Update(void)
 {
     SET_DEBUG_STACK;
-    // Knots per Hour to Meters per second. 
-    // 1852 meters per nautical mile
-    // 3600 seconds per hour
+    /*
+     * Knots per Hour to Meters per second. 
+     * 1852 meters per nautical mile
+     * 3600 seconds per hour
+     */
     const double KPH2MPS = 1852.0/3600.0;
     float t;
     GGA*  pGGA;
@@ -346,6 +349,10 @@ void GTOP::Update(void)
 	pGGA = fNMEA_GPS->pGGA();
 	t  = pGGA->Seconds();
 	t += pGGA->Milli();
+	struct timespec PCTime = pGGA->PCTime();
+	double dt = (double) PCTime.tv_sec + 1.0e-9 * (double)PCTime.tv_nsec;
+	dt -= t;
+
 	pVTG = fNMEA_GPS->pVTG();
 
 	pGSA = fNMEA_GPS->pGSA();
@@ -362,6 +369,8 @@ void GTOP::Update(void)
 	f5Logger->FillInternalVector(pVTG->Mag(), 9);
 	f5Logger->FillInternalVector(pVTG->KPH()*KPH2MPS,10);
 	f5Logger->FillInternalVector(pVTG->Mode(),11);
+	f5Logger->FillInternalVector(dt,12);
+
 
 	time_t now;
 	time(&now);
@@ -398,7 +407,7 @@ bool GTOP::OpenLogFile(void)
 {
     SET_DEBUG_STACK;
 //    const char *Names = "Time:Lat:Lon:Z:NSV:PDOP:HDOP:VDOP:TDOP:VE:VN:VZ";
-    const char *Names = "Time:Lat:Lon:Z:NSV:PDOP:HDOP:VDOP:TRUE:MAG:SMPS:MODE:CTime:EVCount";
+    const char *Names = "Time:Lat:Lon:Z:NSV:PDOP:HDOP:VDOP:TRUE:MAG:SMPS:MODE:CTime:EVCount:PCDT";
     CLogger *pLogger  = CLogger::GetThis();
     /* Give me a file name.  */
     const char* name  = fn->GetUniqueName();
@@ -503,9 +512,9 @@ bool GTOP::ReadConfiguration(void)
 	GPS.lookupValue("Altitude",  fAltitude);
 	GPS.lookupValue("Reset",     fReset);
 	GPS.lookupValue("Debug",     Debug);
-	GPS.lookupValue("Display",    fDisplay);
-	GPS.lookupValue("Logging",    fLogging);
-	GPS.lookupValue("ResetType",  fResetType);
+	GPS.lookupValue("Display",   fDisplay);
+	GPS.lookupValue("Logging",   fLogging);
+	GPS.lookupValue("ResetType", fResetType);
 
 	fSerialPortName = strdup(Port.c_str());
 	SetDebug(Debug);

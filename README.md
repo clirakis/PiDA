@@ -27,3 +27,12 @@ GTOP uses NMEA library which is made in the GTOP directory and provided by
 Adafruit
 
 Processor -- combine all the resources. note this uses wiring2pi
+
+10-Mar-24
+To Do
+- Add in file change signal 
+- Make file rolls at midnight ??
+- JSON output for plotting
+- Add time (local or UTC) in logging
+- Make GPS be able to set time. How do we get over the sudo issue??
+maybe sudo process reads file. 

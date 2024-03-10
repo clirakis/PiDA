@@ -119,6 +119,9 @@ public:
     /** UTC of current day seconds */
     inline time_t UTC(void)       const {return fUTC;};
 
+    /** Get PC time at time of receipt of message */
+    inline struct timespec PCTime(void) const {return fPCTime;};
+
     /* THINGS USED to relay in shared memory. --------------------- */
     /*! Get a pointer to the beginning of the data storage. */
     inline void* DataPointer(void) {return (void*)&fPCTime;};
