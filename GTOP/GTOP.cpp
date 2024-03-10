@@ -358,8 +358,7 @@ void GTOP::Update(void)
 	double sec = tmnow->tm_sec + tmnow->tm_min*60.0 + 
 	    tmnow->tm_hour*3600.0;
 //	double dt = (double) PCTime.tv_sec + 1.0e-9 * (double)PCTime.tv_nsec;
-	double dt = sec + 1.0e-9*(double)PCTime.tv_nsec;
-	dt -= t;
+	double dt = sec - t;
 
 	pVTG = fNMEA_GPS->pVTG();
 
