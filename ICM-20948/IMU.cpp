@@ -224,33 +224,37 @@ void IMU::Do(void)
      */
     do 
     {
-	/* Check to see if the logging interval has rolled over. */
-	if (fn->ChangeNames())
+	if (fn)
 	{
-	    /*
-	     * flush and close existing file
-	     * get a new unique filename
-	     * reset the timer
-	     * and go!
-	     *
-	     * Check to see that logging is enabled. 
-	     */
-	    if(f5Logger)
+	    /* Check to see if the logging interval has rolled over. */
+	    if (fn->ChangeNames())
 	    {
-		// This will close and flush the existing logfile. 
-		delete f5Logger;
-		f5Logger = NULL;
-		// Now reopen
-		OpenLogFile();
-	    }
+		/*
+		 * flush and close existing file
+		 * get a new unique filename
+		 * reset the timer
+		 * and go!
+		 *
+		 * Check to see that logging is enabled. 
+		 */
+		if(f5Logger)
+		{
+		    // This will close and flush the existing logfile. 
+		    delete f5Logger;
+		    f5Logger = NULL;
+		    // Now reopen
+		    OpenLogFile();
+		}
 
+	    }
 	}
 
 	/* Read everything. */
 	fICM20948->Read();
 	if (fDebug>0)
 	    cout << *fICM20948;
-	Update();
+	if (fn) 
+	    Update();
 	nanosleep(&fSampleTime, NULL);
 	if (fNSamples>0)
 	{
