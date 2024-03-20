@@ -52,7 +52,7 @@ using namespace libconfig;
 GTOP* GTOP::fGTOP;
 
 const char *SensorName="GPS";     // Sensor name. 
-const size_t NVar = 14;
+const size_t NVar = 15;
 
 /**
  ******************************************************************
@@ -359,7 +359,7 @@ void GTOP::Update(void)
 	    tmnow->tm_hour*3600.0;
 	double dt = (double) PCTime.tv_sec + 1.0e-9 * (double)PCTime.tv_nsec;
 	dt       -= t;
-	dt       -= timezone;
+	dt       += timezone;
 //	double dt = sec - t;
 
 	pVTG = fNMEA_GPS->pVTG();
