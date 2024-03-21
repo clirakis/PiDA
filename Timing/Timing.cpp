@@ -387,7 +387,16 @@ bool Timing::ReadConfiguration(void)
     {
 	// Ignore.
     }
+    if (fNSamples>0) 
+    {
+	time_t now;
+	time(&now);
+	now += (fNSamples * fSampleRate);
+	struct tm *tnow = gmtime(&now);
+	pLogger->LogTime("NSamples %d, Sample Rate: %d finish at: %s\n", 
+			 fNSamples, fSampleRate, asctime(tnow));
 
+    }
     // If life is good create the queryServer 
     pLogger->LogTime("Trying timeserver: %s\n", ServerAddress);
     fQS = new QueryTS(ServerAddress, (Debug>0));
