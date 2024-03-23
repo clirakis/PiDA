@@ -189,9 +189,10 @@ static double DecodeDegMin(const char *p)
 /**
  ******************************************************************
  *
- * Function Name :  
+ * Function Name :  NMEA_POSITION Constructor
  *
- * Description : 
+ * Description : Construct a NMEA Position and zero out everything. 
+ *
  *
  * Inputs : NONE
  *
@@ -217,7 +218,7 @@ NMEA_POSITION::NMEA_POSITION(void)
 /**
  ******************************************************************
  *
- * Function Name :  
+ * Function Name :  GGA Message Constructor
  *
  * Description : 
  *
@@ -267,6 +268,10 @@ GGA::GGA(void) : NMEA_POSITION()
 bool GGA::Decode(const char *line)
 {
     SET_DEBUG_STACK;
+
+    /*
+     * Capture the PC time of the message.
+     */
     clock_gettime( CLOCK_REALTIME, &fPCTime);
 
     char *p = (char *) line;
@@ -420,6 +425,7 @@ bool RMC::Decode(const char *line)
     SET_DEBUG_STACK;
     double tmp;
     struct tm now;
+    // Capture the PC time of the message. 
     clock_gettime( CLOCK_REALTIME, &fPCTime);
 
     // found RMC

@@ -96,11 +96,13 @@ All text above must be included in any redistribution
 // how long to wait when we're looking for a response
 #define MAXWAITSENTENCE 5
 
-    // Fixed point latitude and longitude value with degrees stored in 
-    // units of 1/100000 degrees,
-    // and minutes stored in units of 1/100000 degrees.  
-    // See pull #13 for more details:
-    //   https://github.com/adafruit/NMEA-GPS-Library/pull/13
+/*!
+ * Fixed point latitude and longitude value with degrees stored in 
+ * units of 1/100000 degrees,
+ * and minutes stored in units of 1/100000 degrees.  
+ * See pull #13 for more details:
+ *   https://github.com/adafruit/NMEA-GPS-Library/pull/13
+ */
 
 class NMEA_POSITION {
 public:

@@ -52,7 +52,7 @@ using namespace libconfig;
 GTOP* GTOP::fGTOP;
 
 const char *SensorName="GPS";     // Sensor name. 
-const size_t NVar = 15;
+const size_t NVar = 16;
 
 /**
  ******************************************************************
@@ -330,7 +330,7 @@ void GTOP::Update(void)
     VTG*  pVTG;
     GSA*  pGSA;
     uint32_t Count; 
-    //RMC*  pRMC;
+    RMC*  pRMC;
 
     // Do IPC
     if (fIPC)
@@ -346,6 +346,7 @@ void GTOP::Update(void)
     // Any user code or logging belongs here. 
     if (f5Logger!=NULL)
     {
+	pRMC = fNMEA_GPS->pRMC();
 	pGGA = fNMEA_GPS->pGGA();
 	t  = pGGA->Seconds();
 	t += pGGA->Milli();
@@ -385,6 +386,7 @@ void GTOP::Update(void)
 	f5Logger->FillInternalVector(now, 12);
 	f5Logger->FillInternalVector(Count, 13);
 	f5Logger->FillInternalVector(dt,14);
+	f5Logger->FillInternalVector(pRMC->Delta(), 15);
 	f5Logger->Fill();
     }
     SET_DEBUG_STACK;
@@ -415,7 +417,7 @@ bool GTOP::OpenLogFile(void)
 {
     SET_DEBUG_STACK;
 //    const char *Names = "Time:Lat:Lon:Z:NSV:PDOP:HDOP:VDOP:TDOP:VE:VN:VZ";
-    const char *Names = "Time:Lat:Lon:Z:NSV:PDOP:HDOP:VDOP:TRUE:MAG:SMPS:MODE:CTime:EVCount:PCDT";
+    const char *Names = "Time:Lat:Lon:Z:NSV:PDOP:HDOP:VDOP:TRUE:MAG:SMPS:MODE:CTime:EVCount:PCDT:RMCDT";
     CLogger *pLogger  = CLogger::GetThis();
     /* Give me a file name.  */
     const char* name  = fn->GetUniqueName();
