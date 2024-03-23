@@ -205,61 +205,73 @@ void Timing::Do(void)
 
     while(fRun)
     {
-	value = fQS->GetTime();
-	prec  = fQS->Precision();
-	delay = fQS->Drootdelay();
-	disp  = fQS->Drootdispersion();
-	//sec   = value.tv_sec;
-	sec = time(NULL);
-	tme   = localtime(&sec);
-	//sec   -= tme->tm_gmtoff;
-	tod   = tme->tm_sec + 60*(tme->tm_min + 60*tme->tm_hour); 
-	PCsec = (double)sec + 1.0e-9 * ((double) host_now.tv_nsec);
-
-	clock_gettime(CLOCK_REALTIME, &host_now);   // Host time
-	delta = (double)(host_now.tv_sec - value.tv_sec) + 
-	    1.0e-9 * (double)(host_now.tv_nsec - value.tv_nsec);
-
-	pMSG = fQS->GetMSG();
-
-	/* 
-	 * Algorithm is as follows
-	 * Definitions
-	 *     T1 originator time stamp
-	 *     T2 request received at server
-	 *     T3 Transmit response from server
-	 *     T4 time received at client. 
-	 * 
-	 *     delays = (T4-T1) - (T3-T2); 
-	 *     
+	/*
+	 * When this sleeps, it doesn't look at any of the signals
+	 * we are sending it. Change to sleep less and count up the 
+	 * number of times we sleep. Minimum sleep is 1 second. 
 	 */
+	if (count%fSampleRate != 0)
+	{
+	    sleep(1);
+	}
+	else
+	{
+	    value = fQS->GetTime();
+	    prec  = fQS->Precision();
+	    delay = fQS->Drootdelay();
+	    disp  = fQS->Drootdispersion();
+	    //sec   = value.tv_sec;
+	    sec = time(NULL);
+	    tme   = localtime(&sec);
+	    //sec   -= tme->tm_gmtoff;
+	    tod   = tme->tm_sec + 60*(tme->tm_min + 60*tme->tm_hour); 
+	    PCsec = (double)sec + 1.0e-9 * ((double) host_now.tv_nsec);
 
-	f5Logger->FillInternalVector(PCsec, 0);
-	f5Logger->FillInternalVector(tod,   1);
-	f5Logger->FillInternalVector(prec,  2);
-	f5Logger->FillInternalVector(delay, 3);
-	f5Logger->FillInternalVector(disp,  4);
-	f5Logger->FillInternalVector(delta, 5);
-	dsec = (double) pMSG->rec[0] + 
-	    multiplier * ((double) pMSG->rec[1]);
-	f5Logger->FillInternalVector(dsec, 6);
+	    clock_gettime(CLOCK_REALTIME, &host_now);   // Host time
+	    delta = (double)(host_now.tv_sec - value.tv_sec) + 
+		1.0e-9 * (double)(host_now.tv_nsec - value.tv_nsec);
 
-	dsec = (double) pMSG->xmt[0] + 
-	    multiplier * ((double) pMSG->xmt[1]);
-	f5Logger->FillInternalVector(dsec, 7);
-	f5Logger->FillInternalVector(dResponse, 8);
-	dTotal = fQS->Correction();
-	f5Logger->FillInternalVector(dTotal, 9);
+	    pMSG = fQS->GetMSG();
 
-	f5Logger->Fill();
+	    /* 
+	     * Algorithm is as follows
+	     * Definitions
+	     *     T1 originator time stamp
+	     *     T2 request received at server
+	     *     T3 Transmit response from server
+	     *     T4 time received at client. 
+	     * 
+	     *     delays = (T4-T1) - (T3-T2); 
+	     *     
+	     */
 
-	count++;
-	if (count%100) 
-	    pLogger->LogTime("Samples processed: %d of %d\n", 
-			     count, fNSamples);
+	    f5Logger->FillInternalVector(PCsec, 0);
+	    f5Logger->FillInternalVector(tod,   1);
+	    f5Logger->FillInternalVector(prec,  2);
+	    f5Logger->FillInternalVector(delay, 3);
+	    f5Logger->FillInternalVector(disp,  4);
+	    f5Logger->FillInternalVector(delta, 5);
+	    dsec = (double) pMSG->rec[0] + 
+		multiplier * ((double) pMSG->rec[1]);
+	    f5Logger->FillInternalVector(dsec, 6);
+
+	    dsec = (double) pMSG->xmt[0] + 
+		multiplier * ((double) pMSG->xmt[1]);
+	    f5Logger->FillInternalVector(dsec, 7);
+	    f5Logger->FillInternalVector(dResponse, 8);
+	    dTotal = fQS->Correction();
+	    f5Logger->FillInternalVector(dTotal, 9);
+
+	    f5Logger->Fill();
+
+	    count++;
+	    if (count%100) 
+		pLogger->LogTime("Samples processed: %d of %d\n", 
+				 count, fNSamples);
+	}
 	if (fRun)  // User didn't request a stop.
 	    fRun = (count<fNSamples);
-	sleep(fSampleRate);
+  
     }
     SET_DEBUG_STACK;
 }

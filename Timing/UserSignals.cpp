@@ -25,7 +25,6 @@ using namespace std;
 #include <unistd.h>
 #include <csignal>
 
-
 // Local Includes.
 #include "UserSignals.hh"
 #include "debug.h"
