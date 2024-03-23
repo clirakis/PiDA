@@ -185,6 +185,7 @@ Timing::~Timing(void)
 void Timing::Do(void)
 {
     SET_DEBUG_STACK;
+    CLogger *pLogger = CLogger::GetThis();
     struct timespec  host_now;    
     struct timespec  value;
     struct tm        *tme;
@@ -252,9 +253,12 @@ void Timing::Do(void)
 
 	f5Logger->Fill();
 
-
 	count++;
-	fRun = (count<fNSamples);
+	if (count%100) 
+	    pLogger->LogTime("Samples processed: %d of %d\n", 
+			     count, fNSamples);
+	if (fRun)  // User didn't request a stop.
+	    fRun = (count<fNSamples);
 	sleep(fSampleRate);
     }
     SET_DEBUG_STACK;
