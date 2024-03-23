@@ -369,14 +369,16 @@ void GTOP::Update(void)
 	if (idt > PCTime.tv_sec)
 	{
 	    idt -= PCTime.tv_sec;
-	    dt   = idt - 1.0e-9 * (double)PCTime.tv_nsec +  pGGA->Milli();
+	    dt   = pGGA->Milli() - 1.0e-9 * (double)PCTime.tv_nsec;
+	    dt  += (double) idt;
 	}
 	else
 	{
-	    idt = PCTime.tv_sec - idt;
-	    dt   = idt + 1.0e-9 * (double)PCTime.tv_nsec -  pGGA->Milli();
+	    idt  = PCTime.tv_sec - idt;
+	    dt   = 1.0e-9 * (double)PCTime.tv_nsec -  pGGA->Milli();
+	    dt  += (double) idt;
 	}
-	dt       += timezone;
+	dt       -= timezone;
 #endif
 
 	pVTG = fNMEA_GPS->pVTG();
