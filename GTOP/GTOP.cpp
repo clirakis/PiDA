@@ -325,12 +325,13 @@ void GTOP::Update(void)
      * 3600 seconds per hour
      */
     const double KPH2MPS = 1852.0/3600.0;
-    float t;
     GGA*  pGGA;
     VTG*  pVTG;
     GSA*  pGSA;
-    uint32_t Count; 
     RMC*  pRMC;
+    uint32_t Count; 
+    uint32_t idt;
+    double   dt = 0.0;
 
     // Do IPC
     if (fIPC)
@@ -348,9 +349,10 @@ void GTOP::Update(void)
     {
 	pRMC = fNMEA_GPS->pRMC();
 	pGGA = fNMEA_GPS->pGGA();
-	t  = pGGA->Seconds();
-	t += pGGA->Milli();
 	struct timespec PCTime = pGGA->PCTime();
+#if 0
+	t  = pGGA->Seconds();
+	//t += pGGA->Milli();
 	/*
 	 * PC time is time since epoch, 
 	 * GPS time is time into day. need to deal with that. 
@@ -362,11 +364,25 @@ void GTOP::Update(void)
 	dt       -= t;
 	dt       += timezone;
 //	double dt = sec - t;
+#else
+	idt      = pGGA->Seconds();
+	if (idt > PCTime.tv_sec)
+	{
+	    idt -= PCTime.tv_sec;
+	    dt   = idt - 1.0e-9 * (double)PCTime.tv_nsec +  pGGA->Milli();
+	}
+	else
+	{
+	    idt = PCTime.tv_sec - idt;
+	    dt   = idt + 1.0e-9 * (double)PCTime.tv_nsec -  pGGA->Milli();
+	}
+	dt       += timezone;
+#endif
 
 	pVTG = fNMEA_GPS->pVTG();
 
 	pGSA = fNMEA_GPS->pGSA();
-
+	double t = pGGA->Seconds() + pGGA->Milli();
 	f5Logger->FillInternalVector(t, 0);
 	f5Logger->FillInternalVector(pGGA->Latitude()*RadToDeg, 1);
 	f5Logger->FillInternalVector(pGGA->Longitude()*RadToDeg, 2);
