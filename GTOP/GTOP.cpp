@@ -17,6 +17,7 @@
  * 
  * 20-Dec-23    Never changed filenames. 
  * 10-Mar-24    Added in GPS-pc time delta. 
+ * 24-Mar-24    Added in TOD 
  * 
  * Classification : Unclassified
  *
@@ -52,7 +53,7 @@ using namespace libconfig;
 GTOP* GTOP::fGTOP;
 
 const char *SensorName="GPS";     // Sensor name. 
-const size_t NVar = 16;
+const size_t NVar = 17;
 
 /**
  ******************************************************************
@@ -350,21 +351,10 @@ void GTOP::Update(void)
 	pRMC = fNMEA_GPS->pRMC();
 	pGGA = fNMEA_GPS->pGGA();
 	struct timespec PCTime = pGGA->PCTime();
-#if 0
-	t  = pGGA->Seconds();
-	//t += pGGA->Milli();
-	/*
-	 * PC time is time since epoch, 
-	 * GPS time is time into day. need to deal with that. 
-	 */
 	struct tm *tmnow = localtime(&PCTime.tv_sec);
 	double sec = tmnow->tm_sec + tmnow->tm_min*60.0 + 
 	    tmnow->tm_hour*3600.0;
-	double dt = (double) PCTime.tv_sec + 1.0e-9 * (double)PCTime.tv_nsec;
-	dt       -= t;
-	dt       += timezone;
-//	double dt = sec - t;
-#else
+
 	idt      = pGGA->Seconds();
 	if (idt > PCTime.tv_sec)
 	{
@@ -379,7 +369,6 @@ void GTOP::Update(void)
 	    dt  += (double) idt;
 	}
 	dt       -= timezone;
-#endif
 
 	pVTG = fNMEA_GPS->pVTG();
 
@@ -405,6 +394,8 @@ void GTOP::Update(void)
 	f5Logger->FillInternalVector(Count, 13);
 	f5Logger->FillInternalVector(dt,14);
 	f5Logger->FillInternalVector(pRMC->Delta(), 15);
+	f5Logger->FillInternalVector(sec, 16);
+
 	f5Logger->Fill();
     }
     SET_DEBUG_STACK;
@@ -435,7 +426,28 @@ bool GTOP::OpenLogFile(void)
 {
     SET_DEBUG_STACK;
 //    const char *Names = "Time:Lat:Lon:Z:NSV:PDOP:HDOP:VDOP:TDOP:VE:VN:VZ";
-    const char *Names = "Time:Lat:Lon:Z:NSV:PDOP:HDOP:VDOP:TRUE:MAG:SMPS:MODE:CTime:EVCount:PCDT:RMCDT";
+    const char *Names = "Time:Lat:Lon:Z:NSV:PDOP:HDOP:VDOP:TRUE:MAG:SMPS:MODE:CTime:EVCount:PCDT:RMCDT:TOD";
+    /*
+     *
+     *  0) Time - Seconds since unix epoch from GGA message
+     *  1) Lat  - degrees
+     *  2) Lon  - degrees
+     *  3) Z    - meters
+     *  4) NSV  - Number of satelites in view
+     *  5) PDOP
+     *  6) HDOP
+     *  7) VDOP
+     *  8) TRUE - compas true north
+     *  9) MAG  - magnetic north
+     * 10) SMPS - Speed Meters per second
+     * 11) MODE - Velocity mode : Autonomous, Differential, Estimated
+     * 12) CTime - computer time seconds since unix epoch
+     * 13) EVCount - event count
+     * 14) PCDT  - DT between arrival of GGA message computer clock time and
+     *             GGA time
+     * 15) RMC DT - same but for RMC message
+     * 16) TOD - Time of Day
+     */
     CLogger *pLogger  = CLogger::GetThis();
     /* Give me a file name.  */
     const char* name  = fn->GetUniqueName();
