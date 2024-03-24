@@ -6,11 +6,14 @@
 #
 # Where to store the data taken.
 export DATAPATH=/home/clirakis/Data
+cd ../GTOP
+./GTOP &
+#
+# WAIT A MOMENT to allow the GPS shared memory to start. 
+sleep 1
 # start IMU process
 cd ICM-20948
 ./IMU &
-cd ../GTOP
-./GTOP &
 cd ~
 . .envFlask/bin/activate
 cd PiDA/Flask
