@@ -180,7 +180,6 @@ int main(int argc, char **argv)
     ProcessCommandLineArgs(argc, argv);
     if (Initialize())
     {
-        cout << __GNUC__ << endl;
 	Timing *pModule = new Timing("Timing.cfg");
 
 	if (pModule->Error() == 0)

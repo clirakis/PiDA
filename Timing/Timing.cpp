@@ -189,7 +189,7 @@ void Timing::Do(void)
     struct timespec  host_now;    
     struct timespec  value;
     struct tm        *tme;
-    time_t           sec; 
+    time_t           sec;        // EPOCH seconds of this system, current 
     double           delta;
     double           PCsec; 
     const struct pkt *pMSG;
@@ -197,34 +197,46 @@ void Timing::Do(void)
     double           dResponse = 0.0;
     double           dTotal;
     double           dsec;
-    int32_t          count = 0;
+    int32_t          count = 0;      // count on number of samples retrieved
+    int32_t          CycleCount = 0; // Count on number of 1 second cycles
     double           multiplier = pow(2.0, -32);
 
 
     fRun = true;
 
+    // Run until user requests a stop OR time is exceeded. 
     while(fRun)
     {
+	// Get the current local time. 
+	sec = time(NULL);
+	tme   = localtime(&sec);
+	// calculate the time of day, used later
+	tod   = tme->tm_sec + 60*(tme->tm_min + 60*tme->tm_hour); 
+
+	// BAIL. 
+	if (sec > fEndTime) 
+	{
+	    fRun = false;
+	}
 	/*
 	 * When this sleeps, it doesn't look at any of the signals
 	 * we are sending it. Change to sleep less and count up the 
 	 * number of times we sleep. Minimum sleep is 1 second. 
 	 */
-	if (count%fSampleRate != 0)
+	if (CycleCount < fSampleRate)
 	{
 	    sleep(1);
+	    CycleCount++;
 	}
 	else
 	{
+	    CycleCount = 0;
 	    value = fQS->GetTime();
 	    prec  = fQS->Precision();
 	    delay = fQS->Drootdelay();
 	    disp  = fQS->Drootdispersion();
-	    //sec   = value.tv_sec;
-	    sec = time(NULL);
-	    tme   = localtime(&sec);
-	    //sec   -= tme->tm_gmtoff;
-	    tod   = tme->tm_sec + 60*(tme->tm_min + 60*tme->tm_hour); 
+	    
+
 	    PCsec = (double)sec + 1.0e-9 * ((double) host_now.tv_nsec);
 
 	    clock_gettime(CLOCK_REALTIME, &host_now);   // Host time
@@ -265,13 +277,10 @@ void Timing::Do(void)
 	    f5Logger->Fill();
 
 	    count++;
-	    if (count%100) 
+	    if (count%fSampleRate == 0) 
 		pLogger->LogTime("Samples processed: %d of %d\n", 
 				 count, fNSamples);
 	}
-	if (fRun)  // User didn't request a stop.
-	    fRun = (count<fNSamples);
-  
     }
     SET_DEBUG_STACK;
 }
@@ -403,15 +412,17 @@ bool Timing::ReadConfiguration(void)
     {
 	// Ignore.
     }
+    // if fNSamples < 0 should be infinite loop. 
     if (fNSamples>0) 
     {
+	// get the current clock time
 	time_t now;
 	time(&now);
-	now += (fNSamples * fSampleRate);
-	struct tm *tnow = gmtime(&now);
-	pLogger->LogTime("NSamples %d, Sample Rate: %d finish at: %s\n", 
+	// Calculate the end time. 
+	fEndTime = now + (fNSamples * fSampleRate);
+	struct tm *tnow = gmtime(&fEndTime);
+	pLogger->LogTime("NSamples %d, Sample Rate: %d finish at: %s", 
 			 fNSamples, fSampleRate, asctime(tnow));
-
     }
     // If life is good create the queryServer 
     pLogger->LogTime("Trying timeserver: %s\n", ServerAddress);

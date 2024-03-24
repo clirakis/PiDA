@@ -97,6 +97,7 @@ private:
 
     int32_t     fNSamples;         // number of samples before quit
     int32_t     fSampleRate;       // Seconds between samples
+    time_t      fEndTime;          // end time in epoch seconds. 
 
     /* Private functions. ==============================  */
 
