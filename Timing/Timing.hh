@@ -24,6 +24,7 @@
 #  include "CObject.hh" // Base class with all kinds of intermediate
 #  include "H5Logger.hh"
 #  include "filename.hh"
+#  include "smIPC.hh"
 
 class QueryTS;
 
@@ -98,6 +99,8 @@ private:
     int32_t     fNSamples;         // number of samples before quit
     int32_t     fSampleRate;       // Seconds between samples
     time_t      fEndTime;          // end time in epoch seconds. 
+
+    TIMING_IPC  *fIPC;
 
     /* Private functions. ==============================  */
 

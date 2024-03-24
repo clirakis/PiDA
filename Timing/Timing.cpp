@@ -10,6 +10,8 @@
  * Restrictions/Limitations : none
  *
  * Change Descriptions : 
+ * 24-Mar-24  Added in sm to log the difference in GPS time with the 
+ *            NTP difference. 
  *
  * Classification : Unclassified
  *
@@ -49,7 +51,7 @@ using namespace libconfig;
 
 Timing* Timing::fTiming;
 
-static uint32_t NVar = 10;
+static uint32_t NVar = 11;
 
 /**
  ******************************************************************
@@ -113,6 +115,18 @@ Timing::Timing(const char* ConfigFile) : CObject()
 	OpenLogFile();
     }
 
+    // connect to SM
+    fIPC = new TIMING_IPC();
+    if (fIPC->CheckError())
+    {
+	delete fIPC;
+	fIPC = NULL;
+    }
+    else
+    {
+	Logger->LogTime("Connected to GPS for time.\n");
+    }
+
     Logger->Log("# Timing constructed.\n");
 
     SET_DEBUG_STACK;
@@ -150,6 +164,7 @@ Timing::~Timing(void)
 			 "Failed to write config file.\n");
     }
     free(fConfigFileName);
+    delete fIPC;
 
     /* Clean up */
     delete f5Logger;
@@ -200,6 +215,10 @@ void Timing::Do(void)
     int32_t          count = 0;      // count on number of samples retrieved
     int32_t          CycleCount = 0; // Count on number of 1 second cycles
     double           multiplier = pow(2.0, -32);
+    GGA              *pGGA = NULL;
+    uint32_t         idt;
+    double           gpsDelta = 0.0;
+
 
 
     fRun = true;
@@ -246,6 +265,30 @@ void Timing::Do(void)
 	    pMSG = fQS->GetMSG();
 
 	    /* 
+	     * connect to GPS time if available. 
+	     */
+	    if (fIPC)
+	    {
+		//fIPC->Update(); // future
+		pGGA = fIPC->GetPosition();
+		struct timespec PCTime = pGGA->PCTime();
+		idt      = pGGA->Seconds();
+		if (idt > PCTime.tv_sec)
+		{
+		    idt -= PCTime.tv_sec;
+		    gpsDelta = pGGA->Milli() - 1.0e-9 * (double)PCTime.tv_nsec;
+		    gpsDelta += (double) idt;
+		}
+		else
+		{
+		    idt  = PCTime.tv_sec - idt;
+		    gpsDelta = 1.0e-9*(double)PCTime.tv_nsec -  pGGA->Milli();
+		    gpsDelta += (double) idt;
+		}
+		gpsDelta       -= timezone;
+	    }
+
+	    /* 
 	     * Algorithm is as follows
 	     * Definitions
 	     *     T1 originator time stamp
@@ -256,7 +299,6 @@ void Timing::Do(void)
 	     *     delays = (T4-T1) - (T3-T2); 
 	     *     
 	     */
-
 	    f5Logger->FillInternalVector(PCsec, 0);
 	    f5Logger->FillInternalVector(tod,   1);
 	    f5Logger->FillInternalVector(prec,  2);
@@ -273,6 +315,7 @@ void Timing::Do(void)
 	    f5Logger->FillInternalVector(dResponse, 8);
 	    dTotal = fQS->Correction();
 	    f5Logger->FillInternalVector(dTotal, 9);
+	    f5Logger->FillInternalVector(gpsDelta, 10);
 
 	    f5Logger->Fill();
 
@@ -310,7 +353,7 @@ bool Timing::OpenLogFile(void)
     SET_DEBUG_STACK;
 
     // USER TO FILL IN.
-    const char *Names   = "PCTime:TOD:PREC:DELAY:DISP:DELTA:REC:XMIT:DRESPONSE:DTOTAL";
+    const char *Names   = "PCTime:TOD:PREC:DELAY:DISP:DELTA:REC:XMIT:DRESPONSE:DTOTAL:GPSDELTA";
     CLogger    *pLogger = CLogger::GetThis();
     /* Give me a file name.  */
     const char* name = fn->GetUniqueName();
