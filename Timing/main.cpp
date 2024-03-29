@@ -95,11 +95,9 @@ ProcessCommandLineArgs(int argc, char **argv)
     SET_DEBUG_STACK;
     do
     {
-        option = getopt( argc, argv, "f:hHnv");
+        option = getopt( argc, argv, "hHnv:");
         switch(option)
         {
-        case 'f':
-            break;
         case 'h':
         case 'H':
             Help();

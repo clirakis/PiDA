@@ -219,8 +219,6 @@ void Timing::Do(void)
     uint32_t         idt;
     double           gpsDelta = 0.0;
 
-
-
     fRun = true;
 
     // Run until user requests a stop OR time is exceeded. 
@@ -254,7 +252,6 @@ void Timing::Do(void)
 	    prec  = fQS->Precision();
 	    delay = fQS->Drootdelay();
 	    disp  = fQS->Drootdispersion();
-	    
 
 	    PCsec = (double)sec + 1.0e-9 * ((double) host_now.tv_nsec);
 
@@ -282,7 +279,7 @@ void Timing::Do(void)
 		else
 		{
 		    idt  = PCTime.tv_sec - idt;
-		    gpsDelta = 1.0e-9*(double)PCTime.tv_nsec -  pGGA->Milli();
+		    gpsDelta  = 1.0e-9*(double)PCTime.tv_nsec -  pGGA->Milli();
 		    gpsDelta += (double) idt;
 		}
 		gpsDelta       -= timezone;
@@ -323,6 +320,10 @@ void Timing::Do(void)
 	    if (count%fSampleRate == 0) 
 		pLogger->LogTime("Samples processed: %d of %d\n", 
 				 count, fNSamples);
+	    if (pLogger->CheckVerbose(0))
+	    {
+		pLogger->LogTime("Delta: %f\n", dTotal);
+	    }
 	}
     }
     SET_DEBUG_STACK;

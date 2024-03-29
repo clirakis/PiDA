@@ -209,24 +209,30 @@ void SetSignals(void)
     /*
      * Setup a signal handler.      
      */
-    signal (SIGHUP , Terminate);   // Hangup.
-    signal (SIGINT , Terminate);   // CTRL+C signal 
-    signal (SIGKILL, Terminate);   // 
-    signal (SIGQUIT, Terminate);   // 
-    signal (SIGILL , Terminate);   // Illegal instruction 
-    signal (SIGABRT, Terminate);   // Abnormal termination 
-    signal (SIGIOT , Terminate);   // 
-    signal (SIGBUS , Terminate);   // 
-    signal (SIGFPE , Terminate);   // 
-    signal (SIGSEGV, Terminate);   // Illegal storage access 
-    signal (SIGTERM, Terminate);   // Termination request 
-    signal (SIGSTOP, Terminate);   // 
-    signal (SIGSYS, Terminate);    // 
+    signal (SIGHUP , Terminate);   // Hangup.        1
+    signal (SIGINT , Terminate);   // CTRL+C signal  2
+    signal (SIGKILL, Terminate);   //                9  DOES NOT WORK on ARM
+    signal (SIGQUIT, Terminate);   //                3
+    signal (SIGILL , Terminate);   // Illegal instruction 4 
+    signal (SIGABRT, Terminate);   // Abnormal termination 6
+    signal (SIGIOT , Terminate);   //                   
+    signal (SIGBUS , Terminate);   //                      7
+    signal (SIGFPE , Terminate);   //                      8
+    signal (SIGSEGV, Terminate);   // Illegal storage access 11 
+    signal (SIGTERM, Terminate);   // Termination request    15
+    signal (SIGSTOP, Terminate);   // 19
+    signal (SIGSYS, Terminate);    // 31 unused
 #ifndef MAC
     signal (SIGSTKFLT, Terminate); // 
-    signal (SIGPWR, Terminate);    // 
+    signal (SIGPWR, Terminate);    // 30 power going down
 #endif
     // Setup user signals for further control
-    signal (SIGUSR1, UserSignal);
-    signal (SIGUSR2, UserSignal);  
+    signal (SIGUSR1, UserSignal);  // 10
+    signal (SIGUSR2, UserSignal);  // 12
+
+    // SIGPIPE 13   Pipe dies
+    // SIGALARM 14  Wake up
+    // 16 unassigned
+    // 17 SIGCHLD
+    // 30 SIGPWR
 }
