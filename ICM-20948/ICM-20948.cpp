@@ -38,16 +38,12 @@ using namespace std;
 #include <unistd.h>
 #include <limits.h>
 
-// specific to talking to I2C
-#include <fcntl.h>
-#include <sys/ioctl.h>
-#include <linux/i2c-dev.h>
-#include <linux/i2c.h>
 
 // Local Includes.
 #include "debug.h"
 #include "CLogger.hh"
 #include "ICM-20948.hh"
+#include "I2CHelper.hh"
 
 /**
  ******************************************************************
@@ -89,22 +85,20 @@ ICM20948::ICM20948 (uint8_t IMU_address, uint8_t Mag_address) : CObject(), IMUDa
      */
     fGscale = GFS_250DPS;
     fAscale = AFS_2G;
-    fMmode  = M_100HZ;
 
     fGres = getGres();
     fAres = getAres();
     fIMU_address = IMU_address;
-    fMag_address = Mag_address;
 
     fGMTOffset = lt.tm_gmtoff;
     //cout << "GMT OFFSET: " << fGMTOffset << endl;
 
-    // Open the chip. 
-    fdI2C = open(kICMDeviceName, O_RDWR);
-    if (fdI2C<0)
+    // Initialize I2C subsystem. 
+    fI2C = new I2CHelper(kICMDeviceName);
+    if (fI2C->Error())
     {
-	SetError(-1, __LINE__);
-	return;
+	delete fI2C;
+	fI2C = NULL;
     }
 
     if(!InitICM20948())
@@ -115,8 +109,11 @@ ICM20948::ICM20948 (uint8_t IMU_address, uint8_t Mag_address) : CObject(), IMUDa
     /*
      * Second argument is the mode to acquire data. 
      */
-    if(!InitAK09916(0x08))
+    fMag = new AK09916(Mag_address, 0x08);
+    if(fMag->Error())
     {
+	delete fMag;
+	fMag = NULL;
 	return;
     }
 
@@ -146,7 +143,8 @@ ICM20948::ICM20948 (uint8_t IMU_address, uint8_t Mag_address) : CObject(), IMUDa
 ICM20948::~ICM20948 (void)
 {
     SET_DEBUG_STACK;
-    close(fdI2C);
+    delete fI2C;
+    delete fMag;
 }
 
 /**
@@ -189,7 +187,7 @@ bool ICM20948::InitICM20948(void)
      * has to be set to 001 to achieve the performance in the datasheet.
      * Also look at power modes in 4.22
      */
-    int rv = WriteReg8( fIMU_address, PWR_MGMT_1, 0x01);  
+    int rv = fI2C->WriteReg8( fIMU_address, PWR_MGMT_1, 0x01);  
   
     /*
      *  Switch to user bank 2 - registers for setup
@@ -198,7 +196,7 @@ bool ICM20948::InitICM20948(void)
      * more detail in section 8
      * 8.65 - bits 5:4 select the bank, here it is bank 2
      */
-    rv = WriteReg8( fIMU_address, REG_BANK_SEL, 0x20);
+    rv = fI2C->WriteReg8( fIMU_address, REG_BANK_SEL, 0x20);
 
     /*
      * Configure Gyro and Thermometer
@@ -231,8 +229,8 @@ bool ICM20948::InitICM20948(void)
      *        7         7932     9
      *
      */
-    rv = WriteReg8( fIMU_address, GYRO_CONFIG_1, 0x19); 
-    rv = WriteReg8( fIMU_address, TEMP_CONFIG, 0x03);
+    rv = fI2C->WriteReg8( fIMU_address, GYRO_CONFIG_1, 0x19); 
+    rv = fI2C->WriteReg8( fIMU_address, TEMP_CONFIG, 0x03);
 
     /*
      * Set sample rate = gyroscope output rate(1.1kHz)/(1 + GYRO_SMPLRT_DIV)
@@ -243,7 +241,7 @@ bool ICM20948::InitICM20948(void)
      * Gyro sample rate divider Section 10.1
      *  
      */
-    rv = WriteReg8( fIMU_address, GYRO_SMPLRT_DIV, 0x04);
+    rv = fI2C->WriteReg8( fIMU_address, GYRO_SMPLRT_DIV, 0x04);
 
     /*
      *
@@ -264,7 +262,7 @@ bool ICM20948::InitICM20948(void)
      *          11 16g
      *   0      1 Enable, 0 Disable DLPF
      */
-    uint8_t c = ReadReg8( fIMU_address, ACCEL_CONFIG);
+    uint8_t c = fI2C->ReadReg8( fIMU_address, ACCEL_CONFIG);
 
     // c = c & ~0xE0;    // Clear self-test bits [7:5]
     c = c & ~0x06;       // Clear AFS bits [4:3]
@@ -273,7 +271,7 @@ bool ICM20948::InitICM20948(void)
     c = c | 0x18;        // and set DLFPFCFG to 50.4 hz (table 18)
 
     // Write new ACCEL_CONFIG register value
-    rv = WriteReg8( fIMU_address, ACCEL_CONFIG, c);
+    rv = fI2C->WriteReg8( fIMU_address, ACCEL_CONFIG, c);
 
     /*
      * Set accelerometer sample rate configuration
@@ -283,12 +281,12 @@ bool ICM20948::InitICM20948(void)
      * 
      * Section 10.12 (LSB for sample rate) 1.125kHz/(1+ACCEL_SSMPLRT_DIV[11:0]
      */
-    rv = WriteReg8( fIMU_address, ACCEL_SMPLRT_DIV_2, 0x04);
+    rv = fI2C->WriteReg8( fIMU_address, ACCEL_SMPLRT_DIV_2, 0x04);
 
     /*
      * Do we neet to set MSB too - lets be complete, CBL addition
      */
-    rv = WriteReg8( fIMU_address, ACCEL_SMPLRT_DIV_1, 0x0);
+    rv = fI2C->WriteReg8( fIMU_address, ACCEL_SMPLRT_DIV_1, 0x0);
 
     /*
      * The accelerometer, gyro, and thermometer are set to 1 kHz sample rates,
@@ -298,7 +296,7 @@ bool ICM20948::InitICM20948(void)
      * Switch to user bank 0 to access this. Section 7.1
      * Bank 0 is also where all the registers for reading data are. 
      */
-    rv = WriteReg8( fIMU_address, REG_BANK_SEL, 0x00);
+    rv = fI2C->WriteReg8( fIMU_address, REG_BANK_SEL, 0x00);
 
     /*
      *
@@ -322,112 +320,16 @@ bool ICM20948::InitICM20948(void)
      *
      *    0x22 --- Hold interrupt until cleared, Bypass enabled
      */
-    rv = WriteReg8( fIMU_address, INT_PIN_CFG, 0x22);
+    rv = fI2C->WriteReg8( fIMU_address, INT_PIN_CFG, 0x22);
 
     // Enable data ready (bit 0) interrupt
-    rv = WriteReg8( fIMU_address, INT_ENABLE_1, 0x01);
+    rv = fI2C->WriteReg8( fIMU_address, INT_ENABLE_1, 0x01);
 
     SET_DEBUG_STACK;
     return true;
 }
 
-/**
- ******************************************************************
- *
- * Function Name : InitAK09916
- *
- * Description :
- *      Setup the magnetometer
- *      Registers are
- *      WIA2 - Device ID   READ ONLY Should return 9
- *      ST1  - Status 1    READ ONLY DOR (1) DRDY (0)
- *      XL   - Data low byte X
- *      XH
- *      YL
- *      YH
- *      ZL
- *      ZH 
- *      ST2   - Status 2  D3 - OVERVLOW (READ ONLY)
- *      CNTL2 - Control 2 (R/W)
- *          bit
- *           4 - Mode 4
- *           3 - Mode 3
- *           2 - Mode 2
- *           1 - Mode 1
- *           0 - Mode 0
- *      00000 - Power Down mode
- *      00001 - Single Measurement Mode
- *      00010 - Continious measurement mode 1
- *      00100 - Continious measurement mode 2
- *      00110 - Continious measurement mode 3
- *      01000 - Continious measurement mode 4
- *      10000 - Self test mode
- *
- *      CNTL3 - Control 3 , bit 0 SRST (R/W)
- * 
- * Inputs :
- *
- * Returns :
- *
- * Error Conditions :
- * 
- * Unit Tested on: 
- *
- * Unit Tested by: CBL
- *
- *
- *******************************************************************
- */
-bool ICM20948::InitAK09916(uint8_t MagMode)
-{
-    SET_DEBUG_STACK;
-    CLogger *log = CLogger::GetThis();
-    ClearError(__LINE__);
 
-    if (fMag_address<0)
-    {
-	log->Log("# Mag subsystem off.\n");
-	return true;
-    }
-    // Initalize the mag sensor at the specified address.
-    // the ioctl points us at the correct address. 
-    if (ioctl(fdI2C, I2C_SLAVE, fMag_address) < 0)
-    {
-	SetError(-2, __LINE__);
- 	log->LogTime(" Error opening AK09916, address 0x%2X\n", fMag_address);
-	return false;
-    }
-    else
-    {
-	log->LogTime(" Opened AK09916, address 0x%2X\n", fMag_address);
-    }
-
-    fMagMode = MagMode;
-    /*
-     *      CNTL2 - Control 2 (R/W)
-     *          bit
-     *           4 - Mode 4
-     *           3 - Mode 3
-     *           2 - Mode 2
-     *           1 - Mode 1
-     *           0 - Mode 0
-     *      00000 - Power Down mode
-     *      00001 - Single Measurement Mode
-     *      00010 - Continious measurement mode 1
-     *      00100 - Continious measurement mode 2
-     *      00110 - Continious measurement mode 3
-     *      01000 - Continious measurement mode 4
-     *      10000 - Self test mode
-     *
-     * 
-     * CNTL2 0x31 Control (R/W) for magnetometer. 
-     * 
-     */
-    WriteReg8(fMag_address, AK09916_CNTL2, fMagMode);
-
-    SET_DEBUG_STACK;
-    return true;
-}
 
 /**
  ******************************************************************
@@ -554,7 +456,7 @@ double ICM20948::readTempData(void)
     const double Temp_Sensitivity = 333.87;  // LSB/C
 
     fTemp = 0.0;
-    if (fdI2C>=0)
+    if (fI2C)
     {
 	uint8_t  Hi, Lo;
 	uint16_t itemp;
@@ -565,8 +467,8 @@ double ICM20948::readTempData(void)
 	//Lo = wiringPiI2CReadReg8(fIMU_address, TEMP_OUT_L);
 
 	// Turn the MSB and LSB into a 16-bit value
-	Hi = ReadReg8( fIMU_address, TEMP_OUT_H);
-	Lo = ReadReg8( fIMU_address,TEMP_OUT_L);
+	Hi = fI2C->ReadReg8( fIMU_address, TEMP_OUT_H);
+	Lo = fI2C->ReadReg8( fIMU_address,TEMP_OUT_L);
 	itemp = ((int16_t)Hi << 8) | Lo;
 
 	/*
@@ -613,7 +515,12 @@ bool ICM20948::Read(void)
     readTempData();
     readAccelData();
     readGyroData();
-    readMagData();
+    if (fMag)
+    {
+	fMag->Read(NULL);
+	// copy over results
+	fMag->Copy(fMagXYZ);
+    }
     return true;
 }
 /**
@@ -646,23 +553,23 @@ bool ICM20948::readAccelData(void)
 	ptr = (uint8_t *)&itemp;
 
 	// Read out sensor data Hi order byte
-	*(ptr+1) = ReadReg8(fIMU_address, ACCEL_XOUT_H);
+	*(ptr+1) = fI2C->ReadReg8(fIMU_address, ACCEL_XOUT_H);
 	// Read out sensor data Low order byte
-	*ptr = ReadReg8(fIMU_address, ACCEL_XOUT_L);
+	*ptr = fI2C->ReadReg8(fIMU_address, ACCEL_XOUT_L);
 
 	fAcc[0] = (double)itemp * fAres;
 
 	// Read out sensor data Hi order byte
-	*(ptr+1) = ReadReg8(fIMU_address, ACCEL_YOUT_H);
+	*(ptr+1) = fI2C->ReadReg8(fIMU_address, ACCEL_YOUT_H);
 	// Read out sensor data Low order byte
-	*ptr = ReadReg8(fIMU_address, ACCEL_YOUT_L);
+	*ptr = fI2C->ReadReg8(fIMU_address, ACCEL_YOUT_L);
 
 	fAcc[1] = (double)itemp * fAres;
 
 	// Read out sensor data Hi order byte
-	*(ptr+1) = ReadReg8(fIMU_address, ACCEL_ZOUT_H);
+	*(ptr+1) = fI2C->ReadReg8(fIMU_address, ACCEL_ZOUT_H);
 	// Read out sensor data Low order byte
-	*ptr = ReadReg8(fIMU_address, ACCEL_ZOUT_L);
+	*ptr = fI2C->ReadReg8(fIMU_address, ACCEL_ZOUT_L);
 
 	fAcc[2] = (double)itemp * fAres;
 
@@ -703,23 +610,23 @@ bool ICM20948::readGyroData(void)
 	ptr = (uint8_t *)&itemp;
 
 	// Read out sensor data Hi order byte
-	*(ptr+1) = ReadReg8(fIMU_address, GYRO_XOUT_H);
+	*(ptr+1) = fI2C->ReadReg8(fIMU_address, GYRO_XOUT_H);
 	// Read out sensor data Low order byte
-	*ptr = ReadReg8(fIMU_address, GYRO_XOUT_L);
+	*ptr = fI2C->ReadReg8(fIMU_address, GYRO_XOUT_L);
 
 	fGyro[0] = (double)itemp * fGres;
 
 	// Read out sensor data Hi order byte
-	*(ptr+1) = ReadReg8(fIMU_address, GYRO_YOUT_H);
+	*(ptr+1) = fI2C->ReadReg8(fIMU_address, GYRO_YOUT_H);
 	// Read out sensor data Low order byte
-	*ptr = ReadReg8(fIMU_address, GYRO_YOUT_L);
+	*ptr = fI2C->ReadReg8(fIMU_address, GYRO_YOUT_L);
 
 	fGyro[1] = (double)itemp * fGres;
 
 	// Read out sensor data Hi order byte
-	*(ptr+1) = ReadReg8(fIMU_address, GYRO_ZOUT_H);
+	*(ptr+1) = fI2C->ReadReg8(fIMU_address, GYRO_ZOUT_H);
 	// Read out sensor data Low order byte
-	*ptr = ReadReg8(fIMU_address, GYRO_ZOUT_L);
+	*ptr = fI2C->ReadReg8(fIMU_address, GYRO_ZOUT_L);
 
 	fGyro[2] = (double)itemp * fGres;
 
@@ -730,138 +637,6 @@ bool ICM20948::readGyroData(void)
     return false;
 }
 
-/**
- ******************************************************************
- *
- * Function Name : readMagData
- *
- * Description :
- *     read the data from the magnetometer. 
- *
- * Inputs : NONE
- *
- * Returns : true on success
- *
- * Error Conditions :
- * 
- * Unit Tested on: 
- *
- * Unit Tested by: CBL
- *
- *
- *******************************************************************
- */
-bool ICM20948::readMagData(int16_t *results)
-{
-    SET_DEBUG_STACK;
-    fMagRead = false;  // Assume read fails. 
-    ClearError(__LINE__);
-    uint8_t rv;
-
-    if(fMag_address>0)
-    {
-	uint8_t *ptr;
-	ptr = (uint8_t *)&itemp;
-
-	/*
-	 * must read ST2 at end of data acquisition.
-	 *
-	 * Wait for magnetometer data ready bit to be set
-	 * Read Status register (ST1)
-	 * Bit 0 - set is data ready
-	 * Bit 1 set means data overrun. 
-	 * DRDY bit turns to -Y´1¡ when data is ready in Single 
-	 * measurement mode, Continuous measurement mode 1, 2, 3, 4 or 
-	 * Self-test mode. It returns to ´0¡ when any one of ST2 register 
-	 * or measurement data register (HXL to TMPS) is read.
-	 */
-	if (fMagMode == 0x01)
-	    rv = ReadReg8(fMag_address, AK09916_ST1);
-	else
-	    rv = 0x01;
-
-	if (rv & 0x01)
-	{
-	    // 8 bytes of read. 
-	    // Read the six raw data and ST2 registers sequentially into data array
-
-	    // Read out sensor data Hi order byte
-	    *(ptr+1) = ReadReg8(fMag_address, AK09916_XOUT_H);
-	    // Read out sensor data Low order byte
-	    *ptr = ReadReg8(fMag_address, AK09916_XOUT_L);
-
-	    if(results) results[0] = itemp;
-	    fMag[0] = (double)itemp * kMagRes;
-
-	    // Read out sensor data Hi order byte
-	    *(ptr+1) = ReadReg8(fMag_address, AK09916_YOUT_H);
-	    // Read out sensor data Low order byte
-	    *ptr = ReadReg8(fMag_address, AK09916_YOUT_L);
-
-	    if(results) results[1] = itemp;
-	    fMag[1] = (double)itemp * kMagRes;
-
-	    // Read out sensor data Hi order byte
-	    *(ptr+1) = ReadReg8(fMag_address, AK09916_ZOUT_H);
-	    // Read out sensor data Low order byte
-	    *ptr = ReadReg8(fMag_address, AK09916_ZOUT_L);
-
-	    if(results) results[2] = itemp;
-	    fMag[2] = (double)itemp * kMagRes;
-
-	    /* 
-	     * Data status  0x18, ST2
-	     * End data read by reading ST2 register
-	     * Section 13.4
-	     * Bits
-	     * 7     ZERO
-	     * 6:4   - Reserved
-	     * 3     0 Normal, 1 Magnetic sensor overflow. 
-	     * 2:0   ZERO
-	     * 
-	     * Overflow is dependend on  mode. 
-	     * Also signifies to magnetometer that the read is complete
-	     * Section 13.4
-	     * ST2 register has a role as data reading end register, also. 
-	     * When any of measurement data register (HXL to TMPS) is read in 
-	     * Continuous measurement mode 1, 2, 3, 4, it means data reading 
-	     * start and taken as data reading until ST2 register is read. 
-	     * Therefore, when any of measurement data is read, be sure to 
-	     * read ST2 register at the end.
-	     */
-	    uint8_t st2 = ReadReg8(fMag_address, AK09916_ST2);
-	    if (st2 & 0x08)
-	    {
-		cout << "OVERFLOW IN MAGNETOMETER." << endl;
-	    }
-
-	    //uint8_t int_status = ReadReg8(fMag_address, INT_STATUS);
-	    fMagRead = true;
-#if 0
-	    // Something is not quite write with this code. 8
-	    // bytes ends up at 0x19 rawdata[7]
-	    // which is INT_STATUS
-
-	    readBytes(AK09916_ADDRESS, AK09916_XOUT_L, 8, &rawData[0]);
-	    uint8_t c = rawData[7]; // End data read by reading ST2 register
-	    // Check if magnetic sensor overflow set, if not then report data
-	    // Remove once finished
-	
-	    if (!(c & 0x08))
-	    {
-		// Turn the MSB and LSB into a signed 16-bit value
-		destination[0] = ((int16_t)rawData[1] << 8) | rawData[0];
-		// Data stored as little Endian
-		destination[1] = ((int16_t)rawData[3] << 8) | rawData[2];
-		destination[2] = ((int16_t)rawData[5] << 8) | rawData[4];
-	    }
-#endif
-	}
-    }
-
-    SET_DEBUG_STACK;
-    return fMagRead;
-}
 /**
  ******************************************************************
  *
@@ -920,23 +695,23 @@ bool ICM20948::ICM20948SelfTest(double * destination)
 
     // Get stable time source
     // Auto select clock source to be PLL gyroscope reference if ready else
-    WriteReg8( fIMU_address,  PWR_MGMT_1, 0x01);
+    fI2C->WriteReg8( fIMU_address,  PWR_MGMT_1, 0x01);
   
     // Switch to user bank 2
-    WriteReg8( fIMU_address, REG_BANK_SEL, 0x20);
+    fI2C->WriteReg8( fIMU_address, REG_BANK_SEL, 0x20);
 
     // Set gyro sample rate to 1 kHz
-    WriteReg8( fIMU_address, GYRO_SMPLRT_DIV, 0x00);
+    fI2C->WriteReg8( fIMU_address, GYRO_SMPLRT_DIV, 0x00);
 
     // Set gyro sample rate to 1 kHz, DLPF to 119.5 Hz and FSR to 250 dps
-    WriteReg8( fIMU_address, GYRO_CONFIG_1, 0x11);
+    fI2C->WriteReg8( fIMU_address, GYRO_CONFIG_1, 0x11);
 
     // Set accelerometer rate to 1 kHz and bandwidth to 111.4 Hz
     // Set full scale range for the accelerometer to 2 g
-    WriteReg8( fIMU_address, ACCEL_CONFIG, 0x11);
+    fI2C->WriteReg8( fIMU_address, ACCEL_CONFIG, 0x11);
 
     // Switch to user bank 0
-    WriteReg8( fIMU_address, REG_BANK_SEL, 0x00);
+    fI2C->WriteReg8( fIMU_address, REG_BANK_SEL, 0x00);
 
     // Hang out a bit, wait for the chip to stablize. 
     nanosleep(&sleeptime, NULL);
@@ -967,24 +742,24 @@ bool ICM20948::ICM20948SelfTest(double * destination)
     }
   
     // Switch to user bank 2
-    WriteReg8( fIMU_address, REG_BANK_SEL, 0x20);
+    fI2C->WriteReg8( fIMU_address, REG_BANK_SEL, 0x20);
 
     /*
      * Configure the accelerometer for self-test
      * Enable self test on all three axes and set accelerometer 
      * range to +/- 2 g
      */
-    WriteReg8( fIMU_address, ACCEL_CONFIG_2, 0x1C);
+    fI2C->WriteReg8( fIMU_address, ACCEL_CONFIG_2, 0x1C);
 
     /*
      * Enable self test on all three axes and set gyro range 
      * to +/- 250 degrees/s
      */
-    WriteReg8( fIMU_address, GYRO_CONFIG_2,  0x38);
+    fI2C->WriteReg8( fIMU_address, GYRO_CONFIG_2,  0x38);
 
   
     // Switch to user bank 0
-    WriteReg8( fIMU_address, REG_BANK_SEL, 0x00);
+    fI2C->WriteReg8( fIMU_address, REG_BANK_SEL, 0x00);
 
     // Hang out a bit, wait for the chip to stablize. 
     nanosleep(&sleeptime, NULL);
@@ -1012,34 +787,34 @@ bool ICM20948::ICM20948SelfTest(double * destination)
     }
   
     // Switch to user bank 2
-    WriteReg8( fIMU_address, REG_BANK_SEL, 0x20);
+    fI2C->WriteReg8( fIMU_address, REG_BANK_SEL, 0x20);
 
     // Configure the gyro and accelerometer for normal operation
-    WriteReg8( fIMU_address, ACCEL_CONFIG_2, 0x00);
-    WriteReg8( fIMU_address, GYRO_CONFIG_2,  0x00);
+    fI2C->WriteReg8( fIMU_address, ACCEL_CONFIG_2, 0x00);
+    fI2C->WriteReg8( fIMU_address, GYRO_CONFIG_2,  0x00);
     
   
     // Switch to user bank 1
-    WriteReg8( fIMU_address, REG_BANK_SEL, 0x10);
+    fI2C->WriteReg8( fIMU_address, REG_BANK_SEL, 0x10);
 
     /*
      * Retrieve accelerometer and gyro factory Self-Test Code from USR_Reg
      * X-axis accel self-test results
      */
-    selfTest[0] = ReadReg8( fIMU_address, SELF_TEST_X_ACCEL);
+    selfTest[0] = fI2C->ReadReg8( fIMU_address, SELF_TEST_X_ACCEL);
     // Y-axis accel self-test results
-    selfTest[1] = ReadReg8( fIMU_address, SELF_TEST_Y_ACCEL);
+    selfTest[1] = fI2C->ReadReg8( fIMU_address, SELF_TEST_Y_ACCEL);
     // Z-axis accel self-test results
-    selfTest[2] = ReadReg8( fIMU_address, SELF_TEST_Z_ACCEL);
+    selfTest[2] = fI2C->ReadReg8( fIMU_address, SELF_TEST_Z_ACCEL);
     // X-axis gyro self-test results
-    selfTest[3] = ReadReg8( fIMU_address, SELF_TEST_X_GYRO);
+    selfTest[3] = fI2C->ReadReg8( fIMU_address, SELF_TEST_X_GYRO);
     // Y-axis gyro self-test results
-    selfTest[4] = ReadReg8( fIMU_address, SELF_TEST_Y_GYRO);
+    selfTest[4] = fI2C->ReadReg8( fIMU_address, SELF_TEST_Y_GYRO);
     // Z-axis gyro self-test results
-    selfTest[5] = ReadReg8( fIMU_address, SELF_TEST_Z_GYRO);
+    selfTest[5] = fI2C->ReadReg8( fIMU_address, SELF_TEST_Z_GYRO);
   
     // Switch to user bank 0
-    WriteReg8( fIMU_address, REG_BANK_SEL, 0x00);
+    fI2C->WriteReg8( fIMU_address, REG_BANK_SEL, 0x00);
     // Hang out a bit, wait for the chip to stablize. 
     nanosleep(&sleeptime, NULL);
 
@@ -1082,146 +857,6 @@ bool ICM20948::ICM20948SelfTest(double * destination)
 
     return true;
 }
-/**
- ******************************************************************
- *
- * Function Name : magCalICM20948
- *
- * Description :
- *     Function which accumulates magnetometer data after device 
- *     initialization.
- *     It calculates the bias and scale in the x, y, and z axes.
- *
- * Inputs : NONE
- *
- * Returns : true on success
- *
- * Error Conditions :
- * 
- * Unit Tested on: 
- *
- * Unit Tested by: CBL
- *
- *
- *******************************************************************
- */
-void ICM20948::magCalICM20948(double * bias_dest, double * scale_dest)
-{
-    SET_DEBUG_STACK;
-
-    const struct timespec D135ms = {0L, 135000000L}; // 135ms
-    const struct timespec D10ms  = {0L,  10000000L}; //  10ms
-
-    CLogger *log = CLogger::GetThis();
-
-    uint16_t ii = 0, sample_count = 0;
-    int32_t mag_bias[3]  = {0, 0, 0};
-    int32_t mag_scale[3] = {0, 0, 0};
-    int16_t mag_max[3]   = { SHRT_MIN, SHRT_MIN, SHRT_MIN};
-    int16_t mag_min[3]   = { SHRT_MAX, SHRT_MAX, SHRT_MAX};
-    int16_t mag_temp[3]  = {0, 0, 0};
-
-    // Make sure resolution has been calculated
-    getMres();
-
-    cout << "Mag Calibration: Wave device in a figure 8 until done!" << endl
-	 << "  4 seconds to get ready followed by 15 seconds of sampling)" 
-	 << endl;
-    sleep(4);
-
-    // shoot for ~fifteen seconds of mag data
-    // at 8 Hz ODR, new mag data is available every 125 ms
-    switch(fMmode)
-    {
-    case M_8HZ:
-	sample_count = 128;
-	break;
-    case M_100HZ: // at 100 Hz ODR, new mag data is available every 10 ms
-	sample_count = 1500;
-	break;
-    }
-
-    /*
-     * Loop and obtain data for 15 seconds. 
-     * Find the max and min of each. 
-     */
-    for (ii = 0; ii < sample_count; ii++)
-    {
-        // Read the mag data, store the integer data in mag temp.
-	readMagData(mag_temp);  
-
-	/*
-	 * Loop over all three axis. 
-	 */
-	for (int jj = 0; jj < 3; jj++)
-	{
-	    if (mag_temp[jj] > mag_max[jj])
-	    {
-		mag_max[jj] = mag_temp[jj];
-	    }
-	    if (mag_temp[jj] < mag_min[jj])
-	    {
-		mag_min[jj] = mag_temp[jj];
-	    }
-	}
-
-	switch(fMmode) 
-	{
-	case M_8HZ:
-	    nanosleep(&D135ms, NULL);
-	    break;
-	case M_100HZ:
-            // At 100 Hz ODR, new mag data is available every 10 ms
-	    nanosleep(&D10ms, NULL);
-	    break;
-	}
-    }
-
-    log->Log("# Mag X Max: %f, Min: %f \n", mag_max[0], mag_min[0]);
-    log->Log("# Mag Y Max: %f, Min: %f \n", mag_max[1], mag_min[1]);
-    log->Log("# Mag Z Max: %f, Min: %f \n", mag_max[2], mag_min[2]);
-
-    /*
-     * Get hard iron correction
-     * Get 'average' x mag bias in counts
-     */
-    mag_bias[0]  = (mag_max[0] + mag_min[0]) / 2;
-    // Get 'average' y mag bias in counts
-    mag_bias[1]  = (mag_max[1] + mag_min[1]) / 2;
-    // Get 'average' z mag bias in counts
-    mag_bias[2]  = (mag_max[2] + mag_min[2]) / 2;
-
-    // Save mag biases in G for main program
-    bias_dest[0] = (double)mag_bias[0] * kMagRes;// * factoryMagCalibration[0];
-    bias_dest[1] = (double)mag_bias[1] * kMagRes;// * factoryMagCalibration[1];
-    bias_dest[2] = (double)mag_bias[2] * kMagRes;// * factoryMagCalibration[2];
-
-    /*
-     * Get soft iron correction estimate
-     * Get average x axis max chord length in counts
-     */
-    mag_scale[0]  = (mag_max[0] - mag_min[0]) / 2;
-    // Get average y axis max chord length in counts
-    mag_scale[1]  = (mag_max[1] - mag_min[1]) / 2;
-    // Get average z axis max chord length in counts
-    mag_scale[2]  = (mag_max[2] - mag_min[2]) / 2;
-
-    double avg_rad = mag_scale[0] + mag_scale[1] + mag_scale[2];
-    avg_rad /= 3.0;
-
-    scale_dest[0] = avg_rad / ((double)mag_scale[0]);
-    scale_dest[1] = avg_rad / ((double)mag_scale[1]);
-    scale_dest[2] = avg_rad / ((double)mag_scale[2]);
-
-    log->LogTime(" Mag Calibration done!");
-    log->Log("# Bias X: %f, Y: %f, Z: %f\n", 
-	     bias_dest[0], bias_dest[1], bias_dest[2]);
-    log->Log("# scale X: %f, Y: %f, Z: %f\n", 
-	     mag_scale[0], mag_scale[1], mag_scale[2]);
-    SET_DEBUG_STACK;
-}
-
-
 
 /**
  ******************************************************************
@@ -1267,62 +902,62 @@ void ICM20948::calibrateICM20948(float * gyroBias, float * accelBias)
 	
     // reset device
     // Write a one to bit 7 reset bit; toggle reset device
-    WriteReg8( fIMU_address, PWR_MGMT_1, READ_FLAG);
+    fI2C->WriteReg8( fIMU_address, PWR_MGMT_1, READ_FLAG);
     delay(200);
 
     // get stable time source; Auto select clock source to be PLL gyroscope
     // reference if ready else use the internal oscillator, bits 2:0 = 001
-    WriteReg8( fIMU_address, PWR_MGMT_1, 0x01);
+    fI2C->WriteReg8( fIMU_address, PWR_MGMT_1, 0x01);
     delay(200);
 
     // Configure device for bias calculation
     // Disable all interrupts
-    WriteReg8( fIMU_address, INT_ENABLE, 0x00);
+    fI2C->WriteReg8( fIMU_address, INT_ENABLE, 0x00);
     // Disable FIFO
-    WriteReg8( fIMU_address, FIFO_EN_1, 0x00);
-    WriteReg8( fIMU_address, FIFO_EN_2, 0x00);
+    fI2C->WriteReg8( fIMU_address, FIFO_EN_1, 0x00);
+    fI2C->WriteReg8( fIMU_address, FIFO_EN_2, 0x00);
     // Turn on internal clock source
-    WriteReg8( fIMU_address, PWR_MGMT_1, 0x00);
+    fI2C->WriteReg8( fIMU_address, PWR_MGMT_1, 0x00);
     // Disable I2C master
-    //WriteReg8( fIMU_address, I2C_MST_CTRL, 0x00); Already disabled
+    //fI2C->WriteReg8( fIMU_address, I2C_MST_CTRL, 0x00); Already disabled
     // Disable FIFO and I2C master modes
-    WriteReg8( fIMU_address, USER_CTRL, 0x00);
+    fI2C->WriteReg8( fIMU_address, USER_CTRL, 0x00);
     // Reset FIFO and DMP
-    WriteReg8( fIMU_address, USER_CTRL, 0x08);
-    WriteReg8( fIMU_address, FIFO_RST, 0x1F);
+    fI2C->WriteReg8( fIMU_address, USER_CTRL, 0x08);
+    fI2C->WriteReg8( fIMU_address, FIFO_RST, 0x1F);
     delay(10);
-    WriteReg8( fIMU_address, FIFO_RST, 0x00);
+    fI2C->WriteReg8( fIMU_address, FIFO_RST, 0x00);
     delay(15);
 
     // Set FIFO mode to snapshot
-    WriteReg8( fIMU_address, FIFO_MODE, 0x1F);
+    fI2C->WriteReg8( fIMU_address, FIFO_MODE, 0x1F);
     // Switch to user bank 2
-    WriteReg8( fIMU_address, REG_BANK_SEL, 0x20);
+    fI2C->WriteReg8( fIMU_address, REG_BANK_SEL, 0x20);
     // Configure ICM20948 gyro and accelerometer for bias calculation
     // Set low-pass filter to 188 Hz
-    WriteReg8( fIMU_address, GYRO_CONFIG_1, 0x01);
+    fI2C->WriteReg8( fIMU_address, GYRO_CONFIG_1, 0x01);
     // Set sample rate to 1 kHz
-    WriteReg8( fIMU_address, GYRO_SMPLRT_DIV, 0x00);
+    fI2C->WriteReg8( fIMU_address, GYRO_SMPLRT_DIV, 0x00);
     // Set gyro full-scale to 250 degrees per second, maximum sensitivity
-    WriteReg8( fIMU_address, GYRO_CONFIG_1, 0x00);
+    fI2C->WriteReg8( fIMU_address, GYRO_CONFIG_1, 0x00);
     // Set accelerometer full-scale to 2 g, maximum sensitivity
-    WriteReg8( fIMU_address, ACCEL_CONFIG, 0x00);
+    fI2C->WriteReg8( fIMU_address, ACCEL_CONFIG, 0x00);
 
     uint16_t  gyrosensitivity  = 131;   // = 131 LSB/degrees/sec
     uint16_t  accelsensitivity = 16384; // = 16384 LSB/g
 
     // Switch to user bank 0
-    WriteReg8( fIMU_address, REG_BANK_SEL, 0x00);
+    fI2C->WriteReg8( fIMU_address, REG_BANK_SEL, 0x00);
     // Configure FIFO to capture accelerometer and gyro data for bias calculation
-    WriteReg8( fIMU_address, USER_CTRL, 0x40);  // Enable FIFO
+    fI2C->WriteReg8( fIMU_address, USER_CTRL, 0x40);  // Enable FIFO
     // Enable gyro and accelerometer sensors for FIFO  (max size 512 bytes in
     // ICM20948)
-    WriteReg8( fIMU_address, FIFO_EN_2, 0x1E);
+    fI2C->WriteReg8( fIMU_address, FIFO_EN_2, 0x1E);
     delay(40);  // accumulate 40 samples in 40 milliseconds = 480 bytes
 
     // At end of sample accumulation, turn off FIFO sensor read
     // Disable gyro and accelerometer sensors for FIFO
-    WriteReg8( fIMU_address, FIFO_EN_2, 0x00);
+    fI2C->WriteReg8( fIMU_address, FIFO_EN_2, 0x00);
     // Read FIFO sample count
     readBytes(ICM20948_ADDRESS, FIFO_COUNTH, 2, &data[0]);
     fifo_count = ((uint16_t)data[0] << 8) | data[1];
@@ -1382,15 +1017,15 @@ void ICM20948::calibrateICM20948(float * gyroBias, float * accelBias)
     data[5] = (-gyro_bias[2]/4)       & 0xFF;
   
     // Switch to user bank 2
-    WriteReg8( fIMU_address, REG_BANK_SEL, 0x20);
+    fI2C->WriteReg8( fIMU_address, REG_BANK_SEL, 0x20);
 
     // Push gyro biases to hardware registers
-    WriteReg8( fIMU_address, XG_OFFSET_H, data[0]);
-    WriteReg8( fIMU_address, XG_OFFSET_L, data[1]);
-    WriteReg8( fIMU_address, YG_OFFSET_H, data[2]);
-    WriteReg8( fIMU_address, YG_OFFSET_L, data[3]);
-    WriteReg8( fIMU_address, ZG_OFFSET_H, data[4]);
-    WriteReg8( fIMU_address, ZG_OFFSET_L, data[5]);
+    fI2C->WriteReg8( fIMU_address, XG_OFFSET_H, data[0]);
+    fI2C->WriteReg8( fIMU_address, XG_OFFSET_L, data[1]);
+    fI2C->WriteReg8( fIMU_address, YG_OFFSET_H, data[2]);
+    fI2C->WriteReg8( fIMU_address, YG_OFFSET_L, data[3]);
+    fI2C->WriteReg8( fIMU_address, ZG_OFFSET_H, data[4]);
+    fI2C->WriteReg8( fIMU_address, ZG_OFFSET_L, data[5]);
 
     // Output scaled gyro biases for display in the main program
     gyroBias[0] = (float) gyro_bias[0]/(float) gyrosensitivity;
@@ -1406,7 +1041,7 @@ void ICM20948::calibrateICM20948(float * gyroBias, float * accelBias)
     // the accelerometer biases calculated above must be divided by 8.
   
     // Switch to user bank 1
-    WriteReg8( fIMU_address, REG_BANK_SEL, 0x10);
+    fI2C->WriteReg8( fIMU_address, REG_BANK_SEL, 0x10);
     // A place to hold the factory accelerometer trim biases
     int32_t accel_bias_reg[3] = {0, 0, 0};
     // Read factory accelerometer trim values
@@ -1459,352 +1094,19 @@ void ICM20948::calibrateICM20948(float * gyroBias, float * accelBias)
     // Apparently this is not working for the acceleration biases in the ICM-20948
     // Are we handling the temperature correction bit properly?
     // Push accelerometer biases to hardware registers
-    WriteReg8( fIMU_address, XA_OFFSET_H, data[0]);
-    WriteReg8( fIMU_address, XA_OFFSET_L, data[1]);
-    WriteReg8( fIMU_address, YA_OFFSET_H, data[2]);
-    WriteReg8( fIMU_address, YA_OFFSET_L, data[3]);
-    WriteReg8( fIMU_address, ZA_OFFSET_H, data[4]);
-    WriteReg8( fIMU_address, ZA_OFFSET_L, data[5]);
+    fI2C->WriteReg8( fIMU_address, XA_OFFSET_H, data[0]);
+    fI2C->WriteReg8( fIMU_address, XA_OFFSET_L, data[1]);
+    fI2C->WriteReg8( fIMU_address, YA_OFFSET_H, data[2]);
+    fI2C->WriteReg8( fIMU_address, YA_OFFSET_L, data[3]);
+    fI2C->WriteReg8( fIMU_address, ZA_OFFSET_H, data[4]);
+    fI2C->WriteReg8( fIMU_address, ZA_OFFSET_L, data[5]);
 
     // Output scaled accelerometer biases for display in the main program
     accelBias[0] = (float)accel_bias[0]/(float)accelsensitivity;
     accelBias[1] = (float)accel_bias[1]/(float)accelsensitivity;
     accelBias[2] = (float)accel_bias[2]/(float)accelsensitivity;
     // Switch to user bank 0
-    WriteReg8( fIMU_address, REG_BANK_SEL, 0x00);
+    fI2C->WriteReg8( fIMU_address, REG_BANK_SEL, 0x00);
 }
 
 #endif
-/**
- ******************************************************************
- *
- * Function Name : ReadReg8
- *
- * Description :
- *     Read a single byte of data from the specified register. eg. 
- *     8 bit wide register.
- *
- * Inputs : Register to read from 
- *
- * Returns : true on success
- *
- * Error Conditions :
- * 
- * Unit Tested on: 
- *
- * Unit Tested by: CBL
- *
- *
- *******************************************************************
- */
-uint8_t ICM20948::ReadReg8(uint8_t SlaveAddress, uint8_t Register)
-{
-    SET_DEBUG_STACK;
-    CLogger *log = CLogger::GetThis();
-    ClearError(__LINE__);
-    uint8_t rv = 0;
-    struct i2c_smbus_ioctl_data blk;
-    union  i2c_smbus_data       i2cdata;
-
-    blk.read_write = 1;
-    blk.command    = Register;
-    blk.size       = I2C_SMBUS_BYTE_DATA;
-    blk.data       = &i2cdata;
-
-    if (fdI2C>=0)
-    {
-	/*
-	 * Sequence
-	 * 1) Select slave I2C address with write bit 0
-	 * 2) Send internal register address. 
-	 * 3) Select slave I2C address with read bit 1
-	 * 4) Read the data.  no ack
-	 */
-	
-	// We are pointing at the "slave" on the I2C bus. 
-	if (ioctl(fdI2C, I2C_SLAVE, SlaveAddress) < 0)
-	{
-	    SetError(-2, __LINE__);
-	    log->LogTime(" Error selecting ICM20948 for read, address 0x%2X\n",
-			 SlaveAddress);
-	    return false;
-	}
-
-	if(ioctl(fdI2C, I2C_SMBUS, &blk) < 0)
-	{
-	    SetError(-3, __LINE__);
-	    return rv;
-	}
-	rv = (uint8_t) i2cdata.byte;
-    }
-
-    SET_DEBUG_STACK;
-    return rv;
-}
-/**
- ******************************************************************
- *
- * Function Name : ReadBlock
- *
- * Description : Read N byte from the I2C (maximum of 31 bytes possible)
- *     
- *
- * Inputs : 
- *     SlaveAddress - address of the subsystem on the bus.
- *     Register - to read from
- *     size     - number of bytes to read
- *     data     - user provided data array to store data. 
- *
- * Returns : 
- *
- * Error Conditions :
- * 
- * Unit Tested on: 
- *
- * Unit Tested by: CBL
- *
- *
- *******************************************************************
- */
-int ICM20948::ReadBlock(uint8_t SlaveAddress, unsigned char Register, 
-			size_t  size,  void* data)
-{
-    SET_DEBUG_STACK;
-    CLogger *log = CLogger::GetThis();
-    ClearError(__LINE__);
-    struct i2c_smbus_ioctl_data  blk;
-    union i2c_smbus_data         i2cdata;
-
-    // We are pointing at the "slave" on the I2C bus. 
-    if (ioctl(fdI2C, I2C_SLAVE, SlaveAddress) < 0)
-    {
-	SetError(-2, __LINE__);
-	log->LogTime(" Error selecting ICM20948 for read, address 0x%2X\n",
-		     SlaveAddress);
-	return -1;
-    }
-
-    blk.read_write   = 1;
-    blk.command      = Register;
-    blk.size         = I2C_SMBUS_I2C_BLOCK_DATA;
-    blk.data         = &i2cdata;
-    i2cdata.block[0] = size;
-
-    if(ioctl(fdI2C, I2C_SMBUS, &blk) < 0)
-    {
-	SetError(-4, __LINE__);
-	return -1;
-    }
-
-    memcpy( data, &i2cdata.block[1], size);
-    SET_DEBUG_STACK;
-    return   i2cdata.block[0];
-}
-
-/**
- ******************************************************************
- *
- * Function Name : 
- *
- * Description :
- *     
- *
- * Inputs : NONE
- *
- * Returns : true on success
- *
- * Error Conditions :
- * 
- * Unit Tested on: 
- *
- * Unit Tested by: CBL
- *
- *
- *******************************************************************
- */
-
-
-/**
- ******************************************************************
- *
- * Function Name : WriteReg8
- *
- * Description :
- *     SlaveAddress - address of the subsystem on the bus.
- *     Register - to read from
- *     value    - value to write to 8 bit wide register
- *
- * Inputs : NONE
- *
- * Returns : true on success
- *
- * Error Conditions :
- * 
- * Unit Tested on: 
- *
- * Unit Tested by: CBL
- *
- *
- *******************************************************************
- */
-bool ICM20948::WriteReg8(uint8_t SlaveAddress, 
-			 unsigned char Register, unsigned char value)
-{
-    SET_DEBUG_STACK;
-    CLogger *log = CLogger::GetThis();
-    ClearError(__LINE__);
-    struct i2c_smbus_ioctl_data  blk;
-    union i2c_smbus_data         i2cdata;
-
-    // We are pointing at the "slave" on the I2C bus. 
-    if (ioctl(fdI2C, I2C_SLAVE, SlaveAddress) < 0)
-    {
-	SetError(-2, __LINE__);
-	log->LogTime(" Error selecting ICM20948 for read, address 0x%2X\n",
-		     SlaveAddress);
-	return -1;
-    }
-
-
-    i2cdata.byte   = value;
-    blk.read_write = 0;
-    blk.command    = Register;
-    blk.size       = I2C_SMBUS_BYTE_DATA;
-    blk.data       = &i2cdata;
-
-    if(ioctl(fdI2C, I2C_SMBUS, &blk)<0)
-    {
-	log->LogTime(" Unable to write I2C byte data\n");
-	SET_DEBUG_STACK;
-	SetError(-4, __LINE__);
-        return false;
-    }
-    SET_DEBUG_STACK;
-    return true;
-}
-
-
-/**
- ******************************************************************
- *
- * Function Name : ReadWord
- *
- * Description : Read a 16 bit word on the I2C bus. 
- *     SlaveAddress - address of the subsystem on the bus.
- *     Register - to read from
- *     
- *
- * Inputs : NONE
- *
- * Returns : true on success
- *
- * Error Conditions :
- * 
- * Unit Tested on: 
- *
- * Unit Tested by: CBL
- *
- *
- *******************************************************************
- */
-int ICM20948::ReadWord(uint8_t SlaveAddress, unsigned char Register)
-{
-    SET_DEBUG_STACK;
-    CLogger *log = CLogger::GetThis();
-    ClearError(__LINE__);
-    struct i2c_smbus_ioctl_data  blk;
-    union i2c_smbus_data         i2cdata;
-
-    // We are pointing at the "slave" on the I2C bus. 
-    if (ioctl(fdI2C, I2C_SLAVE, SlaveAddress) < 0)
-    {
-	SetError(-2, __LINE__);
-	log->LogTime(" Error selecting ICM20948 for read, address 0x%2X\n",
-		     SlaveAddress);
-	return -1;
-    }
-
-    blk.read_write = 1;
-    blk.command    = Register;
-    blk.size       = I2C_SMBUS_WORD_DATA;
-    blk.data       = &i2cdata;
-
-    if(ioctl( fdI2C, I2C_SMBUS, &blk)<0)
-    {
-	SetError(-5, __LINE__);
-	log->LogTime(" Error ICM20948 for readword\n");
-	return -1;
-    }
-    return  (int) i2cdata.word;
-}
-
-
-/**
- ******************************************************************
- *
- * Function Name : WriteWord
- *
- * Description :
- *     SlaveAddress - address of the subsystem on the bus.
- *     Register - to read from
- *     value    - value to write to 8 bit wide register
- *     
- *
- * Inputs : NONE
- *
- * Returns : true on success
- *
- * Error Conditions :
- * 
- * Unit Tested on: 
- *
- * Unit Tested by: CBL
- *
- *
- *******************************************************************
- */
-////////////////////////////////////   I2CWrapperWriteWord
-//
-//    Write 2 bytes  to the I2C device
-//
-//     inputs,
-//
-//     handle:   IO handle
-//     cmd:  Specify which is the device command (more or less the device function or register)
-//     value:    byte value
-//    Return   number of byte written if <0 error
-//
-//    Check I2CWrapperErrorFlag for error
-//
-bool ICM20948::WriteWord(uint8_t SlaveAddress, uint8_t Register, 
-			 uint16_t value)
-{
-    SET_DEBUG_STACK;
-    CLogger *log = CLogger::GetThis();
-    ClearError(__LINE__);
-    struct i2c_smbus_ioctl_data  blk;
-    union i2c_smbus_data         i2cdata;
-
-    // We are pointing at the "slave" on the I2C bus. 
-    if (ioctl(fdI2C, I2C_SLAVE, SlaveAddress) < 0)
-    {
-	SetError(-2, __LINE__);
-	log->LogTime(" Error selecting ICM20948, WriteWord, address 0x%2X\n",
-		     SlaveAddress);
-	return false;
-    }
-
-    i2cdata.word   = value;
-    blk.read_write = 0;
-    blk.command    = Register;
-    blk.size       = I2C_SMBUS_WORD_DATA;
-    blk.data       = &i2cdata;
-
-    if(ioctl( fdI2C, I2C_SMBUS, &blk)<0)
-    {
-	SetError(-6, __LINE__);
-	log->LogTime(" Error ICM20948 for WriteWord\n");
-	return false;
-    }
-    return true;
-}

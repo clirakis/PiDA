@@ -79,8 +79,6 @@ IMU::IMU(const char* ConfigFile) : CObject()
 
     fRun         = true;
     fICM20948    = NULL;
-    fIMUAddress  = 0x69;  // Defaults. 
-    fMagAddress  = 0x0C;
     fIPC         = NULL;
     fSampleRate  = 1;     // 1 Hz
     fNSamples    = 10;    // 10 samples
@@ -129,14 +127,6 @@ IMU::IMU(const char* ConfigFile) : CObject()
 #else
     fIPC = 0;
 #endif
-
-
-    fICM20948 = new ICM20948(fIMUAddress, fMagAddress);
-    if (fICM20948->CheckError())
-    {
-	Logger->Log("# FAIL ON ICM20948 setup.\n");
-	SetError(-1,__LINE__);
-    }
 
     Logger->Log("# IMU constructed.\n");
 
@@ -306,16 +296,16 @@ void IMU::Update(void)
 	struct timespec ts = fICM20948->ReadTime();
 	double t = (double) ts.tv_sec + (double)ts.tv_nsec*1.0e-9;
 	f5Logger->FillInternalVector( t, 0);
-	f5Logger->FillInternalVector(  fICM20948->AccX(),  1);
-	f5Logger->FillInternalVector(  fICM20948->AccY(),  2);
-	f5Logger->FillInternalVector(  fICM20948->AccZ(),  3);
-	f5Logger->FillInternalVector( fICM20948->GyroX(),  4);
-	f5Logger->FillInternalVector( fICM20948->GyroY(),  5);
-	f5Logger->FillInternalVector( fICM20948->GyroZ(),  6);
-	f5Logger->FillInternalVector(  fICM20948->MagX(),  7);
-	f5Logger->FillInternalVector(  fICM20948->MagY(),  8);
-	f5Logger->FillInternalVector(  fICM20948->MagZ(),  9);
-	f5Logger->FillInternalVector(  fICM20948->Temp(), 10);
+	f5Logger->FillInternalVector(  fICM20948->AccX(),   1);
+	f5Logger->FillInternalVector(  fICM20948->AccY(),   2);
+	f5Logger->FillInternalVector(  fICM20948->AccZ(),   3);
+	f5Logger->FillInternalVector(  fICM20948->GyroX(),  4);
+	f5Logger->FillInternalVector(  fICM20948->GyroY(),  5);
+	f5Logger->FillInternalVector(  fICM20948->GyroZ(),  6);
+	f5Logger->FillInternalVector(  fICM20948->MagX(),   7);
+	f5Logger->FillInternalVector(  fICM20948->MagY(),   8);
+	f5Logger->FillInternalVector(  fICM20948->MagZ(),   9);
+	f5Logger->FillInternalVector(  fICM20948->Temp(),  10);
 	if (pGGA)
 	{
 	    f5Logger->FillInternalVector(pGGA->Latitude()*RadToDeg, 11);
@@ -398,12 +388,39 @@ bool IMU::OpenLogFile(void)
 
     return true;
 }
+
+int32_t IMU::Address(void) 
+{
+    int32_t rv = 0;
+    if (fICM20948)
+    {
+	rv = fICM20948->Address();
+    }
+    return rv;
+}
+
+/**
+ * selftest
+ */
+bool IMU::SelfTest(double *rv) 
+{
+    SET_DEBUG_STACK;
+    bool rc = false;
+    if (fICM20948)
+    {
+	rc = fICM20948->ICM20948SelfTest(rv);
+    }
+    return rc;
+}
+
 /**
  ******************************************************************
  *
  * Function Name : ReadConfiguration
  *
  * Description : Open read the configuration file. 
+ * Based on the information in the configuration, initialize the correct
+ * components. 
  *
  * Inputs : none
  *
@@ -424,7 +441,8 @@ bool IMU::ReadConfiguration(void)
     CLogger *Logger = CLogger::GetThis();
     ClearError(__LINE__);
     Config *pCFG = new Config();
-
+    int32_t MagAddress;
+    int32_t IMUAddress; /*! I2C device address for Acc/Gyro. */
     /*
      * Open the configuragtion file. 
      */
@@ -459,8 +477,8 @@ bool IMU::ReadConfiguration(void)
 	const Setting &MM = root["IMU"];
 	MM.lookupValue("Logging",       fLogging);
 	MM.lookupValue("DebugLevel",    fDebug);
-	MM.lookupValue("IMUAddress",    fIMUAddress);
-	MM.lookupValue("MagAddress",    fMagAddress);
+	MM.lookupValue("IMUAddress",    IMUAddress);
+	MM.lookupValue("MagAddress",    MagAddress);
 	MM.lookupValue("SampleRate",    fSampleRate);
 	MM.lookupValue("NumberSamples", fNSamples);
 	
@@ -478,6 +496,17 @@ bool IMU::ReadConfiguration(void)
 
     delete pCFG;
     pCFG = 0;
+
+    fICM20948 = new ICM20948(IMUAddress, MagAddress);
+    if (fICM20948->CheckError())
+    {
+	Logger->Log("# FAIL ON ICM20948 setup.\n");
+	SetError(-1,__LINE__);
+	delete fICM20948;
+	fICM20948 = NULL;
+	return false;
+    }
+
     SET_DEBUG_STACK;
     return true;
 }
@@ -505,21 +534,32 @@ bool IMU::ReadConfiguration(void)
 bool IMU::WriteConfiguration(void)
 {
     SET_DEBUG_STACK;
-    CLogger *Logger = CLogger::GetThis();
     ClearError(__LINE__);
-    Config *pCFG = new Config();
+    CLogger *Logger = CLogger::GetThis();
+    Config *pCFG    = new Config();
+    Setting &root   = pCFG->getRoot();
+    int32_t IMUAddress;
+    int32_t MagAddress;
 
-    Setting &root = pCFG->getRoot();
-
+    if (fICM20948)
+    {
+	IMUAddress = fICM20948->Address();
+	MagAddress = fICM20948->MagAddress();
+    }
+    else
+    {
+	IMUAddress  = 0x69;  // Defaults. 
+	MagAddress  = 0x0C;
+    }
     // USER TO FILL IN
     // Add some settings to the configuration.
     Setting &MM = root.add("IMU", Setting::TypeGroup);
     MM.add("DebugLevel", Setting::TypeInt)     = (int) fDebug;
-    MM.add("Logging",    Setting::TypeBoolean) = true;
-    MM.add("IMUAddress", Setting::TypeInt)     = (int) fIMUAddress;
-    MM.add("MagAddress", Setting::TypeInt)     = (int) fMagAddress;
+    MM.add("Logging",    Setting::TypeBoolean) = fLogging;
+    MM.add("IMUAddress", Setting::TypeInt)     = (int) IMUAddress;
+    MM.add("MagAddress", Setting::TypeInt)     = (int) MagAddress;
     MM.add("SampleRate", Setting::TypeInt)     = (int) fSampleRate;
-    MM.add("NumberSamples", Setting::TypeInt)  = (int)fNSamples;
+    MM.add("NumberSamples", Setting::TypeInt)  = (int) fNSamples;
 
     // Write out the new configuration.
     try

@@ -211,7 +211,7 @@ int main(int argc, char **argv)
 	    if (magCal)
 	    {
 		double bias[3], scale[3];
-		pModule->MagCal(bias, scale);
+		//pModule->MagCal(bias, scale); FIXME
 	    }
 	    else
 	    {

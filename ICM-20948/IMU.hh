@@ -5,11 +5,12 @@
  *
  * Author/Date : C.B. Lirakis / 22-Feb-22
  *
- * Description : Template for a main class
+ * Description : This is meant as a generic wrapper for any IMU in use. 
  *
  * Restrictions/Limitations : none
  *
  * Change Descriptions :
+ * 30-Mar-24 moved I2C and mag sensor to this level. 
  *
  * Classification : Unclassified
  *
@@ -25,6 +26,8 @@
 #  include "filename.hh"
 #  include "ICM-20948.hh"
 #  include "smIPC.hh"
+
+//class H5Logger;
 
 class IMU : public CObject
 {
@@ -45,8 +48,6 @@ public:
      */
     ~IMU(void);
 
-    /*! Access the This pointer. */
-    static IMU* GetThis(void) {return fIMU;};
 
     /**
      * Main Module DO
@@ -57,15 +58,24 @@ public:
     /**
      * Tell the program to stop. 
      */
-    void Stop(void) {fRun=false;};
+    inline void Stop(void) {fRun=false;};
+
+    /**
+     * IMU address
+     */
+    int32_t Address(void);
 
     /**
      * selftest
      */
-    inline bool SelfTest(double *rv) {return fICM20948->ICM20948SelfTest(rv);};
+    bool SelfTest(double *rv);
 
-    inline void MagCal(double *b, double *s) 
-	{return fICM20948->magCalICM20948(b, s);};
+//     inline void MagCal(double *b, double *s) 
+// 	{return fICM20948->magCalICM20948(b, s);};
+
+    /*! Access the This pointer. */
+    static IMU* GetThis(void) {return fIMU;};
+
 
     /**
      * Control bits - control verbosity of output
@@ -90,8 +100,6 @@ private:
     FileName*    fn;          /*! File nameing utilities. */
     PreciseTime* fTimer;      /*! */
     bool         fChangeFile; /*! Tell the system to change the file name. */
-    uint32_t     fIMUAddress; /*! I2C device address for Acc/Gyro. */
-    uint32_t     fMagAddress;  /*! I2C device address for Acc/Gyro. */
 
     /*!
      * Logging tool, log data to HDF5 file.  
@@ -109,10 +117,10 @@ private:
     char        *fConfigFileName;
 
     /*! Collection of configuration parameters. */
-    bool         fLogging;       /*! Turn logging on. */
-    uint32_t     fSampleRate;    /*! Integer Hz. */
-    int32_t      fNSamples;      /*! Number of Samples to take before quit. */
-    struct timespec fSampleTime;  /*! Time for the above. */
+    bool            fLogging;    /*! Turn logging on. */
+    uint32_t        fSampleRate; /*! Integer Hz. */
+    int32_t         fNSamples;   /*! Number of Samples to take before quit. */
+    struct timespec fSampleTime; /*! Time for the above. */
 
 
     /*! The sensor itself. */

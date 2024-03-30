@@ -5,11 +5,12 @@
  *
  * Author/Date : C.B. Lirakis / 27-Feb-22
  *
- * Description : Oganize all IMU data. 
+ * Description : Oganize all IMU data in a generic way
  *
  * Restrictions/Limitations :
  *
  * Change Descriptions :
+ *     29-Mar-24 Changed fMag to fMagXYZ
  *
  * Classification : Unclassified
  *
@@ -57,9 +58,9 @@ public:
     inline double GyroZ(void) const {return fGyro[2];};
 
     // Magnetic values in uT
-    inline double MagX(void)  const {return fMag[0];};
-    inline double MagY(void)  const {return fMag[1];};
-    inline double MagZ(void)  const {return fMag[2];};
+    inline double MagX(void)  const {return fMagXYZ[0];};
+    inline double MagY(void)  const {return fMagXYZ[1];};
+    inline double MagZ(void)  const {return fMagXYZ[2];};
 
     /* Internal chip temperature in C */
     inline double Temp(void) const {return fTemp;}
@@ -82,10 +83,9 @@ protected:
     /* DATA SEGMENT */
     struct timespec fReadTime;
     double    fAcc[3];    /*! Values from Accelerometer stored when read */
-    double    fMag[3];    /*! Values from Magnetometer stored when read */
+    double    fMagXYZ[3]; /*! Values from Magnetometer stored when read */
     double    fGyro[3];   /*! Values from Gryo stored when read */
     double    fTemp;      /*! Last temperature read. */
-    bool      fMagRead;   /* Set true when read succeeds. */
 
     /*! The static 'this' pointer. */
     static IMUData *fIMUData;

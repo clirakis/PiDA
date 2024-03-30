@@ -57,11 +57,10 @@ IMUData::IMUData(void)
     /*
      * Zero all input vectors
      */
-    memset( fAcc,  0, 3*sizeof(double));
-    memset( fMag,  0, 3*sizeof(double));
-    memset( fGyro, 0, 3*sizeof(double));
+    memset( fAcc,     0, 3*sizeof(double));
+    memset( fMagXYZ,  0, 3*sizeof(double));
+    memset( fGyro,    0, 3*sizeof(double));
     fTemp    = 0.0;
-    fMagRead = false;
 }
 
 /**
@@ -131,17 +130,11 @@ ostream& operator<<(ostream& output, const IMUData &n)
 	   << " Y: " << n.fGyro[1]
 	   << " Z: " << n.fGyro[2] << endl;
 
-    if (n.fMagRead)
-    {
-	output << "         Magnetic"  
-	       << " X: " << n.fMag[0] 
-	       << " Y: " << n.fMag[1]
-	       << " Z: " << n.fMag[2] << endl;
-    }
-    else
-    {
-	output << "Magnetic read timed out.\n" << endl;
-    }
+    output << "         Magnetic"  
+	   << " X: " << n.fMagXYZ[0] 
+	   << " Y: " << n.fMagXYZ[1]
+	   << " Z: " << n.fMagXYZ[2] << endl;
+
     SET_DEBUG_STACK;
     return output;
 }

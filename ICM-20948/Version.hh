@@ -12,6 +12,7 @@
  * Change Descriptions :
  * 27-Feb-22 CBL     Enabled H5Logging and SM IPC, v0.4
  * 03-Mar-22 CBL     put IMUData into a library. 
+ * 30-Mar-24 CBL     0.2 took out magnetometer, and I2C
  *
  * Classification : Unclassified
  *
@@ -23,7 +24,7 @@
 #ifndef __Version_hh_
 #define __Version_hh_
 
-#define XXXX_RELEASE "0.0/01"
+#define XXXX_RELEASE "0.2/01"
 #define XXXX_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))
 #define MAJOR_VERSION 0
 #define MINOR_VERSION 7
