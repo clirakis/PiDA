@@ -206,7 +206,9 @@ int main(int argc, char **argv)
 	    if (selfTest)
 	    {
 		double Results[9];
-		pModule->SelfTest(Results);
+		pModule->IMUSelfTest(Results);
+		int16_t magval[3];
+		pModule->MagSelfTest(magval);
 	    }
 	    if (magCal)
 	    {

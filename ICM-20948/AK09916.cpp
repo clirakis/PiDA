@@ -564,10 +564,9 @@ void AK09916::SoftReset(void)
  *
  *******************************************************************
  */
-bool AK09916::SelfTest(uint16_t *results)
+bool AK09916::SelfTest(int16_t *results)
 {
     SET_DEBUG_STACK;
-    CLogger *pLog   = CLogger::GetThis();
     struct timespec sleeptime    = {0L, 50000000};
     CLogger   *pLog = CLogger::GetThis();
     I2CHelper *pI2C = I2CHelper::GetThis();

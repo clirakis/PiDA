@@ -201,7 +201,7 @@ public:
      * Perform self test see 9.4.4 of manual. 
      * data is a vector 3 deep provided by the user. 
      */
-    bool    SelfTest(uint16_t *data);
+    bool    SelfTest(int16_t *data);
 
     /*!
      * Description: 

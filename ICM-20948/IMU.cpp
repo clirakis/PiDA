@@ -436,8 +436,12 @@ int32_t IMU::Address(void)
 
 /**
  * selftest
+ * ICM20948 self test. 
+ * rv is a vector of size 6 provided by the user. 
+ * {0:2} Acceleration calibrations
+ * {3:5} Gyro calibrations. 
  */
-bool IMU::SelfTest(double *rv) 
+bool IMU::IMUSelfTest(double *rv) 
 {
     SET_DEBUG_STACK;
     bool rc = false;
@@ -447,16 +451,30 @@ bool IMU::SelfTest(double *rv)
     }
     return rc;
 }
+
 /**
- * selftest
+ * Perform Mag sensor Self test
  */
-bool IMU::MagCal(double * bias_dest, double * scale_dest) 
+bool IMU::MagSelfTest(int16_t *dest)
 {
     SET_DEBUG_STACK;
     bool rc = false;
     if (fAK09916)
     {
-	rc = fAK09916->Calibrate(bias_dest, scale_dest);
+	rc = fAK09916->SelfTest(dest);
+    }
+    return rc;
+}
+/**
+ * Perform Mag sensor Calibration
+ */
+bool IMU::MagCal(double *bias, double *scale)
+{
+    SET_DEBUG_STACK;
+    bool rc = false;
+    if (fAK09916)
+    {
+	rc = fAK09916->Calibrate(bias, scale);
     }
     return rc;
 }

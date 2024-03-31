@@ -617,7 +617,7 @@ bool ICM20948::ICM20948SelfTest(double * destination)
 	return false;
     }
 
-    log->Log("# Performing self tests. \n");
+    log->LogTime("Performing ICM20948 self tests.\n");
 
     memset(aAvg,   0, 3*sizeof(double));
     memset(gAvg,   0, 3*sizeof(double));

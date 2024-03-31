@@ -77,9 +77,14 @@ public:
     int32_t Address(void);
 
     /**
-     * selftest for magnetometer
+     * selftest for ICM-20948
      */
-    bool SelfTest(double *rv);
+    bool IMUSelfTest(double *rv);
+
+    /**
+     * MagSelfTest
+     */
+    bool MagSelfTest(int16_t *data);
 
     /**
      * Perform magnetic calibration based on the sample rate. 
