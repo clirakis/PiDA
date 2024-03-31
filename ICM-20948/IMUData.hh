@@ -22,7 +22,8 @@
 #define __IMUDATA_hh_
 #    include <time.h>
 
-class IMUData {
+class IMUData 
+{
 public:
     /// Default Constructor
     IMUData(void);

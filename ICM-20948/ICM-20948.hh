@@ -151,16 +151,9 @@
 #define MOD_CTRL_USR	       	0x54 
 
 /// ICM-20948 documentation here. 
-class ICM20948 : public CObject, public IMUData
+class ICM20948 : public CObject
 {
 public:
-    /*
-     * Always make sure this is still true by searching using
-     * sudo i2cdetect -y 1
-     * You should see a device 69 if this works.
-     */
-    const char *kICMDeviceName = "/dev/i2c-1";
-
     /*!
      * Description:  Constructor for ICM20948, also initializes AK09916
      *               magnetometer chip. 
@@ -176,7 +169,7 @@ public:
      *     If the open and configure of either sensor fails. 
      *
      */
-    ICM20948(uint8_t IMU_address, uint8_t Mag_address);
+    ICM20948(uint8_t IMU_address);
 
 
     /*!
@@ -196,7 +189,7 @@ public:
     ~ICM20948(void);
 
     /* Get data from all sensors. */
-    bool Read(void);
+    //bool Read(void);
 
     /*!
      * Description: 
@@ -265,7 +258,7 @@ public:
      *    I2C read fail. 
      *
      */
-    bool readAccelData(void);
+    bool readAccelData(double *XYZ);
 
 
     /*!
@@ -283,7 +276,7 @@ public:
      *    I2C read fail. 
      *
      */
-    bool readGyroData(void);
+    bool readGyroData(double *XYZ);
 
     /*!
      * Description: 
@@ -307,10 +300,7 @@ public:
     bool ICM20948SelfTest(double *results);
 
     inline int32_t Address(void) const {return fIMU_address;};
-    inline int32_t MagAddress(void) const {return fMag->Address();};
 
-    /*! Enable a more friendly way of printing the contents of the class. */
-    friend std::ostream& operator<<(std::ostream& output, const ICM20948 &n);
 
 protected:
 
@@ -364,13 +354,9 @@ protected:
     uint8_t    fAscale;
     double     fAres;    // resulting resolution for acceleration.
 
-
 private:
     int32_t   fIMUAddress;
     int16_t   itemp;
-    time_t    fGMTOffset; 
-    AK09916   *fMag;      /* Magnetometer data. */
-    I2CHelper *fI2C;      /* I2C comms.         */
 
     /*!
      * Setup the primary registers on the IMU unit.

@@ -41,8 +41,8 @@ static unsigned int VerboseLevel = 0;
 
 /** Pointer to the logger structure. */
 static CLogger   *logger;
-static bool selfTest = false;
-static bool magCal   = false;
+static bool      selfTest = false;
+static bool      magCal   = false;
 
 /**
  ******************************************************************
@@ -70,7 +70,7 @@ static void Help(void)
     cout << "*   -m magnetic calibration                *" << endl;
     cout << "*   -s Self test                           *" << endl;
     cout << "*   -v verbose level                       *" << endl;
-    cout << "*                                   *" << endl;
+    cout << "*                                          *" << endl;
     cout << "********************************************" << endl;
 }
 /**
@@ -211,7 +211,7 @@ int main(int argc, char **argv)
 	    if (magCal)
 	    {
 		double bias[3], scale[3];
-		//pModule->MagCal(bias, scale); FIXME
+		pModule->MagCal(bias, scale); 
 	    }
 	    else
 	    {

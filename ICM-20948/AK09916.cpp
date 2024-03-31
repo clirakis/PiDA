@@ -106,21 +106,20 @@ using namespace std;
  *
  *******************************************************************
  */
-AK09916::AK09916 (uint8_t Address, uint8_t Mode)
+AK09916::AK09916 (uint8_t Address, READOUT_MODE Mode)
 {
     SET_DEBUG_STACK;
     CLogger   *pLog = CLogger::GetThis();
     I2CHelper *pI2C = I2CHelper::GetThis();
 
     fError      = false;
-    fMagMode    = Mode;
-    fMmode      = M_100HZ;   // probably want to put external FIXME
+    fMmode      = Mode;     // Measurement mode, see header for details. 
     fMagAddress = Address; 
 
     if (fMagAddress<0)
     {
 	pLog->Log("# Mag subsystem off.\n");
-	fError = false;;
+	fError = false;
     }
     // Initalize the mag sensor at the specified address.
     // the ioctl points us at the correct address. 
@@ -154,10 +153,8 @@ AK09916::AK09916 (uint8_t Address, uint8_t Mode)
      * CNTL2 0x31 Control (R/W) for magnetometer. 
      * 
      */
-    pI2C->WriteReg8(fMagAddress, AK09916_CNTL2, fMagMode);
-
+    pI2C->WriteReg8(fMagAddress, AK09916_CNTL2, fMmode);
     SET_DEBUG_STACK;
-    fError = false;
 }
 
 /**
@@ -184,34 +181,14 @@ AK09916::~AK09916 (void)
 {
 }
 
-
 /**
  ******************************************************************
  *
- * Function Name : AK09916 function
+ * Function Name : Read
  *
  * Description :
- *
- * Inputs :
- *
- * Returns :
- *
- * Error Conditions :
- * 
- * Unit Tested on: 
- *
- * Unit Tested by: CBL
- *
- *
- *******************************************************************
- */
-/**
- ******************************************************************
- *
- * Function Name : readMagData
- *
- * Description :
- *     read the data from the magnetometer. 
+ *     read the data from the magnetometer, always treat like
+ *     a single read. 16 bit integer only!!
  *
  * Inputs : NONE
  *
@@ -233,132 +210,113 @@ bool AK09916::Read(int16_t *results)
     I2CHelper *pI2C = I2CHelper::GetThis();
     uint8_t   rv;
     uint16_t  itemp;
-    
+    uint8_t   *ptr;
+
+    ptr = (uint8_t *)&itemp;
+
     fError   = false;
-    fMagRead = false; // Read failed. 
 
-    if(fMagAddress>0)
+    /*
+     * must read ST2 at end of data acquisition.
+     *
+     * Wait for magnetometer data ready bit to be set
+     * Read Status register (ST1)
+     * Bit 0 - set is data ready
+     * Bit 1 set means data overrun. 
+     * DRDY bit turns to 1 when data is ready in Single 
+     * measurement mode, Continuous measurement mode 1, 2, 3, 4 or 
+     * Self-test mode. It returns to 0 when any one of ST2 register 
+     * or measurement data register (HXL to TMPS) is read.
+     *
+     */
+    rv = pI2C->ReadReg8(fMagAddress, AK09916_ST1);
+    
+    // Data ready bit set. 
+    if (rv & 0x01)
     {
-	uint8_t *ptr;
-	ptr = (uint8_t *)&itemp;
-
 	/*
-	 * must read ST2 at end of data acquisition.
-	 *
-	 * Wait for magnetometer data ready bit to be set
-	 * Read Status register (ST1)
-	 * Bit 0 - set is data ready
-	 * Bit 1 set means data overrun. 
-	 * DRDY bit turns to -Y´1¡ when data is ready in Single 
-	 * measurement mode, Continuous measurement mode 1, 2, 3, 4 or 
-	 * Self-test mode. It returns to ´0¡ when any one of ST2 register 
-	 * or measurement data register (HXL to TMPS) is read.
+	 * 8 bytes of read. 
+	 * Read the six raw data and ST2 registers sequentially 
+	 * into data array.
 	 */
-	if (fMagMode == 0x01)
-	    rv = pI2C->ReadReg8(fMagAddress, AK09916_ST1);
-	else
-	    rv = 0x01;
 
-	if (rv & 0x01)
+	// Read out sensor data Hi order byte
+	*(ptr+1) = pI2C->ReadReg8(fMagAddress, AK09916_XOUT_H);
+	// Read out sensor data Low order byte
+	*ptr = pI2C->ReadReg8(fMagAddress, AK09916_XOUT_L);
+
+	if(results) results[0] = itemp;
+
+	// Read out sensor data Hi order byte
+	*(ptr+1) = pI2C->ReadReg8(fMagAddress, AK09916_YOUT_H);
+	// Read out sensor data Low order byte
+	*ptr = pI2C->ReadReg8(fMagAddress, AK09916_YOUT_L);
+
+	if(results) results[1] = itemp;
+
+	// Read out sensor data Hi order byte
+	*(ptr+1) = pI2C->ReadReg8(fMagAddress, AK09916_ZOUT_H);
+	// Read out sensor data Low order byte
+	*ptr = pI2C->ReadReg8(fMagAddress, AK09916_ZOUT_L);
+
+	if(results) results[2] = itemp;
+
+	/* 
+	 * Data status  0x18, ST2
+	 * End data read by reading ST2 register
+	 * Section 13.4
+	 * Bits
+	 * 7     ZERO
+	 * 6:4   - Reserved
+	 * 3     0 Normal, 1 Magnetic sensor overflow. 
+	 * 2:0   ZERO
+	 * 
+	 * Overflow is dependend on  mode. 
+	 * Also signifies to magnetometer that the read is complete
+	 * Section 13.4
+	 * ST2 register has a role as data reading end register, also. 
+	 * When any of measurement data register (HXL to TMPS) is read in 
+	 * Continuous measurement mode 1, 2, 3, 4, it means data reading 
+	 * start and taken as data reading until ST2 register is read. 
+	 * Therefore, when any of measurement data is read, be sure to 
+	 * read ST2 register at the end.
+	 */
+	uint8_t st2 = pI2C->ReadReg8(fMagAddress, AK09916_ST2);
+	if (st2 & 0x08)
 	{
-	    // 8 bytes of read. 
-	    // Read the six raw data and ST2 registers sequentially into data array
-
-	    // Read out sensor data Hi order byte
-	    *(ptr+1) = pI2C->ReadReg8(fMagAddress, AK09916_XOUT_H);
-	    // Read out sensor data Low order byte
-	    *ptr = pI2C->ReadReg8(fMagAddress, AK09916_XOUT_L);
-
-	    if(results) results[0] = itemp;
-	    fMag[0] = (double)itemp * kMagRes;
-
-	    // Read out sensor data Hi order byte
-	    *(ptr+1) = pI2C->ReadReg8(fMagAddress, AK09916_YOUT_H);
-	    // Read out sensor data Low order byte
-	    *ptr = pI2C->ReadReg8(fMagAddress, AK09916_YOUT_L);
-
-	    if(results) results[1] = itemp;
-	    fMag[1] = (double)itemp * kMagRes;
-
-	    // Read out sensor data Hi order byte
-	    *(ptr+1) = pI2C->ReadReg8(fMagAddress, AK09916_ZOUT_H);
-	    // Read out sensor data Low order byte
-	    *ptr = pI2C->ReadReg8(fMagAddress, AK09916_ZOUT_L);
-
-	    if(results) results[2] = itemp;
-	    fMag[2] = (double)itemp * kMagRes;
-
-	    /* 
-	     * Data status  0x18, ST2
-	     * End data read by reading ST2 register
-	     * Section 13.4
-	     * Bits
-	     * 7     ZERO
-	     * 6:4   - Reserved
-	     * 3     0 Normal, 1 Magnetic sensor overflow. 
-	     * 2:0   ZERO
-	     * 
-	     * Overflow is dependend on  mode. 
-	     * Also signifies to magnetometer that the read is complete
-	     * Section 13.4
-	     * ST2 register has a role as data reading end register, also. 
-	     * When any of measurement data register (HXL to TMPS) is read in 
-	     * Continuous measurement mode 1, 2, 3, 4, it means data reading 
-	     * start and taken as data reading until ST2 register is read. 
-	     * Therefore, when any of measurement data is read, be sure to 
-	     * read ST2 register at the end.
-	     */
-	    uint8_t st2 = pI2C->ReadReg8(fMagAddress, AK09916_ST2);
-	    if (st2 & 0x08)
-	    {
-		pLog->LogTime("OVERFLOW IN MAGNETOMETER.\n");
-		fError = true;
-	    }
-
-	    //uint8_t int_status = ReadReg8(fMagAddress, INT_STATUS);
-	    fMagRead = true; 
-#if 0
-	    // Something is not quite write with this code. 8
-	    // bytes ends up at 0x19 rawdata[7]
-	    // which is INT_STATUS
-
-	    readBytes(AK09916_ADDRESS, AK09916_XOUT_L, 8, &rawData[0]);
-	    uint8_t c = rawData[7]; // End data read by reading ST2 register
-	    // Check if magnetic sensor overflow set, if not then report data
-	    // Remove once finished
-	
-	    if (!(c & 0x08))
-	    {
-		// Turn the MSB and LSB into a signed 16-bit value
-		destination[0] = ((int16_t)rawData[1] << 8) | rawData[0];
-		// Data stored as little Endian
-		destination[1] = ((int16_t)rawData[3] << 8) | rawData[2];
-		destination[2] = ((int16_t)rawData[5] << 8) | rawData[4];
-	    }
-#endif
+	    pLog->LogTime("OVERFLOW IN MAGNETOMETER.\n");
+	    fError = true;
 	}
+	fMagRead = true; 
     }
-
     SET_DEBUG_STACK;
     return fMagRead;
 }
-void AK09916::Copy(double *array)
+
+bool AK09916::DRead(double *array)
 {
     SET_DEBUG_STACK;
-    if (array)
-	memcpy(array, fMag, 3*sizeof(double));
+    int16_t ivalue[3];
+    bool rv = Read(ivalue);
+    if (rv)
+    {
+	Convert(ivalue, array);
+    }
+    return rv;
 }
 /**
  ******************************************************************
  *
- * Function Name : magCalICM20948
+ * Function Name : Calibrate
  *
  * Description :
  *     Function which accumulates magnetometer data after device 
  *     initialization.
  *     It calculates the bias and scale in the x, y, and z axes.
  *
- * Inputs : NONE
+ * Inputs : 
+ *         bias_dest  - 
+ *         scale_dest - 
  *
  * Returns : true on success
  *
@@ -371,14 +329,11 @@ void AK09916::Copy(double *array)
  *
  *******************************************************************
  */
-void AK09916::Calibrate(double * bias_dest, double * scale_dest)
+bool AK09916::Calibrate(double * bias_dest, double * scale_dest)
 {
     SET_DEBUG_STACK;
-
-    const struct timespec D135ms = {0L, 135000000L}; // 135ms
-    const struct timespec D10ms  = {0L,  10000000L}; //  10ms
-
-    CLogger *log = CLogger::GetThis();
+    CLogger *pLog = CLogger::GetThis();
+    struct timespec sleeptime    = {0L, 0L}; 
 
     uint16_t ii = 0, sample_count = 0;
     int32_t mag_bias[3]  = {0, 0, 0};
@@ -395,17 +350,36 @@ void AK09916::Calibrate(double * bias_dest, double * scale_dest)
 	 << endl;
     sleep(4);
 
-    // shoot for ~fifteen seconds of mag data
-    // at 8 Hz ODR, new mag data is available every 125 ms
+    /*
+     * Original code
+     * shoot for ~fifteen seconds of mag data
+     * at 8 Hz ODR, new mag data is available every 125 ms
+     * 
+     * Data sheet says otherwise.
+     */
     switch(fMmode)
     {
-    case M_8HZ:
-	sample_count = 128;
+    case kM_10HZ:
+	// every 100ms
+	sample_count = 150;
+	sleeptime.tv_nsec = 110000000;
 	break;
-    case M_100HZ: // at 100 Hz ODR, new mag data is available every 10 ms
+    case kM_20HZ:
+	// every 50ms
+	sleeptime.tv_nsec =  60000000;
+	sample_count = 300;
+	break;
+    case kM_50HZ:
+	// every 20ms
+	sleeptime.tv_nsec =  25000000;
+	sample_count = 750;
+	break;
+    case kM_100HZ: // at 100 Hz ODR, new mag data is available every 10 ms
+	sleeptime.tv_nsec =  15000000;
 	sample_count = 1500;
 	break;
     }
+    pLog->Log("# Calibration starts, NSamples: %d\n", sample_count);
 
     /*
      * Loop and obtain data for 15 seconds. 
@@ -431,21 +405,13 @@ void AK09916::Calibrate(double * bias_dest, double * scale_dest)
 	    }
 	}
 
-	switch(fMmode) 
-	{
-	case M_8HZ:
-	    nanosleep(&D135ms, NULL);
-	    break;
-	case M_100HZ:
-            // At 100 Hz ODR, new mag data is available every 10 ms
-	    nanosleep(&D10ms, NULL);
-	    break;
-	}
+	nanosleep(&sleeptime, NULL);
     }
+    cout << "SAMPLING COMPLTE" << endl;
 
-    log->Log("# Mag X Max: %f, Min: %f \n", mag_max[0], mag_min[0]);
-    log->Log("# Mag Y Max: %f, Min: %f \n", mag_max[1], mag_min[1]);
-    log->Log("# Mag Z Max: %f, Min: %f \n", mag_max[2], mag_min[2]);
+    pLog->Log("# Mag X Max: %f, Min: %f \n", mag_max[0], mag_min[0]);
+    pLog->Log("# Mag Y Max: %f, Min: %f \n", mag_max[1], mag_min[1]);
+    pLog->Log("# Mag Z Max: %f, Min: %f \n", mag_max[2], mag_min[2]);
 
     /*
      * Get hard iron correction
@@ -461,6 +427,7 @@ void AK09916::Calibrate(double * bias_dest, double * scale_dest)
     bias_dest[0] = (double)mag_bias[0] * kMagRes;// * factoryMagCalibration[0];
     bias_dest[1] = (double)mag_bias[1] * kMagRes;// * factoryMagCalibration[1];
     bias_dest[2] = (double)mag_bias[2] * kMagRes;// * factoryMagCalibration[2];
+
 
     /*
      * Get soft iron correction estimate
@@ -479,11 +446,214 @@ void AK09916::Calibrate(double * bias_dest, double * scale_dest)
     scale_dest[1] = avg_rad / ((double)mag_scale[1]);
     scale_dest[2] = avg_rad / ((double)mag_scale[2]);
 
-    log->LogTime(" Mag Calibration done!");
-    log->Log("# Bias X: %f, Y: %f, Z: %f\n", 
+    pLog->LogTime(" Mag Calibration done!\n");
+    pLog->Log("# Bias X: %f, Y: %f, Z: %f\n", 
 	     bias_dest[0], bias_dest[1], bias_dest[2]);
-    log->Log("# scale X: %f, Y: %f, Z: %f\n", 
+    pLog->Log("# scale X: %f, Y: %f, Z: %f\n", 
 	     mag_scale[0], mag_scale[1], mag_scale[2]);
     SET_DEBUG_STACK;
+    return true;
+}
+/**
+ ******************************************************************
+ *
+ * Function Name : Convert
+ *
+ * Description : Convert from integer counts to uT values
+ *
+ * Inputs : NONE
+ *
+ * Returns : NONE
+ *
+ * Error Conditions : NONE
+ * 
+ * Unit Tested on: 
+ *
+ * Unit Tested by: CBL
+ *
+ *
+ *******************************************************************
+ */
+void AK09916::Convert(int16_t *intArray, double *result)
+{
+    SET_DEBUG_STACK;
+    fMag[0] = (double)intArray[0] * kMagRes;   // store real data
+    fMag[1] = (double)intArray[1] * kMagRes;   // store real data
+    fMag[2] = (double)intArray[2] * kMagRes;   // store real data
+
+    if (result)
+    {
+	memcpy(result, fMag, 3 * sizeof(double));
+    }
 }
 
+/**
+ ******************************************************************
+ *
+ * Function Name : Device ID
+ *
+ * Description : Query Register 0x01, Should return 0x09
+ *               Read only register
+ *
+ * Inputs : NONE
+ *
+ * Returns : Should return 0x09
+ *
+ * Error Conditions : NONE
+ * 
+ * Unit Tested on: 
+ *
+ * Unit Tested by: CBL
+ *
+ *
+ *******************************************************************
+ */
+uint8_t AK09916::DeviceID(void)
+{
+    SET_DEBUG_STACK;
+    I2CHelper *pI2C = I2CHelper::GetThis();
+    uint8_t   rv    = 0;
+    rv = pI2C->ReadReg8(fMagAddress, WHO_AM_I_AK09916);
+
+    return rv;
+}
+/**
+ ******************************************************************
+ *
+ * Function Name : SoftReset
+ *
+ * Description : Issue a soft reset to the device. 
+ *
+ * Inputs :
+ *
+ * Returns :
+ *
+ * Error Conditions :
+ * 
+ * Unit Tested on: 
+ *
+ * Unit Tested by: CBL
+ *
+ *
+ *******************************************************************
+ */
+void AK09916::SoftReset(void)
+{
+    SET_DEBUG_STACK;
+    I2CHelper *pI2C = I2CHelper::GetThis();
+    pI2C->WriteReg8(fMagAddress, AK09916_CNTL3, 0x01);
+}
+
+/**
+ ******************************************************************
+ *
+ * Function Name : SelfTest
+ *
+ * Description : review section 9.4.4 of manual
+ *
+ * Inputs :
+ *
+ * Returns :
+ *
+ * Error Conditions :
+ * 
+ * Unit Tested on: 
+ *
+ * Unit Tested by: CBL
+ *
+ *
+ *******************************************************************
+ */
+bool AK09916::SelfTest(uint16_t *results)
+{
+    SET_DEBUG_STACK;
+    struct timespec sleeptime    = {0L, 10000000};
+    CLogger   *pLog = CLogger::GetThis();
+    I2CHelper *pI2C = I2CHelper::GetThis();
+    bool      rv    = false;
+    uint8_t   rc    = 0; 
+    uint8_t   count = 0;
+    uint8_t    *ptr;
+    int16_t   itemp;
+
+    ptr = (uint8_t *)&itemp;
+
+
+    pI2C->WriteReg8(fMagAddress, AK09916_CNTL2, kSELF_TEST);
+
+
+    /*
+     * This is equivalent to a single shot measurement. 
+     * when complete, check DRDY bit. 
+     */
+    while (((rc&0x01) == 0) && (count<128))
+    {
+	// sleep a short time
+	nanosleep(&sleeptime, NULL);	
+	rc = pI2C->ReadReg8(fMagAddress, AK09916_ST1);
+	count++; // don't get stuck here
+    }
+    if (count<128)
+    {
+	// Read out sensor data Hi order byte
+	*(ptr+1) = pI2C->ReadReg8(fMagAddress, AK09916_XOUT_H);
+	// Read out sensor data Low order byte
+	*ptr = pI2C->ReadReg8(fMagAddress, AK09916_XOUT_L);
+	if ((itemp>-200) && (itemp<200))
+	{
+	    pLog->LogTime("Mag selftest X passed %d\n", itemp);
+	    rv = false;
+	}
+	else
+	{
+	    pLog->LogTime("Mag selftest X failed %d\n", itemp);	
+	    rv = false;
+	}
+
+	if(results) results[0] = itemp;
+	fMag[0] = (double)itemp * kMagRes;   // store real data
+
+	// Read out sensor data Hi order byte
+	*(ptr+1) = pI2C->ReadReg8(fMagAddress, AK09916_YOUT_H);
+	// Read out sensor data Low order byte
+	*ptr = pI2C->ReadReg8(fMagAddress, AK09916_YOUT_L);
+
+	if ((itemp>-200) && (itemp<200))
+	{
+	    pLog->LogTime("Mag selftest Y passed %d\n", itemp);
+	    rv = rv && true;
+	}
+	else
+	{
+	    pLog->LogTime("Mag selftest Y failed %d\n", itemp);	   
+	    rv = false;
+	}
+
+	if(results) results[1] = itemp;
+	fMag[1] = (double)itemp * kMagRes;
+
+	// Read out sensor data Hi order byte
+	*(ptr+1) = pI2C->ReadReg8(fMagAddress, AK09916_ZOUT_H);
+	// Read out sensor data Low order byte
+	*ptr = pI2C->ReadReg8(fMagAddress, AK09916_ZOUT_L);
+
+	if ((itemp>-1000) && (itemp<1000))
+	{
+	    pLog->LogTime("Mag selftest Z passed %d\n", itemp);
+	    rv = rv && true;
+	}
+	else
+	{
+	    pLog->LogTime("Mag selftest Z failed %d\n", itemp);	
+	    rv = false;
+	}
+
+	if(results) results[2] = itemp;
+	fMag[2] = (double)itemp * kMagRes;
+    }
+
+    /* Before finishing, return to normal mode. */
+    pI2C->WriteReg8(fMagAddress, AK09916_CNTL2, fMmode);
+
+    return rv;
+}

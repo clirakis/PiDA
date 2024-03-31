@@ -43,6 +43,11 @@ using namespace libconfig;
 #include "CLogger.hh"
 #include "tools.h"
 #include "debug.h"
+#include "H5Logger.hh"
+#include "ICM-20948.hh"
+#include "filename.hh"
+#include "smIPC.hh"
+#include "I2CHelper.hh"
 
 #define SM_IPC 1
 
@@ -68,7 +73,7 @@ IMU* IMU::fIMU;
  *
  *******************************************************************
  */
-IMU::IMU(const char* ConfigFile) : CObject()
+IMU::IMU(const char* ConfigFile) : CObject(), IMUData()
 {
     CLogger *Logger = CLogger::GetThis();
 
@@ -79,9 +84,17 @@ IMU::IMU(const char* ConfigFile) : CObject()
 
     fRun         = true;
     fICM20948    = NULL;
+    fAK09916     = NULL;
     fIPC         = NULL;
     fSampleRate  = 1;     // 1 Hz
     fNSamples    = 10;    // 10 samples
+
+
+    time_t     t = time(NULL);
+    struct tm lt = {0};
+    localtime_r(&t, &lt);
+    fGMTOffset = lt.tm_gmtoff;
+    //cout << "GMT OFFSET: " << fGMTOffset << endl;
 
     /* 
      * Set defaults for configuration file. 
@@ -172,6 +185,11 @@ IMU::~IMU(void)
     }
     free(fConfigFileName);
 
+    delete fI2C;
+    delete fAK09916;
+    delete fICM20948;
+
+
     /* Clean up */
     delete f5Logger;
     f5Logger = NULL;
@@ -239,12 +257,28 @@ void IMU::Do(void)
 	    }
 	}
 
+
 	/* Read everything. */
-	fICM20948->Read();
-	if (fDebug>0)
-	    cout << *fICM20948;
+
+	clock_gettime(CLOCK_REALTIME, &fReadTime);
+	fReadTime.tv_sec -= fGMTOffset;
+
+	// Assume if we got this far, fICM20948 pointer is valid
+	fTemp = fICM20948->readTempData();
+	fICM20948->readAccelData(fAcc);
+	fICM20948->readGyroData(fGyro);
+
+	if (fAK09916)
+	{
+	    fAK09916->DRead(fMagXYZ);
+	}
+
 	if (fn) 
 	    Update();
+
+	if (fDebug>0)
+	    cout << *this;
+
 	nanosleep(&fSampleTime, NULL);
 	if (fNSamples>0)
 	{
@@ -293,19 +327,20 @@ void IMU::Update(void)
     // Any user code or logging belongs here. 
     if (f5Logger!=NULL)
     {
-	struct timespec ts = fICM20948->ReadTime();
-	double t = (double) ts.tv_sec + (double)ts.tv_nsec*1.0e-9;
-	f5Logger->FillInternalVector( t, 0);
-	f5Logger->FillInternalVector(  fICM20948->AccX(),   1);
-	f5Logger->FillInternalVector(  fICM20948->AccY(),   2);
-	f5Logger->FillInternalVector(  fICM20948->AccZ(),   3);
-	f5Logger->FillInternalVector(  fICM20948->GyroX(),  4);
-	f5Logger->FillInternalVector(  fICM20948->GyroY(),  5);
-	f5Logger->FillInternalVector(  fICM20948->GyroZ(),  6);
-	f5Logger->FillInternalVector(  fICM20948->MagX(),   7);
-	f5Logger->FillInternalVector(  fICM20948->MagY(),   8);
-	f5Logger->FillInternalVector(  fICM20948->MagZ(),   9);
-	f5Logger->FillInternalVector(  fICM20948->Temp(),  10);
+
+	double t = (double) fSampleTime.tv_sec + 
+	    (double)fSampleTime.tv_nsec*1.0e-9;
+	f5Logger->FillInternalVector( t,             0);
+	f5Logger->FillInternalVector(  fAcc[0],      1);
+	f5Logger->FillInternalVector(  fAcc[1],      2);
+	f5Logger->FillInternalVector(  fAcc[2],      3);
+	f5Logger->FillInternalVector(  fGyro[0],     4);
+	f5Logger->FillInternalVector(  fGyro[1],     5);
+	f5Logger->FillInternalVector(  fGyro[3],     6);
+	f5Logger->FillInternalVector(  fMagXYZ[0],   7);
+	f5Logger->FillInternalVector(  fMagXYZ[1],   8);
+	f5Logger->FillInternalVector(  fMagXYZ[2],   9);
+	f5Logger->FillInternalVector(  fTemp,       10);
 	if (pGGA)
 	{
 	    f5Logger->FillInternalVector(pGGA->Latitude()*RadToDeg, 11);
@@ -412,6 +447,19 @@ bool IMU::SelfTest(double *rv)
     }
     return rc;
 }
+/**
+ * selftest
+ */
+bool IMU::MagCal(double * bias_dest, double * scale_dest) 
+{
+    SET_DEBUG_STACK;
+    bool rc = false;
+    if (fAK09916)
+    {
+	rc = fAK09916->Calibrate(bias_dest, scale_dest);
+    }
+    return rc;
+}
 
 /**
  ******************************************************************
@@ -497,7 +545,18 @@ bool IMU::ReadConfiguration(void)
     delete pCFG;
     pCFG = 0;
 
-    fICM20948 = new ICM20948(IMUAddress, MagAddress);
+    // Configuration read, setup devices. 
+    // Initialize I2C subsystem. 
+    fI2C = new I2CHelper(kICMDeviceName);
+    if (fI2C->Error())
+    {
+	Logger->Log("# FAIL ON to open I2C %s.\n", kICMDeviceName);
+	delete fI2C;
+	fI2C = NULL;
+	return false;
+    }
+
+    fICM20948 = new ICM20948(IMUAddress);
     if (fICM20948->CheckError())
     {
 	Logger->Log("# FAIL ON ICM20948 setup.\n");
@@ -506,6 +565,23 @@ bool IMU::ReadConfiguration(void)
 	fICM20948 = NULL;
 	return false;
     }
+
+    /*
+     * Second argument is the mode to acquire data. 
+     */
+    fAK09916 = new AK09916(MagAddress, AK09916::kM_10HZ);
+    if(fAK09916->Error())
+    {
+	Logger->Log("# FAIL ON AK09916 setup.\n");
+	delete fICM20948;
+	fICM20948 = NULL;
+
+	delete fAK09916;
+	fAK09916 = NULL;
+
+	return false;
+    }
+    Logger->Log("# Mag sensor mode: %X\n", AK09916::kM_10HZ);
 
     SET_DEBUG_STACK;
     return true;
@@ -544,7 +620,7 @@ bool IMU::WriteConfiguration(void)
     if (fICM20948)
     {
 	IMUAddress = fICM20948->Address();
-	MagAddress = fICM20948->MagAddress();
+	MagAddress = fAK09916->Address();
     }
     else
     {
@@ -580,4 +656,34 @@ bool IMU::WriteConfiguration(void)
 
     SET_DEBUG_STACK;
     return true;
+}
+/**
+ ******************************************************************
+ *
+ * Function Name :  <<
+ *
+ * Description : operator to print out values from last read
+ *      switches output based on what sensors are operating. 
+ *
+ * Inputs : 
+ *     output - ostream to place data into
+ *     n - ICM20948 class. 
+ *
+ * Returns : populated ostream
+ *
+ * Error Conditions :
+ * 
+ * Unit Tested on: 
+ *
+ * Unit Tested by: CBL
+ *
+ *
+ *******************************************************************
+ */
+ostream& operator<<(ostream& output, const IMU &n)
+{
+    SET_DEBUG_STACK;
+    //output << (CObject)n << (IMUData)n;
+    output << (IMUData)n;
+    return output;
 }

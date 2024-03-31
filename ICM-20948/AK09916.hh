@@ -90,12 +90,31 @@
 // Power down (0000), single-measurement (0001), self-test (1000) 
 // and Fuse ROM (1111) modes on bits 3:0
 #define AK09916_CNTL2           0x31  // Normal (0), Reset (1)
-
+#define AK09916_CNTL3           0x32  // soft reset write 1.
 
 class AK09916 {
 public:
+
+    /*! 
+     * When in single measurement mode, changes to power down mode on 
+     *    completion and DRDY is set to 1 
+     *
+     * modes 2,4,6 and 8 stop when power down is set. DRDY bit is set each 
+     *    time data is ready. 
+     */
+    enum READOUT_MODE {
+	kPOWER_DOWN  = 0x00,
+	kSINGLE_MEAS = 0x01,   // Single measurement
+	kM_10HZ      = 0x02,
+	kM_20HZ      = 0x04,
+	kM_50HZ      = 0x06,
+	kM_100HZ     = 0x08,
+	kSELF_TEST   = 0x10,
+    };
+
+
     /// Default Constructor
-    AK09916(uint8_t Address, uint8_t Mode);
+    AK09916(uint8_t Address, READOUT_MODE Mode);
     /// Default destructor
     ~AK09916(void);
     /// AK09916 function
@@ -119,8 +138,9 @@ public:
      * 16 bits bipolar.
      * The code I stole this from had 10.0 multiplier, I don't know why. 
      * Check cal. 
+     * 0.15mG per LSB fixed
      */
-    const double kMagRes = (4912.0/32760.0);
+    const double kMagRes = (4912.0/32767.0);
 
     /*!
      * Description: 
@@ -137,18 +157,15 @@ public:
      */
     inline double getMres(void) {return kMagRes;};
 
-
     /*!
      * Description: 
      *   reads the 3 axis (X,Y,Z) Magnetic in uT directly from 
-     *   the chip register. The data is stored internally and may be 
-     *   accessed via the inline functions below.  
+     *   the chip register. integer read only   
      *
      * Arguments:
      *   results - a user supplied array of dimension 3 for
      *             integer results. Multiply by kMagRes to convert
      *             to uT. 
-     *
      * Returns:
      *   true
      *
@@ -157,9 +174,13 @@ public:
      */
     bool Read(int16_t *results);
 
-    void Copy(double *array);
-
-    void Calibrate(double * bias_dest, double * scale_dest);
+    /* Same as above but does conversion. */
+    bool DRead(double *results); 
+    /*
+     * convert integer result to double applying scaling factor
+     * as well. 
+     */
+    void Convert(int16_t *intArray, double *result);
 
     inline bool Error(void) {return fError;};
 
@@ -168,17 +189,19 @@ public:
     inline double MagField(uint8_t i) 
 	{if(i<3) return fMag[i]; else return 0.0;};
 
+    /*
+     * Fleshing out more detail here.
+     * Read the register ID.  
+     */
+    uint8_t DeviceID(void);
 
-    // FIXME, not currently used as part of setup
-    enum Mscale {
-      MFS_14BITS = 0, // 0.6 mG per LSB
-      MFS_16BITS      // 0.15 mG per LSB
-    };
+    void    SoftReset(void);
 
-    enum M_MODE {
-      M_8HZ  = 0x02,  // 8 Hz update
-      M_100HZ = 0x06  // 100 Hz continuous magnetometer
-    };
+    /*
+     * Perform self test see 9.4.4 of manual. 
+     * data is a vector 3 deep provided by the user. 
+     */
+    bool    SelfTest(uint16_t *data);
 
     /*!
      * Description: 
@@ -196,16 +219,24 @@ public:
      *   if I2C channel is not open
      *
      */
-     void magCalICM20948(double * bias_dest, double * scale_dest);
+     bool Calibrate(double * bias_dest, double * scale_dest);
 
 private:
     uint8_t    fMagAddress;
-    uint8_t    fMagMode;   /* Bit field to set magnetic readout mode. */
-    // 2 for 8 Hz, 6 for 100 Hz continuous magnetometer data read
-    uint8_t    fMmode;
+    /*!
+     * Readout mode - set in CNTL2 to one of these values. 
+     * 
+     *      00000 - Power Down mode, stop acquisition
+     *      00001 - Single Measurement Mode, one shot
+     *      00010 - Continious measurement mode 1  10Hz
+     *      00100 - Continious measurement mode 2  20Hz
+     *      00110 - Continious measurement mode 3  50Hz
+     *      01000 - Continious measurement mode 4 100Hz
+     *      10000 - Self test mode, internal mag field is generated!!
+     */
+    uint8_t    fMmode;     // Measurement mode, see above. 
     bool       fError;
     bool       fMagRead;   // Read of magnetic data success. 
-    //uint16_t   fResult;
-    double     fMag[3];    // resulting magnetic field
+    double     fMag[3];    // resulting magnetic field, converted
 };
 #endif

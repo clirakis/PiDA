@@ -21,17 +21,28 @@
  */
 #ifndef __IMU_hh_
 #define __IMU_hh_
+#  include <stdint.h>
 #  include "CObject.hh" // Base class with all kinds of intermediate
-#  include "H5Logger.hh"
-#  include "filename.hh"
-#  include "ICM-20948.hh"
-#  include "smIPC.hh"
+#  include "IMUData.hh"
 
-//class H5Logger;
+class H5Logger;
+class ICM20948;
+class FileName;
+class PreciseTime;
+class IMU_IPC;
+class I2CHelper;
+class AK09916;
 
-class IMU : public CObject
+class IMU : public CObject, public IMUData
 {
 public:
+
+    /*
+     * Always make sure this is still true by searching using
+     * sudo i2cdetect -y 1
+     * You should see a device 69 if this works.
+     */
+    const char *kICMDeviceName = "/dev/i2c-1";
 
     /** 
      * Build on CObject error codes. 
@@ -66,12 +77,21 @@ public:
     int32_t Address(void);
 
     /**
-     * selftest
+     * selftest for magnetometer
      */
     bool SelfTest(double *rv);
 
-//     inline void MagCal(double *b, double *s) 
-// 	{return fICM20948->magCalICM20948(b, s);};
+    /**
+     * Perform magnetic calibration based on the sample rate. 
+     * Take data for ~15 seconds and determine best results. 
+     *
+     * b - 'Hard Iron' correction values. Array of 3. 
+     * s - 
+     */
+    bool MagCal(double *b, double *s); 
+
+    /*! Enable a more friendly way of printing the contents of the class. */
+    friend std::ostream& operator<<(std::ostream& output, const IMU &n);
 
     /*! Access the This pointer. */
     static IMU* GetThis(void) {return fIMU;};
@@ -104,17 +124,17 @@ private:
     /*!
      * Logging tool, log data to HDF5 file.  
      */
-    H5Logger    *f5Logger;
+    H5Logger        *f5Logger;
 
     /*!
      * IPC pointer. FIXME
      */
-    IMU_IPC      *fIPC;
+    IMU_IPC         *fIPC;
 
     /*! 
      * Configuration file name. 
      */
-    char        *fConfigFileName;
+    char            *fConfigFileName;
 
     /*! Collection of configuration parameters. */
     bool            fLogging;    /*! Turn logging on. */
@@ -123,9 +143,14 @@ private:
     struct timespec fSampleTime; /*! Time for the above. */
 
 
-    /*! The sensor itself. */
-    ICM20948    *fICM20948;
+    /*! Pointer to I2C helper subsystem for read/write. */
+    I2CHelper       *fI2C;      /* I2C comms.         */
 
+    /*! The sensor itself. */
+    ICM20948        *fICM20948;
+    AK09916         *fAK09916;      /* Magnetometer data. */
+
+    time_t          fGMTOffset; 
 
     /* Private functions. ==============================  */
 
