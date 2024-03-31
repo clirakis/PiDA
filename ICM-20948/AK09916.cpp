@@ -567,7 +567,8 @@ void AK09916::SoftReset(void)
 bool AK09916::SelfTest(uint16_t *results)
 {
     SET_DEBUG_STACK;
-    struct timespec sleeptime    = {0L, 10000000};
+    CLogger *pLog   = CLogger::GetThis();
+    struct timespec sleeptime    = {0L, 50000000};
     CLogger   *pLog = CLogger::GetThis();
     I2CHelper *pI2C = I2CHelper::GetThis();
     bool      rv    = false;
@@ -579,8 +580,11 @@ bool AK09916::SelfTest(uint16_t *results)
     ptr = (uint8_t *)&itemp;
 
 
+    pLog->LogTime("Performing AK09916 self test.\n");
+
     pI2C->WriteReg8(fMagAddress, AK09916_CNTL2, kSELF_TEST);
 
+    nanosleep(&sleeptime, NULL);	
 
     /*
      * This is equivalent to a single shot measurement. 
@@ -593,6 +597,8 @@ bool AK09916::SelfTest(uint16_t *results)
 	rc = pI2C->ReadReg8(fMagAddress, AK09916_ST1);
 	count++; // don't get stuck here
     }
+    pLog->LogTime("AK09916 self test count: %d\n", count);
+
     if (count<128)
     {
 	// Read out sensor data Hi order byte
@@ -651,6 +657,7 @@ bool AK09916::SelfTest(uint16_t *results)
 	if(results) results[2] = itemp;
 	fMag[2] = (double)itemp * kMagRes;
     }
+    pLog->LogTime("AK09916 self test COMPLETE!\n");
 
     /* Before finishing, return to normal mode. */
     pI2C->WriteReg8(fMagAddress, AK09916_CNTL2, fMmode);
