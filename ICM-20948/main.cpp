@@ -221,10 +221,10 @@ int main(int argc, char **argv)
 			  tmnow);
 		pModule->MagCal(bias, scale); 
 		ofstream cal(filename);
-		cal << "# AK09916 calibration performed on"
+		cal << "# AK09916 calibration performed on: "
 		    << asctime(tmnow)
 		    << "# bias X,Y,Z and Scale X,Y,Z" << endl;
-		cal << bias[0] << "," << bias[1] << "," << bias[2] 
+		cal << bias[0] << "," << bias[1] << "," << bias[2] << ","
 		    << scale[0] << "," << scale[1] << "," << scale[3]
 		    << endl;
 		cal.close();
