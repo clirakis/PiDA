@@ -5,7 +5,7 @@
  *
  * Author/Date : C.B. Lirakis / 29-Mar-24
  *
- * Description : 
+ * Description : All interfaces to magnetic sensor subsystem
  *
  * Restrictions/Limitations :
  *
@@ -113,11 +113,26 @@ public:
     };
 
 
-    /// Default Constructor
+
+    /*!
+     * Description: 
+     *   Constructor for subsystem
+     *
+     * Arguments:
+     *   Address - I2C address of subsystem
+     *   Mode    - what is the sample rate, see above. 
+     *
+     * Returns:
+     *
+     * Errors:
+     *    sets fError if setup fails. 
+     *
+     */
     AK09916(uint8_t Address, READOUT_MODE Mode);
+
     /// Default destructor
     ~AK09916(void);
-    /// AK09916 function
+
     /*!
      * Description: 
      *   
@@ -176,6 +191,25 @@ public:
 
     /* Same as above but does conversion. */
     bool DRead(double *results); 
+
+    /*!
+     * Description: 
+     *   Get an averaged read from the sensor. This depends
+     *   on the Mode - number of samples/second, and the average time
+     *   supplied. 
+     *
+     * Arguments:
+     *   AvgTime - number of seconds to average over. 
+     *   results - return vector of 3 elements
+     *
+     * Returns:
+     *   true on success. 
+     *
+     * Errors:
+     *
+     */
+    bool ARead(double AvgTime, double *results);
+
     /*
      * convert integer result to double applying scaling factor
      * as well. 
@@ -188,6 +222,8 @@ public:
 
     inline double MagField(uint8_t i) 
 	{if(i<3) return fMag[i]; else return 0.0;};
+
+    inline uint8_t Mode(void) const {return fMmode;};
 
     /*
      * Fleshing out more detail here.
@@ -222,6 +258,9 @@ public:
      bool Calibrate(double * bias_dest, double * scale_dest);
 
 private:
+
+    double SampleRate(void); // return sample rate in Hz based on fMmode
+
     uint8_t    fMagAddress;
     /*!
      * Readout mode - set in CNTL2 to one of these values. 

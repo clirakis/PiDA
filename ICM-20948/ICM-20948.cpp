@@ -77,7 +77,6 @@ ICM20948::ICM20948 (uint8_t IMU_address) : CObject()
 
     fIMUAddress = IMU_address;
 
-
     /*
      * Lets use this in setup FIXME. 
      */
@@ -206,7 +205,7 @@ bool ICM20948::InitICM20948(void)
      *
      */
     rv = pI2C->WriteReg8( fIMU_address, GYRO_CONFIG_1, 0x19); 
-    rv = pI2C->WriteReg8( fIMU_address, TEMP_CONFIG, 0x03);
+    rv = pI2C->WriteReg8( fIMU_address, TEMP_CONFIG,   0x03);
 
     /*
      * Set sample rate = gyroscope output rate(1.1kHz)/(1 + GYRO_SMPLRT_DIV)
@@ -416,7 +415,7 @@ double ICM20948::getAres(void)
  *
  * Error Conditions : NONE
  * 
- * Unit Tested on: 
+ * Unit Tested on: 30-Mar-24
  *
  * Unit Tested by: CBL
  *
@@ -434,11 +433,6 @@ double ICM20948::readTempData(void)
     uint8_t  Hi, Lo;
     uint16_t itemp;
 
-    // Read out temperature sensor data Hi order byte
-    //Hi = wiringPiI2CReadReg8(fIMU_address, TEMP_OUT_H);
-    // Read out temperature sensor data Low order byte
-    //Lo = wiringPiI2CReadReg8(fIMU_address, TEMP_OUT_L);
-
     // Turn the MSB and LSB into a 16-bit value
     Hi = pI2C->ReadReg8( fIMU_address, TEMP_OUT_H);
     Lo = pI2C->ReadReg8( fIMU_address,TEMP_OUT_L);
@@ -449,13 +443,6 @@ double ICM20948::readTempData(void)
      * I think RoomTemp_Offset is wrong. 
      */
     Temp = ((double)itemp - RoomTemp_Offset)/Temp_Sensitivity + 21.0;
-#if 0
-    cout << " Hi: " << (int) Hi
-	 << " Lo: " << (int) Lo
-	 << " itemp: " << itemp
-	 << " ftemp: " << fTemp
-	 << endl;
-#endif
 
     SET_DEBUG_STACK;
     return Temp;
@@ -597,19 +584,21 @@ bool ICM20948::readGyroData(double *XYZ)
 bool ICM20948::ICM20948SelfTest(double * destination)
 {
     const struct timespec sleeptime = {0L, 25000000L};
-    const int32_t kNAVG = 200;
-    const uint8_t FS    = 0;         // What is this? 
-    const double scale  = (double)(2620/1<<FS);
+    const struct timespec hangout   = {0L, 1000000L};  // 1ms
+    const int32_t kNAVG = 200;       // Number of averages to perform.
+    const uint8_t FS    = 0;         // Full Scale??
+    const double scale  = (double)(2620/(1<<FS));
     SET_DEBUG_STACK;
     I2CHelper *pI2C = I2CHelper::GetThis();
-    CLogger   *log  = CLogger::GetThis();
+    CLogger   *pLog  = CLogger::GetThis();
 
+    // Working variables
     uint8_t selfTest[6];
-    double  Acc[3], Gyro[3];
-    double  aAvg[3], gAvg[3];
-    double  aSTAvg[3];
+    double  Acc[3], Gyro[3];     // intermediate readout results
+    double  aAvg[3], gAvg[3];    // Initial averages
+    double  aSTAvg[3];           //  Self test mode averages
     double  gSTAvg[3];
-    double  factoryTrim[6];
+    double  factoryTrim[6];      // What is stored internall
 
     if (!destination)
     {
@@ -617,15 +606,17 @@ bool ICM20948::ICM20948SelfTest(double * destination)
 	return false;
     }
 
-    log->LogTime("Performing ICM20948 self tests.\n");
+    pLog->LogTime("Performing ICM20948 self tests.\n");
 
     memset(aAvg,   0, 3*sizeof(double));
     memset(gAvg,   0, 3*sizeof(double));
     memset(aSTAvg, 0, 3*sizeof(double));
     memset(gSTAvg, 0, 3*sizeof(double));
 
-    // Get stable time source
-    // Auto select clock source to be PLL gyroscope reference if ready else
+    /* 
+     * Get stable time source
+     * Auto select clock source to be PLL gyroscope reference if ready else
+     */
     pI2C->WriteReg8( fIMU_address,  PWR_MGMT_1, 0x01);
   
     // Switch to user bank 2
@@ -637,8 +628,10 @@ bool ICM20948::ICM20948SelfTest(double * destination)
     // Set gyro sample rate to 1 kHz, DLPF to 119.5 Hz and FSR to 250 dps
     pI2C->WriteReg8( fIMU_address, GYRO_CONFIG_1, 0x11);
 
-    // Set accelerometer rate to 1 kHz and bandwidth to 111.4 Hz
-    // Set full scale range for the accelerometer to 2 g
+    /*
+     * Set accelerometer rate to 1 kHz and bandwidth to 111.4 Hz
+     * Set full scale range for the accelerometer to 2 g
+     */
     pI2C->WriteReg8( fIMU_address, ACCEL_CONFIG, 0x11);
 
     // Switch to user bank 0
@@ -663,15 +656,23 @@ bool ICM20948::ICM20948SelfTest(double * destination)
 	gAvg[0] += Gyro[0];
 	gAvg[1] += Gyro[1];
 	gAvg[2] += Gyro[2];
+
+	// Might want to sleep here depending on sample rate. 
+	nanosleep(&hangout, NULL);
     }
 
+    pLog->Log(" Current Settings avereged %d times\n", kNAVG);
     // Get average of 200 values and store as average current readings
     for (int ii =0; ii < 3; ii++)
     {
 	aAvg[ii] /= ((double)kNAVG);
 	gAvg[ii] /= ((double)kNAVG);
+	pLog->Log("# %d Acc: %f, Gyro: %f \n", ii, aAvg[ii], gAvg[ii]);
     }
   
+    /* Reconfigure */
+
+
     // Switch to user bank 2
     pI2C->WriteReg8( fIMU_address, REG_BANK_SEL, 0x20);
 
@@ -708,17 +709,23 @@ bool ICM20948::ICM20948SelfTest(double * destination)
 	gSTAvg[0] += Gyro[0];
 	gSTAvg[1] += Gyro[1];
 	gSTAvg[2] += Gyro[2];
+	// Might want to sleep here depending on sample rate. 
+	nanosleep(&hangout, NULL);
     }
 
+    pLog->Log(" Selftest avereged %d times\n", kNAVG);
     // Get average of 200 values and store as average self-test readings
     for (int ii =0; ii < 3; ii++)
     {
 	aSTAvg[ii] /= ((double)kNAVG);
 	gSTAvg[ii] /= ((double)kNAVG);
+	pLog->Log("# %d Acc: %f, Gyro: %f \n", ii, aSTAvg[ii], gSTAvg[ii]);
     }
   
     // Switch to user bank 2
     pI2C->WriteReg8( fIMU_address, REG_BANK_SEL, 0x20);
+
+    /* ****************** DONE ***************************/
 
     // Configure the gyro and accelerometer for normal operation
     pI2C->WriteReg8( fIMU_address, ACCEL_CONFIG_2, 0x00);
@@ -744,6 +751,13 @@ bool ICM20948::ICM20948SelfTest(double * destination)
     // Z-axis gyro self-test results
     selfTest[5] = pI2C->ReadReg8( fIMU_address, SELF_TEST_Z_GYRO);
   
+    pLog->Log("SELF TEST internal values. \n");
+    pLog->Log("    ACC X: %d, Y: %d, Z: %d\n", selfTest[0], selfTest[1],
+	      selfTest[2]);
+    pLog->Log("    GRYO X: %d, Y: %d, Z: %d\n", selfTest[3], selfTest[4],
+	      selfTest[5]);
+    
+
     // Switch to user bank 0
     pI2C->WriteReg8( fIMU_address, REG_BANK_SEL, 0x00);
     // Hang out a bit, wait for the chip to stablize. 
@@ -780,10 +794,10 @@ bool ICM20948::ICM20948SelfTest(double * destination)
 	destination[i+3] = 100.0*((gSTAvg[i]-gAvg[i]))/factoryTrim[i+3] - 100.;
     }
 
-    log->Log("# Self tests complete. \n");
-    log->Log("#    acc: %f %f %f \n", 
+    pLog->Log("# Self tests complete. Scale: %f \n", scale);
+    pLog->Log("#    acc: %f %f %f \n", 
 	     destination[0], destination[1], destination[2]);
-    log->Log("#    gyro: %f %f %f \n", 
+    pLog->Log("#    gyro: %f %f %f \n", 
 	     destination[3], destination[4], destination[5]);
 
     return true;

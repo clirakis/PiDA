@@ -94,12 +94,14 @@ using namespace std;
  * WR - write register. 
  *
  * Inputs :
+ *           Address - address on I2C of device. 
+ *           Mode    - bit packed mode of acquisition. See header file. 
  *
  * Returns :
  *
- * Error Conditions :
+ * Error Conditions : Subsystem off or can't setup system. 
  * 
- * Unit Tested on: 
+ * Unit Tested on: 30-Mar-24
  *
  * Unit Tested by: CBL
  *
@@ -194,9 +196,9 @@ AK09916::~AK09916 (void)
  *
  * Returns : true on success
  *
- * Error Conditions :
+ * Error Conditions : faulty read
  * 
- * Unit Tested on: 
+ * Unit Tested on: 30-Mar-24
  *
  * Unit Tested by: CBL
  *
@@ -303,6 +305,74 @@ bool AK09916::DRead(double *array)
 	Convert(ivalue, array);
     }
     return rv;
+}
+/**
+ ******************************************************************
+ *
+ * Function Name : ARead
+ *
+ * Description :
+ *      Perform multiple reads depending on the sample rate specified
+ *      by fMmode. 
+ *
+ * Inputs : 
+ *    AvgTime - Time in seconds to average over
+ *    results - A 3 vector to return results in. 
+ *
+ * Returns : true on success
+ *
+ * Error Conditions : faulty read
+ * 
+ * Unit Tested on: 
+ *
+ * Unit Tested by: CBL
+ *
+ *
+ *******************************************************************
+ */
+bool AK09916::ARead(double AvgTime, double *results)
+{
+    SET_DEBUG_STACK;
+    struct timespec sleeptime    = {0L, 0L}; 
+    int16_t current[3];
+    int32_t sum[3];
+
+    double sr = SampleRate(); // returns value in Hz. 
+    /* sleep time between samples should be 1/Hz */
+    sleeptime.tv_nsec = (unsigned long) (1.0e9/sr);
+
+    /* Number of samples should be: */
+    uint32_t NSamples = (uint32_t) floor(AvgTime * sr);
+
+    /* Zero input array */
+    memset(sum, 0, 3 * sizeof(uint32_t));
+
+    /* do it. */
+    for (uint32_t i=0;i<NSamples;i++)
+    {
+	// Perform read
+	Read(current);
+	sum[0] += current[0];
+	sum[1] += current[1];
+	sum[2] += current[2];
+	nanosleep(&sleeptime, NULL);
+    }
+    
+    /* Calculate end result. */
+    double mult = kMagRes/((double) NSamples);
+    fMag[0] = (double)sum[0];
+    fMag[1] = (double)sum[1];
+    fMag[2] = (double)sum[2];
+    
+    fMag[0] *= mult;
+    fMag[1] *= mult;
+    fMag[2] *= mult;
+
+    if (results)
+    {
+	memcpy(results, fMag, 3 * sizeof(double));
+    }
+    return true;
 }
 /**
  ******************************************************************
@@ -544,6 +614,50 @@ void AK09916::SoftReset(void)
     I2CHelper *pI2C = I2CHelper::GetThis();
     pI2C->WriteReg8(fMagAddress, AK09916_CNTL3, 0x01);
 }
+/**
+ ******************************************************************
+ *
+ * Function Name : SampleRate
+ *
+ * Description : Return Current sample rate in Hz based on fMmode. 
+ *
+ * Inputs : NONE
+ *
+ * Returns :
+ *
+ * Error Conditions :
+ * 
+ * Unit Tested on: 
+ *
+ * Unit Tested by: CBL
+ *
+ *
+ *******************************************************************
+ */
+double AK09916::SampleRate(void)
+{
+    SET_DEBUG_STACK;
+    double rv = 0.0;
+    switch(fMmode)
+    {
+    case kM_10HZ:
+	// every 100ms
+	rv = 10.0;
+	break;
+    case kM_20HZ:
+	// every 50ms
+	rv = 20.0;
+	break;
+    case kM_50HZ:
+	// every 20ms
+	rv = 50.0;
+	break;
+    case kM_100HZ: // at 100 Hz ODR, new mag data is available every 10 ms
+	rv = 100.0;
+	break;
+    }
+    return rv;
+}
 
 /**
  ******************************************************************
@@ -552,13 +666,14 @@ void AK09916::SoftReset(void)
  *
  * Description : review section 9.4.4 of manual
  *
- * Inputs :
+ * Inputs : Perform a self test. According to the manual an internal field
+ *          is applied for this. 
  *
- * Returns :
+ * Returns : 3D array of X,Y,Z triplet of resulting test. 
  *
- * Error Conditions :
+ * Error Conditions : Out of bounds
  * 
- * Unit Tested on: 
+ * Unit Tested on: 30-Mar-24
  *
  * Unit Tested by: CBL
  *
