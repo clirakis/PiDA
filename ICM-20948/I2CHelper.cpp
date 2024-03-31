@@ -56,7 +56,8 @@ I2CHelper::I2CHelper (const char *DeviceName)
 {
     SET_DEBUG_STACK;
     fError = false;
-    fdI2C = open( DeviceName, O_RDWR);
+    fI2C   = this;
+    fdI2C  = open( DeviceName, O_RDWR);
     fError = (fdI2C<0);
 }
 
