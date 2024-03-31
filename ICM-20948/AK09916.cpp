@@ -449,8 +449,8 @@ bool AK09916::Calibrate(double * bias_dest, double * scale_dest)
     pLog->LogTime(" Mag Calibration done!\n#\n");
     pLog->Log("# Bias X: %f, Y: %f, Z: %f\n", 
 	     bias_dest[0], bias_dest[1], bias_dest[2]);
-    pLog->Log("# scale X: %f, Y: %f, Z: %f\n", 
-	     mag_scale[0], mag_scale[1], mag_scale[2]);
+    pLog->Log("# Scale X: %f, Y: %f, Z: %f\n", 
+	     scale_dest[0], scale_dest[1], scale_dest[2]);
     pLog->Log("#\n");
     SET_DEBUG_STACK;
     return true;
