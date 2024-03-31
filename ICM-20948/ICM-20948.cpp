@@ -650,7 +650,7 @@ bool ICM20948::ICM20948SelfTest(double * destination)
     // Get average current values of gyro and acclerometer
     for (int ii = 0; ii < kNAVG; ii++)
     {
-	log->Log("# BHW::ii = %d\n", ii);
+	//log->Log("# BHW::ii = %d\n", ii);
 
 	// Read The acclerometer data and average it. 
 	readAccelData(Acc);

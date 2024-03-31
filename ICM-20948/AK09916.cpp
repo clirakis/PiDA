@@ -379,7 +379,8 @@ bool AK09916::Calibrate(double * bias_dest, double * scale_dest)
 	sample_count = 1500;
 	break;
     }
-    pLog->Log("# Calibration starts, NSamples: %d\n", sample_count);
+
+    pLog->Log("#\n # Calibration starts, NSamples: %d\n", sample_count);
 
     /*
      * Loop and obtain data for 15 seconds. 
@@ -409,9 +410,9 @@ bool AK09916::Calibrate(double * bias_dest, double * scale_dest)
     }
     cout << "SAMPLING COMPLTE" << endl;
 
-    pLog->Log("# Mag X Max: %f, Min: %f \n", mag_max[0], mag_min[0]);
-    pLog->Log("# Mag Y Max: %f, Min: %f \n", mag_max[1], mag_min[1]);
-    pLog->Log("# Mag Z Max: %f, Min: %f \n", mag_max[2], mag_min[2]);
+    pLog->Log("# Mag X Max: %d, Min: %d \n", mag_max[0], mag_min[0]);
+    pLog->Log("# Mag Y Max: %d, Min: %d \n", mag_max[1], mag_min[1]);
+    pLog->Log("# Mag Z Max: %d, Min: %d \n", mag_max[2], mag_min[2]);
 
     /*
      * Get hard iron correction
@@ -446,11 +447,12 @@ bool AK09916::Calibrate(double * bias_dest, double * scale_dest)
     scale_dest[1] = avg_rad / ((double)mag_scale[1]);
     scale_dest[2] = avg_rad / ((double)mag_scale[2]);
 
-    pLog->LogTime(" Mag Calibration done!\n");
+    pLog->LogTime(" Mag Calibration done!\n #\n");
     pLog->Log("# Bias X: %f, Y: %f, Z: %f\n", 
 	     bias_dest[0], bias_dest[1], bias_dest[2]);
     pLog->Log("# scale X: %f, Y: %f, Z: %f\n", 
 	     mag_scale[0], mag_scale[1], mag_scale[2]);
+    pLog->Log("#\n");
     SET_DEBUG_STACK;
     return true;
 }
@@ -606,12 +608,14 @@ bool AK09916::SelfTest(int16_t *results)
 	*ptr = pI2C->ReadReg8(fMagAddress, AK09916_XOUT_L);
 	if ((itemp>-200) && (itemp<200))
 	{
-	    pLog->LogTime("Mag selftest X passed %d\n", itemp);
+	    pLog->LogTime("Mag selftest X passed: %d out of {-200:200}\n", 
+			  itemp);
 	    rv = false;
 	}
 	else
 	{
-	    pLog->LogTime("Mag selftest X failed %d\n", itemp);	
+	    pLog->LogTime("Mag selftest X failed: %d out of {-200:200}\n", 
+			  itemp);	
 	    rv = false;
 	}
 
@@ -625,12 +629,12 @@ bool AK09916::SelfTest(int16_t *results)
 
 	if ((itemp>-200) && (itemp<200))
 	{
-	    pLog->LogTime("Mag selftest Y passed %d\n", itemp);
+	    pLog->LogTime("Mag selftest Y passed: %d {-200:200}\n", itemp);
 	    rv = rv && true;
 	}
 	else
 	{
-	    pLog->LogTime("Mag selftest Y failed %d\n", itemp);	   
+	    pLog->LogTime("Mag selftest Y failed %d {-200:200}\n", itemp);	   
 	    rv = false;
 	}
 
@@ -644,12 +648,12 @@ bool AK09916::SelfTest(int16_t *results)
 
 	if ((itemp>-1000) && (itemp<1000))
 	{
-	    pLog->LogTime("Mag selftest Z passed %d\n", itemp);
+	    pLog->LogTime("Mag selftest Z passed %d {-1000:1000}\n", itemp);
 	    rv = rv && true;
 	}
 	else
 	{
-	    pLog->LogTime("Mag selftest Z failed %d\n", itemp);	
+	    pLog->LogTime("Mag selftest Z failed %d {-1000:1000}\n", itemp);	
 	    rv = false;
 	}
 
