@@ -429,7 +429,6 @@ bool AK09916::Calibrate(double * bias_dest, double * scale_dest)
     bias_dest[1] = (double)mag_bias[1] * kMagRes;// * factoryMagCalibration[1];
     bias_dest[2] = (double)mag_bias[2] * kMagRes;// * factoryMagCalibration[2];
 
-
     /*
      * Get soft iron correction estimate
      * Get average x axis max chord length in counts
@@ -447,7 +446,7 @@ bool AK09916::Calibrate(double * bias_dest, double * scale_dest)
     scale_dest[1] = avg_rad / ((double)mag_scale[1]);
     scale_dest[2] = avg_rad / ((double)mag_scale[2]);
 
-    pLog->LogTime(" Mag Calibration done!\n #\n");
+    pLog->LogTime(" Mag Calibration done!\n#\n");
     pLog->Log("# Bias X: %f, Y: %f, Z: %f\n", 
 	     bias_dest[0], bias_dest[1], bias_dest[2]);
     pLog->Log("# scale X: %f, Y: %f, Z: %f\n", 

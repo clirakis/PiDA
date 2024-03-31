@@ -213,7 +213,22 @@ int main(int argc, char **argv)
 	    if (magCal)
 	    {
 		double bias[3], scale[3];
+		time_t now;
+		char filename[256];
+		time(&now);
+		struct tm *tmnow = gmtime(&now);
+		strftime( filename, sizeof(filename),"%y%m%d_%H%M%S.cal", 
+			  tmnow);
 		pModule->MagCal(bias, scale); 
+		ofstream cal(filename);
+		cal << "# AK09916 calibration performed on"
+		    << asctime(tmnow)
+		    << "# bias X,Y,Z and Scale X,Y,Z" << endl;
+		cal << bias[0] << "," << bias[1] << "," << bias[2] 
+		    << scale[0] << "," << scale[1] << "," << scale[3]
+		    << endl;
+		cal.close();
+		
 	    }
 	    else
 	    {
