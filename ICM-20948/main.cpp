@@ -209,6 +209,24 @@ int main(int argc, char **argv)
 		pModule->IMUSelfTest(Results);
 		int16_t magval[3];
 		pModule->MagSelfTest(magval);
+		time_t now;
+		char filename[256];
+		time(&now);
+		struct tm *tmnow = gmtime(&now);
+		strftime( filename, sizeof(filename),"%y%m%d_%H%M%S.tst", 
+			  tmnow);
+		ofstream testrv(filename);
+		testrv << "# ICM20948 and AK09916 selftest results performed on: "
+		       << asctime(tmnow)
+		       << "ACC:  " << Results[0] << "," << Results[1] << ","
+		       << Results[2] << endl
+		       << "GYRO: " << Results[3] << "," << Results[4] << ","
+		       << Results[5] << endl
+		       << "MAG:  " << magval[0] << "," << magval[1] << ","
+		       << magval[2] << endl;
+		testrv.close();
+
+
 	    }
 	    if (magCal)
 	    {
@@ -225,10 +243,9 @@ int main(int argc, char **argv)
 		    << asctime(tmnow)
 		    << "# bias X,Y,Z and Scale X,Y,Z" << endl;
 		cal << bias[0] << "," << bias[1] << "," << bias[2] << ","
-		    << scale[0] << "," << scale[1] << "," << scale[3]
+		    << scale[0] << "," << scale[1] << "," << scale[2]
 		    << endl;
 		cal.close();
-		
 	    }
 	    else
 	    {

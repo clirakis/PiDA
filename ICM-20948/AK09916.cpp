@@ -597,7 +597,7 @@ bool AK09916::SelfTest(int16_t *results)
 	rc = pI2C->ReadReg8(fMagAddress, AK09916_ST1);
 	count++; // don't get stuck here
     }
-    pLog->LogTime("AK09916 self test count: %d\n", count);
+    pLog->Log("# AK09916 self test count: %d\n", count);
 
     if (count<128)
     {
@@ -607,13 +607,13 @@ bool AK09916::SelfTest(int16_t *results)
 	*ptr = pI2C->ReadReg8(fMagAddress, AK09916_XOUT_L);
 	if ((itemp>-200) && (itemp<200))
 	{
-	    pLog->LogTime("Mag selftest X passed: %d out of {-200:200}\n", 
+	    pLog->Log("# X passed: %d {-200:200}\n", 
 			  itemp);
 	    rv = false;
 	}
 	else
 	{
-	    pLog->LogTime("Mag selftest X failed: %d out of {-200:200}\n", 
+	    pLog->Log("# X failed: %d {-200:200}\n", 
 			  itemp);	
 	    rv = false;
 	}
@@ -628,12 +628,12 @@ bool AK09916::SelfTest(int16_t *results)
 
 	if ((itemp>-200) && (itemp<200))
 	{
-	    pLog->LogTime("Mag selftest Y passed: %d {-200:200}\n", itemp);
+	    pLog->Log("# Y passed: %d {-200:200}\n", itemp);
 	    rv = rv && true;
 	}
 	else
 	{
-	    pLog->LogTime("Mag selftest Y failed %d {-200:200}\n", itemp);	   
+	    pLog->Log("# Y failed %d {-200:200}\n", itemp);	   
 	    rv = false;
 	}
 
@@ -647,12 +647,12 @@ bool AK09916::SelfTest(int16_t *results)
 
 	if ((itemp>-1000) && (itemp<1000))
 	{
-	    pLog->LogTime("Mag selftest Z passed %d {-1000:1000}\n", itemp);
+	    pLog->Log("# Z passed %d {-1000:1000}\n", itemp);
 	    rv = rv && true;
 	}
 	else
 	{
-	    pLog->LogTime("Mag selftest Z failed %d {-1000:1000}\n", itemp);	
+	    pLog->Log("# Z failed %d {-1000:1000}\n", itemp);	
 	    rv = false;
 	}
 
