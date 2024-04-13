@@ -6,17 +6,17 @@
 #
 # Where to store the data taken.
 export DATAPATH=/home/clirakis/Data
-cd ../GTOP
+cd /home/clirakis/PiDA/GTOP
 ./GTOP &
 #
 # WAIT A MOMENT to allow the GPS shared memory to start. 
 sleep 1
 # start IMU process
-cd ICM-20948
+cd /home/clirakis/PiDA/ICM-20948
 ./IMU &
 cd ~
 . .envFlask/bin/activate
-cd PiDA/Flask
+cd /home/clirakis/PiDA/Flask
 export FLASK_APP='PiDA.py'
 flask run --host=0.0.0.0 --no-debug --reload >& flask.log &
 #flask --app PiDA.py
