@@ -174,7 +174,9 @@ IMU::~IMU(void)
     SET_DEBUG_STACK;
     CLogger *Logger = CLogger::GetThis();
 
-    delete fICM20948;
+    /* Clean up do this first, may fix issues with closing file. */
+    delete f5Logger;
+    f5Logger = NULL;
 
     // Do some other stuff as well. 
     if(!WriteConfiguration())
@@ -188,11 +190,6 @@ IMU::~IMU(void)
     delete fI2C;
     delete fAK09916;
     delete fICM20948;
-
-
-    /* Clean up */
-    delete f5Logger;
-    f5Logger = NULL;
 
     delete fIPC;
 
@@ -509,8 +506,6 @@ bool IMU::ReadConfiguration(void)
     Config *pCFG = new Config();
     int32_t MagAddress;
     int32_t IMUAddress; /*! I2C device address for Acc/Gyro. */
-    int32_t magrate;
-
     /*
      * Open the configuragtion file. 
      */
@@ -549,7 +544,6 @@ bool IMU::ReadConfiguration(void)
 	MM.lookupValue("MagAddress",    MagAddress);
 	MM.lookupValue("SampleRate",    fSampleRate);
 	MM.lookupValue("NumberSamples", fNSamples);
-	MM.lookupValue("MagRate",       magrate);
 	
 	double ival;
 	double Period = 1.0/((double) fSampleRate);
@@ -587,40 +581,10 @@ bool IMU::ReadConfiguration(void)
 	return false;
     }
 
-    /* determine mag sensor acquisition rate can be
-     * 0 - reset
-     * 1 - single shot
-     * 2  10Hz
-     * 4  20Hz
-     * 6  50Hz
-     * 8 100Hz
-     */
-    AK09916::READOUT_MODE Mode;
-    switch (magrate)
-    {
-    case 1:
-	Mode = AK09916::kSINGLE_MEAS;
-	break;
-    case 2:
-	Mode = AK09916::kM_10HZ;
-	break;
-    case 4:
-	Mode = AK09916::kM_20HZ;
-	break;
-    case 6:
-	Mode = AK09916::kM_50HZ;
-	break;
-    case 8:
-	Mode = AK09916::kM_100HZ;
-	break;
-    default:
-	Mode = AK09916::kM_10HZ;
-	break;
-    }
     /*
      * Second argument is the mode to acquire data. 
      */
-    fAK09916 = new AK09916(MagAddress, Mode);
+    fAK09916 = new AK09916(MagAddress, AK09916::kM_10HZ);
     if(fAK09916->Error())
     {
 	Logger->Log("# FAIL ON AK09916 setup.\n");
@@ -632,7 +596,7 @@ bool IMU::ReadConfiguration(void)
 
 	return false;
     }
-    Logger->Log("# Mag sensor mode: %X\n", Mode);
+    Logger->Log("# Mag sensor mode: %X\n", AK09916::kM_10HZ);
 
     SET_DEBUG_STACK;
     return true;
@@ -667,42 +631,17 @@ bool IMU::WriteConfiguration(void)
     Setting &root   = pCFG->getRoot();
     int32_t IMUAddress;
     int32_t MagAddress;
-    int32_t Mode;
 
     if (fICM20948)
     {
 	IMUAddress = fICM20948->Address();
 	MagAddress = fAK09916->Address();
-	switch(fAK09916->Mode())
-	{
-	case AK09916::kSINGLE_MEAS:
-	    Mode = 1;
-	    break;
-	case AK09916::kM_10HZ:
-	    Mode = 2;
-	    break;
-	case AK09916::kM_20HZ:
-	    Mode = 4;
-	    break;
-	case AK09916::kM_50HZ:
-	    Mode = 6;
-	    break;
-	case AK09916::kM_100HZ:
-	    Mode = 8;
-	    break;
-	default:
-	    Mode = 2;
-	break;
-	}
     }
     else
     {
 	IMUAddress  = 0x69;  // Defaults. 
 	MagAddress  = 0x0C;
-	Mode = 2;
     }
-
-
     // USER TO FILL IN
     // Add some settings to the configuration.
     Setting &MM = root.add("IMU", Setting::TypeGroup);
@@ -712,7 +651,7 @@ bool IMU::WriteConfiguration(void)
     MM.add("MagAddress", Setting::TypeInt)     = (int) MagAddress;
     MM.add("SampleRate", Setting::TypeInt)     = (int) fSampleRate;
     MM.add("NumberSamples", Setting::TypeInt)  = (int) fNSamples;
-    MM.add("MagRate",    Setting::TypeInt)     = (int) Mode;
+
     // Write out the new configuration.
     try
     {
