@@ -206,7 +206,7 @@ static bool Initialize(void)
 	    logger->Log("# Dispaly Thread failed.\n");
 	}
     }
-
+    logger->Log("# SIGUSR1: %d, SIGUSR2 %d\n", SIGUSR1, SIGUSR2);
     return true;
 }
 /**

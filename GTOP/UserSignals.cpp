@@ -9,6 +9,7 @@
  * Restrictions/Limitations :
  *
  * Change Descriptions :
+ * 08-Sep-25   CBL changed SIGUSR2 to force log filename change. 
  *
  * Classification : Unclassified
  *
@@ -181,13 +182,25 @@ void Terminate (int sig)
 void UserSignal(int sig)
 {
     CLogger *logger = CLogger::GetThis();
+    logger->Log("# SIGUSR: %d\n", sig);
+
     switch (sig)
     {
     case SIGUSR1:   // 10
-    case SIGUSR2:   // 12
-	logger->Log("# SIGUSR: %d\n", sig);
+	/* 
+	 * man pages have this as possibly 30,10 or 16, depends
+	 * on OS
+	 */
 	/* Command a graceful exit to the program. */
 	GTOP::GetThis()->Stop(); 
+	break;
+    case SIGUSR2:   // 12
+	/*! 
+	 * Man pages have this listed as 31,12, or 17
+	 * Ask the program to change filenames. 
+	 */
+	logger->Log("# user request filename change.\n");
+	GTOP::GetThis()->UpdateFileName();
 	break;
     }
 }
@@ -236,4 +249,5 @@ void SetSignals(void)
     // Setup user signals for further control
     signal (SIGUSR1, UserSignal);
     signal (SIGUSR2, UserSignal);  
+
 }

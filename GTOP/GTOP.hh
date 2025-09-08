@@ -77,6 +77,12 @@ public:
      */
     void Update(void);
 
+    /*! 
+     * Ask the program to change filenames. 
+     */
+    void UpdateFileName(void);
+
+
     /**
      * Control bits - control verbosity of output
      */
@@ -103,7 +109,6 @@ private:
      */
     FileName*    fn;          /*! File nameing utilities. */
     //PreciseTime* fTimer;      /*! */
-    bool         fChangeFile; /*! Tell the system to change the file name. */
 
     /*!
      * Logging tool, log data to HDF5 file.  

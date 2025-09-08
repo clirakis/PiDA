@@ -18,6 +18,7 @@
  * 20-Dec-23    Never changed filenames. 
  * 10-Mar-24    Added in GPS-pc time delta. 
  * 24-Mar-24    Added in TOD 
+ * 08-Sep-25    added in ability to prompt change log file names
  * 
  * Classification : Unclassified
  *
@@ -226,7 +227,49 @@ GTOP::~GTOP(void)
     Logger->LogTime(" GTOP closed.\n");
     SET_DEBUG_STACK;
 }
-
+/**
+ ******************************************************************
+ *
+ * Function Name : UpdateFileName
+ *
+ * Description : Flush and close current log file, update the name, 
+ *               and reopen.
+ *
+ * Inputs : NONE
+ *
+ * Returns : NONE
+ *
+ * Error Conditions : NONE
+ * 
+ * Unit Tested on: 
+ *
+ * Unit Tested by: CBL
+ *
+ *
+ *******************************************************************
+ */
+void GTOP::UpdateFileName(void)
+{
+    SET_DEBUG_STACK;
+    /*
+     * flush and close existing file
+     * get a new unique filename
+     * reset the timer
+     * and go!
+     *
+     * Check to see that logging is enabled. 
+     */
+    if(f5Logger)
+    {
+	// This will close and flush the existing logfile. 
+	delete f5Logger;
+	f5Logger = NULL;
+	// Now reopen
+	OpenLogFile();
+    }
+    SET_DEBUG_STACK;
+}
+ 
 /**
  ******************************************************************
  *
@@ -260,23 +303,7 @@ void GTOP::Do(void)
 	/* Check to see if the logging interval has rolled over. */
 	if (fn->ChangeNames())
 	{
-	    /*
-	     * flush and close existing file
-	     * get a new unique filename
-	     * reset the timer
-	     * and go!
-	     *
-	     * Check to see that logging is enabled. 
-	     */
-	    if(f5Logger)
-	    {
-		// This will close and flush the existing logfile. 
-		delete f5Logger;
-		f5Logger = NULL;
-		// Now reopen
-		OpenLogFile();
-	    }
-
+	    UpdateFileName();
 	}
 	if(fNMEA_GPS->Read())
 	{
@@ -401,7 +428,6 @@ void GTOP::Update(void)
     SET_DEBUG_STACK;
 }
 
-
 /**
  ******************************************************************
  *
@@ -479,8 +505,6 @@ bool GTOP::OpenLogFile(void)
      {
  	fIPC->UpdateFilename(name);
      }
-    
-    fChangeFile = false;
 
     return true;
 }
