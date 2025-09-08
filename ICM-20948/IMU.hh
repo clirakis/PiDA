@@ -11,6 +11,7 @@
  *
  * Change Descriptions :
  * 30-Mar-24 moved I2C and mag sensor to this level. 
+ * 08-Sep-25 CBL put in ability to force a log filename change. 
  *
  * Classification : Unclassified
  *
@@ -94,6 +95,13 @@ public:
      * s - 
      */
     bool MagCal(double *b, double *s); 
+
+    /*! 
+     * Ask the program to change filenames. 
+     */
+    void UpdateFileName(void);
+
+
 
     /*! Enable a more friendly way of printing the contents of the class. */
     friend std::ostream& operator<<(std::ostream& output, const IMU &n);

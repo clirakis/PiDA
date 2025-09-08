@@ -177,11 +177,17 @@ void UserSignal(int sig)
     switch (sig)
     {
     case SIGUSR1:   // 10
-    case SIGUSR2:   // 12
 	logger->Log("# SIGUSR: %d\n", sig);
 	// User code here. 
-	IMU *ptr = IMU::GetThis();
-	ptr->Stop();
+	IMU::GetThis()->Stop();
+	break;
+    case SIGUSR2:   // 12
+	/*! 
+	 * Man pages have this listed as 31,12, or 17
+	 * Ask the program to change filenames. 
+	 */
+	logger->Log("# user request filename change.\n");
+	IMU::GetThis()->UpdateFileName();
 	break;
     }
 }

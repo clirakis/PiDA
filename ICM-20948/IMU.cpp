@@ -201,6 +201,49 @@ IMU::~IMU(void)
 /**
  ******************************************************************
  *
+ * Function Name : UpdateFileName
+ *
+ * Description : Flush and close current log file, update the name, 
+ *               and reopen.
+ *
+ * Inputs : NONE
+ *
+ * Returns : NONE
+ *
+ * Error Conditions : NONE
+ * 
+ * Unit Tested on: 
+ *
+ * Unit Tested by: CBL
+ *
+ *
+ *******************************************************************
+ */
+void IMU::UpdateFileName(void)
+{
+    SET_DEBUG_STACK;
+    /*
+     * flush and close existing file
+     * get a new unique filename
+     * reset the timer
+     * and go!
+     *
+     * Check to see that logging is enabled. 
+     */
+    if(f5Logger)
+    {
+	// This will close and flush the existing logfile. 
+	delete f5Logger;
+	f5Logger = NULL;
+	// Now reopen
+	OpenLogFile();
+    }
+    SET_DEBUG_STACK;
+}
+
+/**
+ ******************************************************************
+ *
  * Function Name : Do
  *
  * Description : The main loop for the program, do the operations. 
@@ -234,23 +277,7 @@ void IMU::Do(void)
 	    /* Check to see if the logging interval has rolled over. */
 	    if (fn->ChangeNames())
 	    {
-		/*
-		 * flush and close existing file
-		 * get a new unique filename
-		 * reset the timer
-		 * and go!
-		 *
-		 * Check to see that logging is enabled. 
-		 */
-		if(f5Logger)
-		{
-		    // This will close and flush the existing logfile. 
-		    delete f5Logger;
-		    f5Logger = NULL;
-		    // Now reopen
-		    OpenLogFile();
-		}
-
+		UpdateFileName();
 	    }
 	}
 
