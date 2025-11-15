@@ -24,5 +24,5 @@
 #ifndef __VERSION_hh_
 #define __VERSION_hh_
 #define MAJOR_VERSION 1
-#define MINOR_VERSION 3
+#define MINOR_VERSION 4
 #endif
