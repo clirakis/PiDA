@@ -41,17 +41,18 @@ int GetSerial_fd(void)
 /**
  ******************************************************************
  *
- * Function Name :
+ * Function Name : SerialOpen
  *
- * Description :
+ * Description : Open the provided serial port
  *
- * Inputs :
+ * Inputs : port - character name of device to open
+ *          BaudRate - the baud rate we want to use. 
  *
- * Returns :
+ * Returns : serial fd
  *
- * Error Conditions :
+ * Error Conditions : oh there are several
  * 
- * Unit Tested on: 
+ * Unit Tested on: 15-Nov-25
  *
  * Unit Tested by: CBL
  *
@@ -175,6 +176,26 @@ int SerialOpen(const char *port, speed_t BaudRate)
     }
     return rc;
 }
+/**
+ ******************************************************************
+ *
+ * Function Name : Close Serial
+ *
+ * Description : close the serial file descriptor
+ *
+ * Inputs : NONE
+ *
+ * Returns : NONE
+ *
+ * Error Conditions : NONE
+ * 
+ * Unit Tested on: 15-Nov-25
+ *
+ * Unit Tested by: CBL
+ *
+ *
+ *******************************************************************
+ */
 void CloseSerial(void)
 {
     close(serial_fd);
