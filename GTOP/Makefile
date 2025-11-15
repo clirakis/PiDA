@@ -12,6 +12,7 @@
 #       23-Feb-22       CBL     v1.3 made library for consumer
 #
 #       20-Dec-23       CBL     Added a counter function
+#       15-Nov-25	CBL     updates to NMEA library
 #
 ######################################################################
 # Machine specific stuff
@@ -21,8 +22,8 @@ TARGET = GTOP
 #
 # Compile time resolution.
 #
-INCLUDE = -I$(DRIVE)/common/utility -I$(DRIVE)/common/iolib \
-	-I/usr/include/hdf5/serial
+INCLUDE = -I$(DRIVE)/common/utility -I$(DRIVE)/common/libNMEA \
+	-I$(DRIVE)/common/iolib -I/usr/include/hdf5/serial
 
 EXT_CFLAGS += -DSM_IPC
 
@@ -32,9 +33,9 @@ LIBS = -lNMEA -lutility -lio  -lrt -lcurses -lhdf5_cpp -lhdf5
 LIBS += -L./ -L$(HDF5LIB) -lconfig++
 
 # Rules to make the object files depend on the sources.
-SRC     = GTOP_utilities.c 
+SRC     = GTOP_utilities.c serial.c
 SRCCPP  = main.cpp GTOP.cpp GTOPdisp.cpp smIPC.cpp EventCounter.cpp \
-	UserSignals.cpp
+	UserSignals.cpp 
 SRCS    = $(SRC) $(SRCCPP)
 
 HEADERS = GTOP.hh GTOPdisp.hh GTOP_utilities.h EventCounter.hh \
@@ -46,7 +47,3 @@ all:      $(TARGET)
 
 include $(DRIVE)/common/makefiles/makefile.inc
 
-
-#dependencies
-include make.depend 
-# DO NOT DELETE

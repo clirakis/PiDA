@@ -42,7 +42,7 @@ public:
      * Constructor the lassen GTOP subsystem.
      * All inputs are in configuration file. 
      */
-    GTOP(const char *ConfigFile);
+    GTOP(const string& ConfigFile);
 
     /**
      * Destructor for GTOP. 
@@ -107,18 +107,17 @@ private:
     /*!
      * Tool to manage the file name. 
      */
-    FileName*    fn;          /*! File nameing utilities. */
-    //PreciseTime* fTimer;      /*! */
+    FileName*     fn;          /*! File nameing utilities. */
 
     /*!
      * Logging tool, log data to HDF5 file.  
      */
-    H5Logger    *f5Logger;
+    H5Logger     *f5Logger;
 
     /*! 
      * Configuration file name. 
      */
-    char   *fConfigFileName;
+    std::string  fConfigFileName;
 
     /*!
      * Event counter 
@@ -129,7 +128,7 @@ private:
     /*!
      * Serial port name. 
      */
-    char*  fSerialPortName;
+    std::string  fSerialPortName;
     double fLatitude;      /*! Starting Latitude  */
     double fLongitude;     /*! Starting Longitude */
     double fAltitude;      /*! Starting Altitude  */
@@ -139,9 +138,16 @@ private:
     bool   fDisplay;       /*! Turn curses display on. */
     bool   fLogging;       /*! Turn logging on. */
     int    fResetType;     /*! 1 - soft reset, 2 Hard reset */
+    char*  fCurrentLine;   /*! Last line read from GPS serial port. */
+    uint32_t fLineIndex; 
 
 
     /* Private functions. =============================================   */
+    /*!
+     * Read - read data from the serial port. 
+     */
+    bool Read(void);
+
     /*!
      * Open the data logger. 
      */

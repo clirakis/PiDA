@@ -275,7 +275,7 @@ void GTOP_Display::main_frame(void)
  *
  *******************************************************************
  */
-void GTOP_Display::Update(NMEA_GPS *pGPS)
+void GTOP_Display::Update(NMEA_GPS *pGPS, const string& Message)
 {
     SET_DEBUG_STACK;
 
@@ -287,7 +287,7 @@ void GTOP_Display::Update(NMEA_GPS *pGPS)
     RMC* pRMC;
 
     if (fDisplayData)
-         WriteMsgToScreen(pGPS->lastNMEA());
+	WriteMsgToScreen(Message.c_str());
 
     switch (fCurrentScreen)
     {
@@ -297,7 +297,7 @@ void GTOP_Display::Update(NMEA_GPS *pGPS)
     case POSITION_SCREEN:
 	switch(pGPS->LastID()) 
 	{
-	case NMEA_GPS::MESSAGE_GGA:
+	case NMEA_GPS::kMESSAGE_GGA:
 	    pGGA = pGPS->pGGA();
 	    t  = pGGA->UTC();
 	    t += pGGA->Milli();
@@ -305,18 +305,18 @@ void GTOP_Display::Update(NMEA_GPS *pGPS)
 			     pGGA->Altitude(), pGGA->Geoid(), t, pGGA->Fix());
 	    NSAT = pGGA->Satellites();
 	    break;
-	case NMEA_GPS::MESSAGE_VTG:
+	case NMEA_GPS::kMESSAGE_VTG:
 	    pVTG = pGPS->pVTG();
 	    display_velocity( pVTG->True(), pVTG->Mag(), pVTG->Knots(), 
 			      pVTG->KPH());
 	    break;
-	case NMEA_GPS::MESSAGE_GSA:
+	case NMEA_GPS::kMESSAGE_GSA:
 	    pGSA = pGPS->pGSA();
 	    display_rp(pGSA->Mode1(), NSAT, 
 		       pGSA->Mode2(), pGSA->IDS(), 
 		       pGSA->PDOP(), pGSA->HDOP(), pGSA->VDOP(), pGSA->TDOP());
 	    break;
-	case NMEA_GPS::MESSAGE_RMC:
+	case NMEA_GPS::kMESSAGE_RMC:
 	    pRMC = pGPS->pRMC();
 	    display_time(pRMC->Seconds(), pRMC->Delta());
 	    break;

@@ -99,7 +99,7 @@ public:
     /**
      * Call this to update the display when the frame is complete. 
      */
-    void Update(NMEA_GPS *);
+    void Update(NMEA_GPS *, const std::string& message);
 
     void WriteMsgToScreen(const char *s);
     int  checkKeys(void);

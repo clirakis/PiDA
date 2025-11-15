@@ -19,6 +19,7 @@
  * 10-Mar-24    Added in GPS-pc time delta. 
  * 24-Mar-24    Added in TOD 
  * 08-Sep-25    added in ability to prompt change log file names
+ * 15-Nov-25    There have been some upgrades in the general NMEA_LIB
  * 
  * Classification : Unclassified
  *
@@ -50,12 +51,13 @@ using namespace libconfig;
 #include "debug.h"
 #include "smIPC.hh"
 #include "EventCounter.hh"
+#include "serial.h"
 
 GTOP* GTOP::fGTOP;
 
 const char *SensorName="GPS";     // Sensor name. 
 const size_t NVar = 17;
-
+const size_t kMAXCHARCOUNT = 128;
 /**
  ******************************************************************
  *
@@ -76,7 +78,7 @@ const size_t NVar = 17;
  *
  *******************************************************************
  */
-GTOP::GTOP(const char* ConfigFile) : CObject()
+GTOP::GTOP(const string& ConfigFile) : CObject()
 {
     CLogger *Logger = CLogger::GetThis();
 
@@ -91,8 +93,7 @@ GTOP::GTOP(const char* ConfigFile) : CObject()
     fIPC       = NULL;
     fn         = NULL;
     f5Logger   = NULL;
-    fConfigFileName = NULL;
-    fSerialPortName = NULL;
+    fConfigFileName = ConfigFile;
 
     /* Set some defaults. */
     fLatitude  = 41.3084;
@@ -103,30 +104,34 @@ GTOP::GTOP(const char* ConfigFile) : CObject()
     fLogging   = true;
     fDisplay   = false;
     fResetType = 0;
+    fCurrentLine = NULL;
+    fLineIndex   = 0;   // Beginning of line
 
     fGeoLatitude  = 41.3084;
     fGeoLongitude = -73.893;
 
-    if(!ConfigFile)
+    if(ConfigFile.length()<=0)
     {
 	SetError(ENO_FILE,__LINE__);
 	return;
     }
 
-    fConfigFileName = strdup(ConfigFile);
+
     if(!ReadConfiguration())
     {
 	SetError(ECONFIG_READ_FAIL,__LINE__);
 	return;
     }
 
-    /* User initialization goes here. ---------------------------- */
-    fNMEA_GPS = new NMEA_GPS( fSerialPortName, B9600);
+    /* 
+     *User initialization goes here. ---------------------------- 
+     * Open serial port and then initialize the NMEA decoding package. 
+     */
 
     /*
      * Factory default reset is 9600 8 None 1 
      */
-    if (fNMEA_GPS->Error())
+    if (SerialOpen( fSerialPortName.c_str(), 9600))
     {
 	Logger->Log("# %s %s\n","# Failed to open serial:", fSerialPortName); 
 	SetError(-1);
@@ -135,6 +140,8 @@ GTOP::GTOP(const char* ConfigFile) : CObject()
     else
     {
         Logger->Log("# %s %s \n", "Opened serial port: ", fSerialPortName);
+	fNMEA_GPS = new NMEA_GPS();
+	fCurrentLine = new char[kMAXCHARCOUNT];
     }
 
     /*
@@ -144,7 +151,7 @@ GTOP::GTOP(const char* ConfigFile) : CObject()
     fIPC = new GPS_IPC();
     if (fIPC->Error() != 0)
     {
-	CLogger::GetThis()->LogError(__FILE__, __LINE__,'W',
+	Logger->LogError(__FILE__, __LINE__,'W',
 				     "Could not initialize IPC.");
 	fIPC = NULL;
 	SetError(-2); 
@@ -153,7 +160,7 @@ GTOP::GTOP(const char* ConfigFile) : CObject()
     fEVCounter = new EventCounter(true);
     if(fEVCounter->Error() != 0)
     {
-	CLogger::GetThis()->LogError(__FILE__, __LINE__,'W',
+	Logger->LogError(__FILE__, __LINE__,'W',
 				     "Could not initialize EventCounter.");
 	fEVCounter = NULL;
 	SetError(-3); 
@@ -161,7 +168,7 @@ GTOP::GTOP(const char* ConfigFile) : CObject()
     }
     else
     {
-	CLogger::GetThis()->LogTime("# Event Counter Started! \n");
+	Logger->LogTime("# Event Counter Started! \n");
     }
 #else
     fIPC       = NULL;
@@ -214,8 +221,7 @@ GTOP::~GTOP(void)
 	Logger->LogError(__FILE__,__LINE__, 'W', 
 			 "Failed to write config file.\n");
     }
-    free(fConfigFileName);
-    free(fSerialPortName);
+    delete fCurrentLine;
 
     /* Clean up IPC */
     delete fIPC;
@@ -269,7 +275,61 @@ void GTOP::UpdateFileName(void)
     }
     SET_DEBUG_STACK;
 }
- 
+/**
+ ******************************************************************
+ *
+ * Function Name : Read
+ *
+ * Description : Read a character at a time.
+ *
+ * Inputs :
+ *
+ * Returns :
+ *
+ * Error Conditions :
+ * 
+ * Unit Tested on: 
+ *
+ * Unit Tested by: CBL
+ *
+ *
+ *******************************************************************
+ */
+bool GTOP::Read(void)
+{
+    SET_DEBUG_STACK;
+    const struct timespec sleeptime = {0L, 100000000L};
+    bool rv = false;
+
+    // Loop over the serial port until we get a full line. 
+    char c = 0;
+    size_t n = read(GetSerial_fd(), &c, 1);
+    if (n == 0)
+    {
+	nanosleep( &sleeptime, NULL);
+	rv = false;
+    }
+    else if (c == '\n') 
+    {
+	// Represents an end of line. Null terminate then decode. 
+	fCurrentLine[fLineIndex] = 0;
+	// go ahead and decode what we have.
+	fNMEA_GPS->parse(fCurrentLine);
+	fLineIndex = 0;         // reset line index. 
+	rv = true;
+    }
+    else
+    {
+	/// buffer overflow situation. 
+	fCurrentLine[fLineIndex++] = c;
+	if ((fLineIndex >= kMAXCHARCOUNT) ||
+	    (fLineIndex = kMAXCHARCOUNT-1))
+	    rv = false;
+    }
+
+    SET_DEBUG_STACK;
+    return rv;
+}
 /**
  ******************************************************************
  *
@@ -305,17 +365,18 @@ void GTOP::Do(void)
 	{
 	    UpdateFileName();
 	}
-	if(fNMEA_GPS->Read())
+	// Read serial data until we have a sentance. 
+	if(Read())
 	{
 	    // This is the last message in the read sequence. 
-	    if(fNMEA_GPS->LastID() == NMEA_GPS::MESSAGE_VTG)
+	    if(fNMEA_GPS->LastID() == NMEA_GPS::kMESSAGE_VTG)
 	    {
 		// VTG message is the last in the series. 
 		Update();
 	    }
 	    if (pDisp != NULL)
 	    {
-		pDisp->Update(fNMEA_GPS);
+		pDisp->Update(fNMEA_GPS, fCurrentLine);
 	    }
 	}
 	//nanosleep( &sleeptime, NULL);
@@ -570,7 +631,7 @@ bool GTOP::ReadConfiguration(void)
 	string Port;
 	int    Debug;
 
-	GPS.lookupValue("Port", Port);
+	GPS.lookupValue("Port", fSerialPortName);
 	GPS.lookupValue("Latitude",  fLatitude);
 	GPS.lookupValue("Longitude", fLongitude);
 	GPS.lookupValue("Altitude",  fAltitude);
@@ -580,7 +641,6 @@ bool GTOP::ReadConfiguration(void)
 	GPS.lookupValue("Logging",   fLogging);
 	GPS.lookupValue("ResetType", fResetType);
 
-	fSerialPortName = strdup(Port.c_str());
 	SetDebug(Debug);
 
 	if (fReset)
@@ -669,13 +729,13 @@ bool GTOP::WriteConfiguration(void)
     {
 	pCFG->writeFile(fConfigFileName);
 	Logger->LogTime(" New configuration successfully written to: %s\n",
-		    fConfigFileName);
+			fConfigFileName.c_str());
 
     }
     catch(const FileIOException &fioex)
     {
 	Logger->Log("# I/O error while writing file: %s \n",
-		    fConfigFileName);
+		    fConfigFileName.c_str());
 	delete pCFG;
 	return(false);
     }
