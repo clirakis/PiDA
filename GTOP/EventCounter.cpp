@@ -60,15 +60,15 @@ EventCounter::EventCounter (bool Server) : SharedMem2("EventCounter",
  *
  * Function Name : EventCounter destructor
  *
- * Description :
+ * Description : NOTHING TO BE DONE HERE
  *
- * Inputs :
+ * Inputs : NONE
  *
- * Returns :
+ * Returns : NONE
  *
- * Error Conditions :
+ * Error Conditions : NONE
  * 
- * Unit Tested on: 
+ * Unit Tested on: 15-Nov-25
  *
  * Unit Tested by: CBL
  *
@@ -77,6 +77,7 @@ EventCounter::EventCounter (bool Server) : SharedMem2("EventCounter",
  */
 EventCounter::~EventCounter(void)
 {
+    SET_DEBUG_STACK;
 }
 
 /**

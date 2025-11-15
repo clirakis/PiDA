@@ -29,7 +29,8 @@
 class EventCounter : public SharedMem2
 {
 public:
-    /// Default Constructor
+    /*! @brief Default Constructor
+     */
     EventCounter(bool Server=false);
     /// Default destructor
     ~EventCounter();
