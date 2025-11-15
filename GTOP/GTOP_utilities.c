@@ -71,14 +71,17 @@ struct timespec DateFromGPSTime(float TimeOfWeek, int ExtendedWeek, float UTC_Of
 
     return rv;
 }
+
 void ClearBit(unsigned char *mybyte,unsigned char mask)
 {
     *mybyte &= ~mask;
 }
+
 void SetBit(unsigned char *mybyte,unsigned char mask)
 {
     *mybyte |= mask;
 }
+
 void ToggleBit(unsigned char *mybyte,unsigned char mask)
 {
     if ((*mybyte&mask) > 0)

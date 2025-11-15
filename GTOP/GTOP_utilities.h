@@ -27,8 +27,14 @@
   extern          "C"
   {
 # endif
+      /*!
+       * kind of returns the date/time spec from the input data. 
+       */
       struct timespec DateFromGPSTime(float TimeOfWeek, int WeekNumber, 
 				      float UTC_Offset);
+      /*!
+       * Bit mask utilties
+       */
       void ClearBit(unsigned char *mybyte,unsigned char mask);
       void SetBit(unsigned char *mybyte,unsigned char mask);
       void ToggleBit(unsigned char *mybyte,unsigned char mask);
