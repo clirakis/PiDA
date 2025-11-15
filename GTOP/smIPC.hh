@@ -65,5 +65,7 @@ private:
      * Shared memory segment for current data file name. 
      */
     SharedMem2   *fSM_Filename;
+
+
 };
 #endif
