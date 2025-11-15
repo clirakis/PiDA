@@ -71,68 +71,68 @@ void Terminate (int sig)
       sprintf( msg, "User abnormal termination");
       break;
     case 0:                    // Normal termination
-        sprintf( msg, "Normal program termination.");
+        snprintf( msg, sizeof(msg), "Normal program termination.");
         break;
     case SIGHUP:
-        sprintf( msg, " Hangup");
+        snprintf( msg, sizeof(msg), " Hangup");
         break;
     case SIGINT:               // CTRL+C signal 
-        sprintf( msg, " SIGINT ");
+        snprintf( msg, sizeof(msg), " SIGINT ");
         break;
     case SIGQUIT:               //QUIT 
-        sprintf( msg, " SIGQUIT ");
+        snprintf( msg, sizeof(msg), " SIGQUIT ");
         break;
     case SIGILL:               // Illegal instruction 
-        sprintf( msg, " SIGILL ");
+        snprintf( msg, sizeof(msg), " SIGILL ");
         break;
     case SIGABRT:              // Abnormal termination 
-        sprintf( msg, " SIGABRT ");
+        snprintf( msg, sizeof(msg), " SIGABRT ");
         break;
     case SIGBUS:               //Bus Error! 
-        sprintf( msg, " SIGBUS ");
+        snprintf( msg, sizeof(msg), " SIGBUS ");
         break;
     case SIGFPE:               // Floating-point error 
-        sprintf( msg, " SIGFPE ");
+        snprintf( msg, sizeof(msg), " SIGFPE ");
         break;
     case SIGKILL:               // Kill!!!! 
-        sprintf( msg, " SIGKILL");
+        snprintf( msg, sizeof(msg), " SIGKILL");
         break;
     case SIGSEGV:              // Illegal storage access 
-        sprintf( msg, " SIGSEGV ");
+        snprintf( msg, sizeof(msg), " SIGSEGV ");
         break;
     case SIGTERM:              // Termination request 
-        sprintf( msg, " SIGTERM ");
+        snprintf( msg, sizeof(msg), " SIGTERM ");
         break;
     case SIGTSTP:               // 
-        sprintf( msg, " SIGTSTP");
+        snprintf( msg, sizeof(msg), " SIGTSTP");
         break;
     case SIGXCPU:               // 
-        sprintf( msg, " SIGXCPU");
+        snprintf( msg, sizeof(msg), " SIGXCPU");
         break;
     case SIGXFSZ:               // 
-        sprintf( msg, " SIGXFSZ");
+        snprintf( msg, sizeof(msg), " SIGXFSZ");
         break;
     case SIGSTOP:               // 
-        sprintf( msg, " SIGSTOP ");
+        snprintf( msg, sizeof(msg), " SIGSTOP ");
         break;
     case SIGSYS:               // 
-        sprintf( msg, " SIGSYS ");
+        snprintf( msg, sizeof(msg), " SIGSYS ");
         break;
 #ifndef MAC
      case SIGPWR:               // 
-        sprintf( msg, " SIGPWR ");
+        snprintf( msg, sizeof(msg), " SIGPWR ");
         break;
     case SIGSTKFLT:               // Stack fault
-        sprintf( msg, " SIGSTKFLT ");
+        snprintf( msg, sizeof(msg), " SIGSTKFLT ");
         break;
 #endif
    default:
-        sprintf( msg, " Uknown signal type: %d", sig);
+        snprintf( msg, sizeof(msg), " Uknown signal type: %d", sig);
         break;
     }
     if (sig!=0)
     {
-        sprintf ( tmp, " %s %d", LastFile, LastLine);
+        snprintf ( tmp, sizeof(tmp), " %s %d", LastFile, LastLine);
         strncat ( msg, tmp, sizeof(msg)-strlen(tmp));
 	logger->LogCommentTimestamp(msg);
 	//logger->Log("# %s\n",msg);
