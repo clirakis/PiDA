@@ -104,6 +104,7 @@ GTOP::GTOP(const string& ConfigFile) : CObject()
     fLogging   = true;
     fDisplay   = false;
     fResetType = 0;
+    fLogNMEA   = false;
 
     fGeoLatitude  = 41.3084;
     fGeoLongitude = -73.893;
@@ -179,6 +180,11 @@ GTOP::GTOP(const string& ConfigFile) : CObject()
 	fn = new FileName("GTop", "h5", One_Day);
 	OpenLogFile();
     }
+    if (fLogNMEA)
+    {
+	fnNMEA = new FileName("GTop","NMEA", One_Day);
+	fNMEAfd = ofstream(fnNMEA->GetName());
+    }
 
     SET_DEBUG_STACK;
 }
@@ -225,7 +231,11 @@ GTOP::~GTOP(void)
     delete fIPC;
     delete f5Logger;
     f5Logger = NULL;
-
+    if (fLogNMEA)
+    {
+	fNMEAfd.close();
+	delete fnNMEA;
+    }
     delete fNMEA_GPS;
 
     Logger->LogTime(" GTOP closed.\n");
@@ -360,10 +370,19 @@ void GTOP::Do(void)
 	{
 	    UpdateFileName();
 	}
+	if (fLogNMEA)
+	{
+	    if (fnNMEA->ChangeNames())
+	    {
+		fNMEAfd.close();
+		fNMEAfd.open(fnNMEA->GetName());
+	    }
+	}
 	// Read serial data until we have a full sentance terminated with a \n
 	if(Read())
 	{
 	    //cout << "DEBUG, read a line: " << fCurrentLine.str() << endl;
+	    fNMEAfd << fCurrentLine.str() << endl;
 	    // This is the last message in the read sequence. 
 	    if(fNMEA_GPS->LastID() == NMEA_GPS::kMESSAGE_VTG)
 	    {
@@ -638,6 +657,7 @@ bool GTOP::ReadConfiguration(void)
 	GPS.lookupValue("Display",   fDisplay);
 	GPS.lookupValue("Logging",   fLogging);
 	GPS.lookupValue("ResetType", fResetType);
+	GPS.lookupValue("LogNMEA",   fLogNMEA);
 
 	SetDebug(Debug);
 
@@ -717,6 +737,7 @@ bool GTOP::WriteConfiguration(void)
     GPS.add("Display",   Setting::TypeBoolean) = fDisplay;
     GPS.add("Logging",   Setting::TypeBoolean) = fLogging;
     GPS.add("ResetType", Setting::TypeInt)     = fResetType;
+    GPS.add("LogNMEA",   Setting::TypeBoolean) = fLogNMEA;
 
     // These are somewhat residual. 
     Geodetic.add("Latitude",  Setting::TypeFloat) = fGeoLatitude;

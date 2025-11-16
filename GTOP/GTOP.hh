@@ -107,7 +107,8 @@ private:
     /*!
      * Tool to manage the file name. 
      */
-    FileName*     fn;          /*! File nameing utilities. */
+    FileName*     fn;          /*! File nameing utilities. hdf5 log */
+    FileName*     fnNMEA;      /*! File naming for NMEA messages. */
 
     /*!
      * Logging tool, log data to HDF5 file.  
@@ -139,6 +140,8 @@ private:
     bool   fLogging;       /*! Turn logging on. */
     int    fResetType;     /*! 1 - soft reset, 2 Hard reset */
     std::stringstream  fCurrentLine; /*! Last line read from GPS serial port. */
+    bool   fLogNMEA;       /*! Log to a NMEA file if set. */
+    ofstream fNMEAfd; 
 
 
     /* Private functions. =============================================   */
