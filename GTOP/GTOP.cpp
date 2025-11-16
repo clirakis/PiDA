@@ -143,6 +143,7 @@ GTOP::GTOP(const string& ConfigFile) : CObject()
         Logger->Log("# %s %s \n", "Opened serial port: ", fSerialPortName);
 	fNMEA_GPS = new NMEA_GPS();
 	fCurrentLine = new char[kMAXCHARCOUNT];
+	memset(fCurrentLine, 0, kMAXCHARCOUNT);
     }
 
     /*
