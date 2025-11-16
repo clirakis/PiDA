@@ -133,7 +133,8 @@ GTOP::GTOP(const string& ConfigFile) : CObject()
      */
     if (SerialOpen( fSerialPortName.c_str(), 9600))
     {
-	Logger->Log("# %s %s\n","# Failed to open serial:", fSerialPortName); 
+	Logger->Log("# %s %s\n","# Failed to open serial:", 
+		    fSerialPortName.c_str()); 
 	SetError(-1);
 	return; /* no sense in continuing. */
     }
