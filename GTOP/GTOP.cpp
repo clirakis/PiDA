@@ -131,7 +131,7 @@ GTOP::GTOP(const string& ConfigFile) : CObject()
     /*
      * Factory default reset is 9600 8 None 1 
      */
-    if (SerialOpen( fSerialPortName.c_str(), 9600))
+    if (SerialOpen( fSerialPortName.c_str(), 9600)<0)
     {
 	Logger->Log("# %s %s\n","# Failed to open serial:", 
 		    fSerialPortName.c_str()); 
