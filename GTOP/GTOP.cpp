@@ -131,7 +131,7 @@ GTOP::GTOP(const string& ConfigFile) : CObject()
     /*
      * Factory default reset is 9600 8 None 1 
      */
-    if (SerialOpen( fSerialPortName.c_str(), 9600)<0)
+    if (SerialOpen( fSerialPortName.c_str(), B9600)<0)
     {
 	Logger->Log("# %s %s\n","# Failed to open serial:", 
 		    fSerialPortName.c_str()); 
@@ -369,7 +369,7 @@ void GTOP::Do(void)
 	// Read serial data until we have a sentance. 
 	if(Read())
 	{
-	    cout << "DEBUG, read a line: " << fCurrentLine;
+	    cout << "DEBUG, read a line: " << fCurrentLine << endl;
 	    // This is the last message in the read sequence. 
 	    if(fNMEA_GPS->LastID() == NMEA_GPS::kMESSAGE_VTG)
 	    {
@@ -380,6 +380,7 @@ void GTOP::Do(void)
 	    {
 		pDisp->Update(fNMEA_GPS, fCurrentLine);
 	    }
+	    memset(fCurrentLine, 0, kMAXCHARCOUNT);
 	}
 	//nanosleep( &sleeptime, NULL);
     } // End of run do loop. 
