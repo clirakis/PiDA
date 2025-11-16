@@ -82,7 +82,6 @@ public:
      */
     void UpdateFileName(void);
 
-
     /**
      * Control bits - control verbosity of output
      */

@@ -369,6 +369,7 @@ void GTOP::Do(void)
 	// Read serial data until we have a sentance. 
 	if(Read())
 	{
+	    cout << "DEBUG, read a line: " << fCurrentLine;
 	    // This is the last message in the read sequence. 
 	    if(fNMEA_GPS->LastID() == NMEA_GPS::kMESSAGE_VTG)
 	    {
