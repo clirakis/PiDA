@@ -24,6 +24,7 @@
  */
 #ifndef __GTOP_hh_
 #define __GTOP_hh_
+#  include <sstream> 
 #  include "CObject.hh" // Base class with all kinds of intermediate
 #  include "NMEA_GPS.hh"  // Class definitions for NMEA GPS objects.
 #  include "smIPC.hh"
@@ -137,8 +138,7 @@ private:
     bool   fDisplay;       /*! Turn curses display on. */
     bool   fLogging;       /*! Turn logging on. */
     int    fResetType;     /*! 1 - soft reset, 2 Hard reset */
-    char*  fCurrentLine;   /*! Last line read from GPS serial port. */
-    uint32_t fLineIndex; 
+    std::stringstream  fCurrentLine; /*! Last line read from GPS serial port. */
 
 
     /* Private functions. =============================================   */

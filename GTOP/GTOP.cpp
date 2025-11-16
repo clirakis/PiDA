@@ -104,8 +104,6 @@ GTOP::GTOP(const string& ConfigFile) : CObject()
     fLogging   = true;
     fDisplay   = false;
     fResetType = 0;
-    fCurrentLine = NULL;
-    fLineIndex   = 0;   // Beginning of line
 
     fGeoLatitude  = 41.3084;
     fGeoLongitude = -73.893;
@@ -142,8 +140,7 @@ GTOP::GTOP(const string& ConfigFile) : CObject()
     {
         Logger->Log("# %s %s \n", "Opened serial port: ", fSerialPortName);
 	fNMEA_GPS = new NMEA_GPS();
-	fCurrentLine = new char[kMAXCHARCOUNT];
-	memset(fCurrentLine, 0, kMAXCHARCOUNT);
+	fCurrentLine.str("");
     }
 
     /*
@@ -223,7 +220,6 @@ GTOP::~GTOP(void)
 	Logger->LogError(__FILE__,__LINE__, 'W', 
 			 "Failed to write config file.\n");
     }
-    delete fCurrentLine;
 
     /* Clean up IPC */
     delete fIPC;
@@ -314,19 +310,16 @@ bool GTOP::Read(void)
     else if (c == '\n') 
     {
 	// Represents an end of line. Null terminate then decode. 
-	fCurrentLine[fLineIndex] = 0;
 	// go ahead and decode what we have.
-	fNMEA_GPS->parse(fCurrentLine);
-	fLineIndex = 0;         // reset line index. 
+	fNMEA_GPS->parse(fCurrentLine.str().c_str());
 	rv = true;
     }
     else
     {
 	/// buffer overflow situation. 
-	fCurrentLine[fLineIndex++] = c;
-	if ((fLineIndex >= kMAXCHARCOUNT) ||
-	    (fLineIndex = kMAXCHARCOUNT-1))
-	    rv = false;
+	fCurrentLine << c;
+	if (fCurrentLine.str().length() >= kMAXCHARCOUNT)
+	    rv=false;
     }
 
     SET_DEBUG_STACK;
@@ -367,22 +360,22 @@ void GTOP::Do(void)
 	{
 	    UpdateFileName();
 	}
-	// Read serial data until we have a sentance. 
+	// Read serial data until we have a full sentance terminated with a \n
 	if(Read())
 	{
-	    cout << "DEBUG, read a line: " << fCurrentLine << endl;
+	    cout << "DEBUG, read a line: " << fCurrentLine.str() << endl;
 	    // This is the last message in the read sequence. 
 	    if(fNMEA_GPS->LastID() == NMEA_GPS::kMESSAGE_VTG)
 	    {
 		// VTG message is the last in the series. 
 		Update();
-		memset(fCurrentLine, 0, kMAXCHARCOUNT);
 	    }
-	    // This probably updates too soon. 
 	    if (pDisp != NULL)
 	    {
-		pDisp->Update(fNMEA_GPS, fCurrentLine);
+		pDisp->Update(fNMEA_GPS, fCurrentLine.str());
 	    }
+	    // reset the stream
+	    fCurrentLine.str("");
 	}
 	//nanosleep( &sleeptime, NULL);
     } // End of run do loop. 
