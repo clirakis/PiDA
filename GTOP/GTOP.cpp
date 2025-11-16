@@ -57,7 +57,7 @@ GTOP* GTOP::fGTOP;
 
 const char *SensorName="GPS";     // Sensor name. 
 const size_t NVar = 17;
-const size_t kMAXCHARCOUNT = 128;
+const size_t kMAXCHARCOUNT = 256;
 /**
  ******************************************************************
  *
