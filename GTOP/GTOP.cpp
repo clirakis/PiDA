@@ -376,12 +376,13 @@ void GTOP::Do(void)
 	    {
 		// VTG message is the last in the series. 
 		Update();
+		memset(fCurrentLine, 0, kMAXCHARCOUNT);
 	    }
+	    // This probably updates too soon. 
 	    if (pDisp != NULL)
 	    {
 		pDisp->Update(fNMEA_GPS, fCurrentLine);
 	    }
-	    memset(fCurrentLine, 0, kMAXCHARCOUNT);
 	}
 	//nanosleep( &sleeptime, NULL);
     } // End of run do loop. 
