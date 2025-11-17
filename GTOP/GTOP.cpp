@@ -217,20 +217,25 @@ GTOP::GTOP(const string& ConfigFile) : CObject()
 GTOP::~GTOP(void)
 {
     SET_DEBUG_STACK;
-    CLogger *Logger = CLogger::GetThis();
+    CLogger *pLog = CLogger::GetThis();
 
     // Do some other stuff as well. 
     if(!WriteConfiguration())
     {
 	SetError(ECONFIG_WRITE_FAIL,__LINE__);
-	Logger->LogError(__FILE__,__LINE__, 'W', 
-			 "Failed to write config file.\n");
+	pLog->LogError(__FILE__,__LINE__, 'W', 
+		       "Failed to write config file.\n");
     }
 
-    /* Clean up IPC */
-    delete fIPC;
+    /* Shut down logging. */
+    pLog->LogTime("stop logging\n");
     delete f5Logger;
     f5Logger = NULL;
+
+    /* Clean up IPC */
+    pLog->LogTime("Close up IPC\n");
+    delete fIPC;
+
     if (fLogNMEA)
     {
 	fNMEAfd.close();
@@ -238,7 +243,7 @@ GTOP::~GTOP(void)
     }
     delete fNMEA_GPS;
 
-    Logger->LogTime(" GTOP closed.\n");
+    pLog->LogTime(" GTOP closed.\n");
     SET_DEBUG_STACK;
 }
 /**
