@@ -138,16 +138,17 @@ void Terminate (int sig)
 	//logger->Log("# %s\n",msg);
     }
 
-    // User termination here
-    GTOP *pGPS = GTOP::GetThis();
-    delete pGPS;
 
     GTOP_Display *disp = GTOP_Display::GetThis();
     if(disp)
     {
 	disp->Stop();
-	delete disp;
     }
+
+    // User termination here
+    GTOP *pGPS = GTOP::GetThis();
+    delete pGPS;
+
     delete logger;
 
     if (sig == 0)
