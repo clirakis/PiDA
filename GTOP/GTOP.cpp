@@ -751,7 +751,7 @@ bool GTOP::WriteConfiguration(void)
     // Write out the new configuration.
     try
     {
-	pCFG->writeFile(fConfigFileName);
+	pCFG->writeFile(fConfigFileName.c_str());
 	Logger->LogTime(" New configuration successfully written to: %s\n",
 			fConfigFileName.c_str());
 
