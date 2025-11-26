@@ -18,7 +18,7 @@ TARGET = IMU
 # Compile time resolution.
 #
 INCLUDE = -I../GTOP -I$(DRIVE)/common/utility -I$(DRIVE)/common/iolib \
-	-I/usr/include/hdf5/serial
+	-I$(DRIVE)/common/libNMEA -I/usr/include/hdf5/serial
 
 LIBS = -L. -L../GTOP -L$(HDF5LIB) 
 LIBS += -lNMEA -lIMUData -lio -lutility -lhdf5_cpp -lhdf5 -lconfig++
