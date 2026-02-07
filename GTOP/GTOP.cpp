@@ -20,6 +20,7 @@
  * 24-Mar-24    Added in TOD 
  * 08-Sep-25    added in ability to prompt change log file names
  * 15-Nov-25    There have been some upgrades in the general NMEA_LIB
+ * 07-Feb-26    Enable forced update in file number. 
  * 
  * Classification : Unclassified
  *

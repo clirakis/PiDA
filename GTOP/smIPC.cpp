@@ -14,6 +14,7 @@
  *                     into shared memory. '
  * 20-Feb-22    CBL    NMEA GPS
  * 15-Dec-23    CBL    Put in some logging to show that SM was connected
+ * 07-Feb-26    CBL    Re-enabled GPS Commands structure. 
  *
  * Classification : Unclassified
  *
@@ -149,7 +150,7 @@ GPS_IPC::GPS_IPC(void) : CObject()
 	plogger->Log("# VTG SM successfully created.\n");
     }
 
-#if 0
+
     pSM_Commands = new SharedMem2("GPS_Commands", kCommandSize, true);
     if (pSM_Commands->CheckError())
     {
@@ -164,7 +165,7 @@ GPS_IPC::GPS_IPC(void) : CObject()
 	plogger->Log("# %s %d Commands shared memory attached.\n",
 		    __FILE__,  __LINE__);
     }
-#endif
+
     fSM_Filename = new SharedMem2("GPS_Filename", kFilenameSize, true);
     if (fSM_Filename->CheckError())
     {
@@ -217,13 +218,11 @@ void GPS_IPC::ProcessCommands(void)
 	{
 	    pSM_Commands->GetData(command);
 	    plogger->Log("# Command received: %s\n", command);
-#if 0
 	    // Process approprately.
 	    if (strcmp( command, "CF") == 0)
 	    {
-		puser->ChangeFile();
+		GTOP::GetThis()->UpdateFileName();
 	    }
-#endif
 	    available = 0.0; // Commands have been processed. 
 	    memset( command, 0, kCommandSize);
 	    pSM_Commands->PutData(available);

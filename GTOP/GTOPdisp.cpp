@@ -10,6 +10,7 @@
  *
  * Change Descriptions :
  * 19-Feb-22 CBL  Updated to class structure
+ * 07-Feb-26 CBL  Updated to enable user enabled file change
  *
  * Classification : Unclassified
  *
@@ -95,6 +96,7 @@ static const char *help_strings[] = {
              "                                               ",
              "  d - toggle display data (Hex codes rec'd)    ",
              "                                               ",
+             "  f - filename change, advance number          ",
              "  h - home                                     ",
              "                                               ",
              "  q - quit                                     ",
@@ -106,8 +108,6 @@ static const char *help_strings[] = {
 };
 
 #define HELP_STR_SIZE sizeof(help_strings) / sizeof(help_strings[0])
-
-
 
 /**
  ******************************************************************
@@ -773,6 +773,8 @@ void GTOP_Display::ParseHomeKeys( char c)
     {
     case 'f':
     case 'F':
+	display_message("File number advance.\n");
+	break;
     case 'o':
     case 'O':
     case 'p':
@@ -827,6 +829,11 @@ int GTOP_Display::checkKeys(void)
 	case '?':
 	    fCurrentScreen = HELP_SCREEN;
 	    main_frame();
+	    break;
+	case 'f':
+	case 'F':
+	    // File name change requested. 
+	    GTOP::GetThis()->UpdateFileName();
 	    break;
 	case 'h':
 	case 'H':
