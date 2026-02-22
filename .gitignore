@@ -10,3 +10,4 @@ make.depend
 *.cfg
 .#*
 #*
+.depends
