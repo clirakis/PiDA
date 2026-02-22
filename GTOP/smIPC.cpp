@@ -15,6 +15,11 @@
  * 20-Feb-22    CBL    NMEA GPS
  * 15-Dec-23    CBL    Put in some logging to show that SM was connected
  * 07-Feb-26    CBL    Re-enabled GPS Commands structure. 
+ * 22-Feb-26    CBL    Think I'm being rather stupid with commands. Change
+ *                     the string space to be much larger so responses 
+ *                     can be replied. The commands coming from the client
+ *                     can be small, but potentinally the responses could
+ *                     be larger. 
  *
  * Classification : Unclassified
  *
@@ -36,7 +41,8 @@ using namespace std;
 #include "smIPC.hh"
 #include "GTOP.hh"
 
-const size_t kCommandSize  = 32;          // Bytes of command data.
+// 22-Feb-26 upped command size allocation to 512
+const size_t kCommandSize  = 512;          // Bytes of command data.
 const size_t kFilenameSize = 512;         // Bytes of data open to filename
 #define DEBUG_SM 0
 /**
@@ -77,7 +83,6 @@ GPS_IPC::GPS_IPC(void) : CObject()
     pSM_SolutionData  = NULL;
     pSM_VelocityData  = NULL;
     pSM_Minimum       = NULL;
-    fSM_Filename      = NULL;
 
     pSM_PositionData = new SharedMem2("GGA", 
 				      GGA::DataSize(), true);
@@ -165,22 +170,6 @@ GPS_IPC::GPS_IPC(void) : CObject()
 	plogger->Log("# %s %d Commands shared memory attached.\n",
 		    __FILE__,  __LINE__);
     }
-
-    fSM_Filename = new SharedMem2("GPS_Filename", kFilenameSize, true);
-    if (fSM_Filename->CheckError())
-    {
-	plogger->Log("# %s %d Filename shared memory failed.\n", 
-		    __FILE__,  __LINE__);
-	delete fSM_Filename;
-	fSM_Filename = NULL;
-	SetError(-5);
-    }
-    else
-    {
-	plogger->Log("# %s %d Filename shared memory attached: GPS_Filename\n",
-		     __FILE__,  __LINE__);
-    }
-
     SET_DEBUG_STACK;
 }
 
@@ -208,7 +197,8 @@ GPS_IPC::GPS_IPC(void) : CObject()
 void GPS_IPC::ProcessCommands(void)
 {
     SET_DEBUG_STACK;
-    CLogger *plogger = CLogger::GetThis();
+    GTOP    *pGTOP    = GTOP::GetThis();
+    CLogger *plogger  = CLogger::GetThis();
     if (pSM_Commands != NULL)
     {
         // number of bytes in buffer
@@ -222,6 +212,13 @@ void GPS_IPC::ProcessCommands(void)
 	    if (strcmp( command, "CF") == 0)
 	    {
 		GTOP::GetThis()->UpdateFileName();
+	    }
+	    else if (strcmp( command, "GF") == 0)
+	    {
+		// get the current filename. 
+		const char *filespec = pGTOP->Filespec();
+		pSM_Commands->PutData(filespec);
+
 	    }
 	    available = 0.0; // Commands have been processed. 
 	    memset( command, 0, kCommandSize);
@@ -291,41 +288,6 @@ void GPS_IPC::Update(void)
     }
     SET_DEBUG_STACK;
 }
-/**
- ******************************************************************
- *
- * Function Name :  UpdateFilename
- *
- * Description : Update the current data file name, includes path. 
- *
- * Inputs : full file specification to the current data file. 
- *
- * Returns : none
- *
- * Error Conditions : none
- *
- * Unit Tested on: 15-Nov-25
- *
- * Unit Tested by: CBL
- *
- *
- *******************************************************************
- */
-void GPS_IPC::UpdateFilename(const char *name)
-{
-    SET_DEBUG_STACK;
-    char temp[kFilenameSize];
-
-
-    if (fSM_Filename)
-    {
-	memset( temp, 0, kFilenameSize);
-	strncpy( temp, name, kFilenameSize-1);
-	fSM_Filename->PutData(temp);
-    }
-
-    SET_DEBUG_STACK;
-}
 
 /**
  ******************************************************************
@@ -355,7 +317,6 @@ GPS_IPC::~GPS_IPC(void)
     delete pSM_VelocityData;
     delete pSM_Minimum;
     delete pSM_Commands;
-    delete fSM_Filename;
     SET_DEBUG_STACK;
 }
 

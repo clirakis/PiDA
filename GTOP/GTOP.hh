@@ -83,6 +83,8 @@ public:
      */
     void UpdateFileName(void);
 
+    inline const char* Filespec(void) {return fn->GetCurrentFilespec();};
+
     /**
      * Control bits - control verbosity of output
      */

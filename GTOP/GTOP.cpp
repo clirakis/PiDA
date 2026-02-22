@@ -582,14 +582,6 @@ bool GTOP::OpenLogFile(void)
     strftime (msg, sizeof(msg), "%m-%d-%y %H:%M:%S", gmtime(&now));
     pLogger->Log("# changed file name %s at %s\n", name, msg);
 
-    /*
-     * If the IPC is realized, put the current filename into it.
-     */ 
-     if (fIPC)
-     {
- 	fIPC->UpdateFilename(name);
-     }
-
     return true;
 }
 /**

@@ -13,6 +13,9 @@
  * 07-Mar-19  CBL  Made into class
  * 21-Sep-20  CBL  Changed to SharedMem2
  * 20-Feb-22  CBL  Changed to NMEA GPS
+ * 22-Feb-26  CBL  Took out the filename SM and changed the
+ *                 command structure to allow for 512 bytes of string
+ *                 data to be returned. Use this when querying filename
  *
  * Classification : Unclassified
  *
@@ -38,9 +41,6 @@ public:
     /*! provide shared memory for inbound commands. */
     void ProcessCommands(void);
 
-    /*! Update filename in shared memory. */
-    void UpdateFilename(const char *name);
-
 private:
     /**
      * Shared memory for position data. GPGGA
@@ -60,12 +60,5 @@ private:
     SharedMem2   *pSM_VelocityData;
 
     SharedMem2   *pSM_Commands;        // A way to communicate with remote
-
-    /**
-     * Shared memory segment for current data file name. 
-     */
-    SharedMem2   *fSM_Filename;
-
-
 };
 #endif
