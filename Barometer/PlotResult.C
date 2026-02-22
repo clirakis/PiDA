@@ -16,12 +16,13 @@ void PlotResult(void)
     Calvin->cd();
     Calvin->SetGrid();
 
-    TGraph *tg = new TGraph("Barometer.log","%lg,%lg");
+    //TGraph *tg = new TGraph("Barometer_240607.log","%lg,%lg");
+    TGraph *tg = new TGraph("baro.log","%lg,%lg");
     tg->Draw("ALP");
 
     tg->GetXaxis()->SetTimeDisplay(1);
     tg->GetXaxis()->SetNdivisions(513);
-    tg->GetXaxis()->SetTimeFormat("%H:%M:%S");
+    tg->GetXaxis()->SetTimeFormat("%d %H:%M:%S");
     tg->GetXaxis()->SetTimeOffset(0,"gmt");
 
     TH1 *hbs = tg->GetHistogram();
