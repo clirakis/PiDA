@@ -7,6 +7,7 @@
      Modified  By   Reason
      --------  --   ------
      26-Sep-20 CBL  Original
+     22-Feb-26 CBL  Need a write
 
 
   References:
@@ -263,3 +264,10 @@ class SharedMem2:
         return (Ds + Ds/1.0e9)
 
 
+    def Write(self, value):
+        """
+        Write a string value to a shared memory segment
+        that has been defined by the C program.
+        """
+        # set this up for debug. 
+        print('WRITE: ', value)
