@@ -190,10 +190,12 @@ def imu():
 def filename():
     """
     Request a filename change. 
-    """
+
     response = make_response("Ok")
     response.mimetype = 'text/plain'
     return response
+    """
+    return gps()
 
 @app.route('/testme')
 def testme():
