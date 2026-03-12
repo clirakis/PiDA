@@ -186,6 +186,13 @@ def imu():
                            GX=sGx,GY=sGy,GZ=sGz,
                            MX=sMx,MY=sMy,MZ=sMz,
                            )
+@app.route('/filename')
+def filename():
+    """
+    Request a filename change. 
+    """
+    response = make_response("Ok")
+    response.mimetype = 'text/plain'
 
 @app.route('/testme')
 def testme():
