@@ -193,6 +193,7 @@ def filename():
     """
     response = make_response("Ok")
     response.mimetype = 'text/plain'
+    return response
 
 @app.route('/testme')
 def testme():
