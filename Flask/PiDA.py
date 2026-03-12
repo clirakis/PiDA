@@ -34,6 +34,7 @@ from PySM.NMEA_RMC import NMEA_RMC
 from PySM.NMEA_GSA import NMEA_GSA
 from PySM.NMEA_VTG import NMEA_VTG
 from PySM.IMU      import IMU
+from PySM.Commands import Commands
 
 
 app = Flask(__name__)
@@ -50,8 +51,8 @@ MyGGA = NMEA_GGA()
 #MySM = NMEA_GSA()
 #MySM = NMEA_RMC()
 MyVTG = NMEA_VTG()
-MyIMU  = IMU()
-
+MyIMU = IMU()
+COMM  = Commands()
 """
 Initialize the ploting package.
 """
@@ -194,7 +195,10 @@ def filename():
     response = make_response("Ok")
     response.mimetype = 'text/plain'
     return response
+    This return of the gps call works!!!
+    Now have to tickle the shared memory
     """
+    COMM.Write("CF")
     return gps()
 
 @app.route('/testme')
