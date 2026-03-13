@@ -8,6 +8,7 @@
      --------  --   ------
      26-Sep-20 CBL  Original
      22-Feb-26 CBL  Need a write
+     13-Feb-26 CBL  Building necessary write functions. 
 
 
   References:
@@ -263,11 +264,61 @@ class SharedMem2:
         Ds  = time.clock_gettime(time.CLOCK_HIGHRES) - self.LastUpdate_Time_tv_sec
         return (Ds + Ds/1.0e9)
 
+    def Pack(self, format, Value):
+        """
+        Pack up the stream to send!!
+        format - see below
+        Value  - Value to pack into stream.
+        
+        specify format
+        see: https://docs.python.org/3/library/struct.html
+        Regularly used formats include:
+        f - float
+        d - double
+        l - long integer
+        i - integer (signed)
+        B - unsigned char
+        c - character
+        b - signed char
+        
+        Using a dictionary.
+        https://stackoverflow.com/questions/60208/replacements-for-switch-statement-in-python
+        """
 
-    def Write(self, value):
+    def Write(self, value, length):
         """
         Write a string value to a shared memory segment
         that has been defined by the C program.
+        @param value - value to write out
+        @param length - length of attached SM. Think I'm doing this wrong
+
+        This is currently not general format. Works for byte strings only. 
         """
         # set this up for debug. 
-        print('WRITE: ', value)
+        #print('WRITE: ', value)
+        # Make the header information.
+        #
+        # LENGTH is highly dependent on the parent SM.
+        # header size should be 40 bytes long.
+        #
+        self.memorysize = length + 40
+        #self.bytes =
+        format_str = 'llldl' + str(length) + 'c'
+        self.inb   = self.Pack(format_str, length,
+                               time.clock_gettime_ns(time.CLOCK_HIGHRES),
+                               time.clock_gettime(time.CLOCK_HIGHRES),
+                               0.0, 0,
+                               value)
+        #
+        self.semaphore.acquire()
+        # write the header info and data into the memory map
+        # go to beginning of file. 
+        self.Mapfile.seek(0)
+        self.inb = self.Mapfile.write(self.inb)
+        #
+        # The inheriting class should pick up from this point in the
+        # data stream.
+        #
+        if (self.debug):
+            print('Write Releasing the semaphore.')
+        self.semaphore.release()
