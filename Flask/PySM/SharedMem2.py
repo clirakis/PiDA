@@ -8,7 +8,9 @@
      --------  --   ------
      26-Sep-20 CBL  Original
      22-Feb-26 CBL  Need a write
-     13-Feb-26 CBL  Building necessary write functions. 
+     13-Mar-26 CBL  Building necessary write functions.
+     15-Mar-26 CBL  CLOCK_HIGHRES is only available on SOLARIS, use
+                    CLOCK_REALTIME
 
 
   References:
@@ -260,8 +262,8 @@ class SharedMem2:
         returns the age of data relative to the current clock time.
         https://docs.python.org/3/library/time.html
         """
-        Dns = time.clock_gettime_ns(time.CLOCK_HIGHRES) - self.LastUpdate_Time_tv_nsec
-        Ds  = time.clock_gettime(time.CLOCK_HIGHRES) - self.LastUpdate_Time_tv_sec
+        Dns = time.clock_gettime_ns(time.CLOCK_REALTIME) - self.LastUpdate_Time_tv_nsec
+        Ds  = time.clock_gettime(time.CLOCK_REALTIME) - self.LastUpdate_Time_tv_sec
         return (Ds + Ds/1.0e9)
 
     def Pack(self, format, Value):
@@ -305,8 +307,8 @@ class SharedMem2:
         #self.bytes =
         format_str = 'llldl' + str(length) + 'c'
         self.inb   = self.Pack(format_str, length,
-                               time.clock_gettime_ns(time.CLOCK_HIGHRES),
-                               time.clock_gettime(time.CLOCK_HIGHRES),
+                               time.clock_gettime_ns(time.CLOCK_REALTIME),
+                               time.clock_gettime(time.CLOCK_REALTIME),
                                0.0, 0,
                                value)
         #
