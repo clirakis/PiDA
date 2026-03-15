@@ -315,7 +315,7 @@ class SharedMem2:
         #   5) character string of length (length character)
         #
         format_str = 'llldl' + str(length) + 's'
-        print('DEBUG : ', format_str
+        print('DEBUG : ', format_str)
         self.inb   = struct.pack(format_str,
                                  length,
                                  time.clock_gettime_ns(time.CLOCK_REALTIME),
