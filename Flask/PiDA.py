@@ -198,7 +198,7 @@ def filename():
     This return of the gps call works!!!
     Now have to tickle the shared memory
     """
-    COMM.Write("CF")
+    COMM.Write("CF", 2)
     return gps()
 
 @app.route('/testme')
