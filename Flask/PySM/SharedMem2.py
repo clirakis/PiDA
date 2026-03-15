@@ -306,11 +306,11 @@ class SharedMem2:
         self.memorysize = length + 40
         #self.bytes =
         format_str = 'llldl' + str(length) + 'c'
-        self.inb   = self.Pack(format_str, length,
-                               time.clock_gettime_ns(time.CLOCK_REALTIME),
-                               time.clock_gettime(time.CLOCK_REALTIME),
-                               0.0, 0,
-                               value)
+        self.inb   = struct.Pack(format_str, length,
+                                 time.clock_gettime_ns(time.CLOCK_REALTIME),
+                                 time.clock_gettime(time.CLOCK_REALTIME),
+                                 0.0, 0,
+                                 value)
         #
         self.semaphore.acquire()
         # write the header info and data into the memory map
