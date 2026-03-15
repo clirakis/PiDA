@@ -208,20 +208,20 @@ void GPS_IPC::ProcessCommands(void)
         // number of bytes in buffer
 	float available = pSM_Commands->GetData(); 
 	char command[kCommandSize];
-	plogger->LogTime("command loop, size: %f\n", available);
+	//plogger->LogTime("command loop, size: %f\n", available);
 	if (available > 0.0)
 	{
 	    pSM_Commands->GetData(command);
 	    plogger->Log("# Command received: %s\n", command);
 	    // Process approprately.
-	    if (strcmp( command, "CF") == 0)
+	    if (!strcmp( command, "CF") == 0)
 	    {
 		GTOP::GetThis()->UpdateFileName();
 		// Now clear out the data buffer. 
 		// Otherwise the last command will stick around. 
 		pSM_Commands->PutData(zerobuf);
 	    }
-	    else if (strcmp( command, "GF") == 0)
+	    else if (!strcmp( command, "GF") == 0)
 	    {
 		// get the current filename. 
 		const char *filespec = pGTOP->Filespec();
