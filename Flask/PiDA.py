@@ -187,7 +187,10 @@ def imu():
                            GX=sGx,GY=sGy,GZ=sGz,
                            MX=sMx,MY=sMy,MZ=sMz,
                            )
-@app.route('/filename', methods=['POST'])
+
+# If this is not GET and POST it fails
+# but with GET and POST it gets called on a refresh. 
+@app.route('/filename', methods=['GET', 'POST'])
 def filename():
     """
     Request a filename change. 
@@ -198,7 +201,8 @@ def filename():
     This return of the gps call works!!!
     Now have to tickle the shared memory
     """
-    COMM.Write("CF", 2)
+    if request.method == 'POST':
+        COMM.Write("CF", 2)
     return gps()
 
 @app.route('/testme')
