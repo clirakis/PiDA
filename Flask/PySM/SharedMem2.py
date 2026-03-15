@@ -320,7 +320,7 @@ class SharedMem2:
         format_str = 'llldl512s'
         #
         # post pad the string
-        to_send = value + bytes(512-len(value))
+        to_send = value + str(bytes(512-len(value)))
         #
         self.inb   = struct.pack(format_str,
                                  512,
