@@ -319,10 +319,10 @@ class SharedMem2:
         self.inb   = struct.pack(format_str,
                                  length,
                                  time.clock_gettime_ns(time.CLOCK_REALTIME),
-                                 time.clock_gettime(time.CLOCK_REALTIME),
+                                 int(time.clock_gettime(time.CLOCK_REALTIME)),
                                  0.0,
                                  0,
-                                 value)
+                                 value.encode("utf-8"))
         #
         self.semaphore.acquire()
         # write the header info and data into the memory map
