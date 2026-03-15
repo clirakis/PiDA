@@ -173,6 +173,10 @@ GPS_IPC::GPS_IPC(void) : CObject()
     {
 	plogger->Log("# %s %d Commands shared memory attached.\n",
 		    __FILE__,  __LINE__);
+	// Sometimes there is residual crap in the buffer that 
+	// needs clearing
+	pSM_Commands->PutData(zerobuf);
+        pSM_Commands->PutData(0.0);
     }
     SET_DEBUG_STACK;
 }
