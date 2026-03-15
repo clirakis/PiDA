@@ -204,6 +204,7 @@ void GPS_IPC::ProcessCommands(void)
         // number of bytes in buffer
 	float available = pSM_Commands->GetData(); 
 	char command[kCommandSize];
+	plogger->LogTime("command loop, size: %f\n", available);
 	if (available > 0.0)
 	{
 	    pSM_Commands->GetData(command);
