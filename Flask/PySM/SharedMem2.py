@@ -305,11 +305,23 @@ class SharedMem2:
         #
         self.memorysize = length + 40
         #self.bytes =
-        format_str = 'llldl' + str(length) + 'c'
-        self.inb   = struct.pack(format_str, length,
+        #
+        # Overall header is:
+        #   0) length in header (long)
+        #   1) ns  since epoch  (long)
+        #   2) seconds since epoch (long)
+        #   3) double value     (double)
+        #   4) integer value    (long)
+        #   5) character string of length (length character)
+        #
+        format_str = 'llldl' + str(length) + 's'
+        print('DEBUG : ', format_str
+        self.inb   = struct.pack(format_str,
+                                 length,
                                  time.clock_gettime_ns(time.CLOCK_REALTIME),
                                  time.clock_gettime(time.CLOCK_REALTIME),
-                                 0.0, 0,
+                                 0.0,
+                                 0,
                                  value)
         #
         self.semaphore.acquire()
