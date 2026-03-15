@@ -44,6 +44,8 @@ using namespace std;
 // 22-Feb-26 upped command size allocation to 512
 const size_t kCommandSize  = 512;          // Bytes of command data.
 const size_t kFilenameSize = 512;         // Bytes of data open to filename
+static char zerobuf[kCommandSize];
+
 #define DEBUG_SM 0
 /**
  ******************************************************************
@@ -83,6 +85,8 @@ GPS_IPC::GPS_IPC(void) : CObject()
     pSM_SolutionData  = NULL;
     pSM_VelocityData  = NULL;
     pSM_Minimum       = NULL;
+
+    memset(zerobuf, 0, sizeof(zerobuf));
 
     pSM_PositionData = new SharedMem2("GGA", 
 				      GGA::DataSize(), true);
@@ -213,6 +217,9 @@ void GPS_IPC::ProcessCommands(void)
 	    if (strcmp( command, "CF") == 0)
 	    {
 		GTOP::GetThis()->UpdateFileName();
+		// Now clear out the data buffer. 
+		// Otherwise the last command will stick around. 
+		pSM_Commands->PutData(zerobuf);
 	    }
 	    else if (strcmp( command, "GF") == 0)
 	    {
