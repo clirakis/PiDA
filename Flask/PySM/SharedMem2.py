@@ -314,15 +314,21 @@ class SharedMem2:
         #   4) integer value    (long)
         #   5) character string of length (length character)
         #
-        format_str = 'llldl' + str(length) + 's'
-        print('DEBUG : ', format_str)
+        # the command buffer size is 512 bytes, I guess I have to write the
+        # full thing.
+        #
+        format_str = 'llldl512s'
+        #
+        # post pad the string
+        to_send = value + bytes(512-len(value))
+        #
         self.inb   = struct.pack(format_str,
-                                 length,
+                                 512,
                                  time.clock_gettime_ns(time.CLOCK_REALTIME),
                                  int(time.clock_gettime(time.CLOCK_REALTIME)),
-                                 0.0,
+                                 float(length),
                                  0,
-                                 value.encode("utf-8"))
+                                 to_send.encode("utf-8"))
         #
         self.semaphore.acquire()
         # write the header info and data into the memory map
