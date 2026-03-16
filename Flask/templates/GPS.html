@@ -5,6 +5,8 @@ Setting up a grid format
 Flask bootstrap is v3.3.7.1
 You have to specify the column width col-md-4
 
+16-Mar-26 CBL, Modified a bit
+
 -->
 {% extends "base.html" %}
 
@@ -26,86 +28,53 @@ You have to specify the column width col-md-4
 </div>
 
 <div class="container-box">
-  <div class="row">
-    <div class="col-md-2">
-      Latitude:
+  <table sytle="width:100%">
+  <tr> 
+    <th width="25%"> Item </th>
+    <th width="25%"> Value </th>
+  </tr>
+  <tr>
+    <td width="25%"> Latitude: </td>
+    <td style="text-align: center">  {{Latitude}}</td>
+  </tr>
+  <tr>  
+    <td width="25%">  Longitude: </td>
+    <td style="text-align: center">  {{Longitude}} </td>
+  </tr>
+  <tr> 
+    <td width="25%"> Altitude(m):  </td>
     </div>
     <div class="col-md-2">
-      {{Latitude}}
-    </div>
-  </div>
-  <div class="row">
-    <div class="col-md-2">
-      Longitude: 
-    </div>
-    <div class="col-md-2">
-      {{Longitude}}
-    </div>  
-  </div>
-  <div class="row">
-    <div class="col-md-2">
-    Altitude(m): 
-    </div>
-    <div class="col-md-2">
-      {{Altitude}}
-    </div>  
-  </div>
-  <div class="row">
-    <div class="col-md-2">
-    Geoid Sep(m): 
-    </div>
-    <div class="col-md-2">
-      {{Geiod}}
-    </div>  
-  </div>
-  <div class="row">
-    <div class="col-md-2">
-      Fix Time: 
-    </div>
-    <div class="col-md-2">
-      {{FixTime}}
-    </div>  
-  </div>
-  <div class="row">
-    <div class="col-md-2">
-      Speed (m/s): 
-    </div>
-    <div class="col-md-2">
-      {{Speed}}
-    </div>  
-  </div>
-  <div class="row">
-    <div class="col-md-2">
-    Course(True): 
-    </div>
-    <div class="col-md-2">
-      {{CompassTrue}}
-    </div>  
-  </div>
-  <div class="row">
-    <div class="col-md-2">
-      Course(Mag): 
-    </div>
-    <div class="col-md-2">
-      {{CompassMagnetic}}
-    </div>  
-  </div>
-  <div class="row">
-    <div class="col-md-2">
-      Frequency Offset: 
-    </div>
-    <div class="col-md-2">
-      {{FOffset}}
-    </div>  
-  </div>
-  <div class="row">
-    <div class="col-md-2">
-      Fix Type: 
-    </div>
-    <div class="col-md-2">
-      {{FixType}}
-    </div>  
-  </div>
+    <td style="text-align: center">  {{Altitude}} </td>
+  </tr>
+  <tr>
+    <td width="25%"> Geoid Sep(m):  </td>
+    <td style="text-align: center">  {{Geiod}} </td>
+  </tr>
+  <tr>
+    <td width="25%"> Fix Time:  </td>
+    <td style="text-align: center">  {{FixTime}} </td>
+  </tr>
+  <tr>
+    <td width="25%"> Speed (m/s):  </td>
+    <td style="text-align: center">  {{Speed}} </td>
+  </tr>
+  <tr>
+    <td width="25%"> Course(True):  </td>
+    <td style="text-align: center">  {{CompassTrue}} </td>
+  </tr>
+  <tr>
+    <td width="25%"> Course(Mag):  </td>
+    <td style="text-align: center">  {{CompassMagnetic}} </td>
+  </tr>
+  <tr>
+    <td width="25%"> Frequency Offset:  </td>
+    <td style="text-align: center">  {{FOffset}} </td>
+  </tr>
+  <tr>
+    <td width="25%"> Fix Type:  </td>
+    <td style="text-align: center">  {{FixType}} </td>
+  </tr>
 </div> 
 <hr>
 <div class="container">
