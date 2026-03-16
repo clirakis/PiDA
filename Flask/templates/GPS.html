@@ -84,14 +84,20 @@ You have to specify the column width col-md-4
 </div> 
 <hr>
 <div class="container">
-  <form method = "post" action="/gps">
-    <input type="submit" value="Refresh" name="refresh"/>
-  </form>
-</div>
-<div class="container">
-  <form method = "post" action="/filename">
-    <input type="submit" value="Filename Change" name="filename"/>
-  </form>
+  <table style="width:100%">
+    <tr>
+      <td>
+        <form method = "post" action="/gps">
+          <input type="submit" value="Refresh" name="refresh"/>
+        </form>
+      </td>
+      <td>
+        <form method = "post" action="/filename">
+          <input type="submit" value="Filename Change" name="filename"/>
+        </form>
+      </td>
+    </tr>
+  </table> 
 </div>
 
 <hr>
