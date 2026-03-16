@@ -53,6 +53,10 @@ MyGGA = NMEA_GGA()
 MyVTG = NMEA_VTG()
 MyIMU = IMU()
 COMM  = Commands()
+
+# Global Variable
+CurrentFileName = "NONE"
+
 """
 Initialize the ploting package.
 """
@@ -147,7 +151,8 @@ def gps():
                            CompassTrue=sTrue,
                            CompassMagnetic=sMag,
                            FOffset=0.0,
-                           FixType=FixStr(MyGGA.fFix)
+                           FixType=FixStr(MyGGA.fFix),
+                           logFileName=CurrentFileName
                            )
 
 @app.route('/imu', methods=['GET','POST'])
