@@ -19,14 +19,14 @@ You have to specify the column width col-md-4
     <p> Local Computer time: {{moment(current_time).format('LLL')}}.</p>
     <meta http-equiv="refresh" content="5">
 </div>
-
+%
 <div class="card" style="width: 18rem;">
   <div class="card-body">
     <h5 class="card-title"> GPS Log File </h5>
     <p class="card-text"> {{logFileName}} </p>
   </div>
 </div>
-
+%
 <div class="container">
   <style> 
      table, th, td {
@@ -84,14 +84,19 @@ You have to specify the column width col-md-4
 </div> 
 <hr>
 <div class="container">
+  <style> 
+     table, th, td {
+        border: none;
+     }
+  </style>
   <table style="width:100%">
     <tr>
-      <td>
+      <td width="25%">
         <form method = "post" action="/gps">
           <input type="submit" value="Refresh" name="refresh"/>
         </form>
       </td>
-      <td>
+      <td width="25%">
         <form method = "post" action="/filename">
           <input type="submit" value="Filename Change" name="filename"/>
         </form>
