@@ -35,6 +35,10 @@ class Graph(GraphData):
         self.__ax.set_ylabel('Latitude')
         self.__ax.set_xlabel('Longitude')
         self.__ax.set_title('Simple Plot')
+        self.__lat_min__ = 41.0
+        self.__lat_max__ = 42.0
+        self.__lon_min__ = -72.0
+        self.__lon_max__ = -71.0
 
     def __del__(self):
         """
@@ -57,6 +61,8 @@ class Graph(GraphData):
         ready to send to HTML canvas
         """
         plt.plot(self.X(), self.Y(),'.')
+        plt.ylim(self.__lat_min__, self.__lat_max__)
+        plt.xlim(self.__lon_min__, self.__lon_max__)
         canvas = FigureCanvas(self.__fig)
         output = io.BytesIO()
         canvas.print_png(output)
