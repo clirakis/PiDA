@@ -40,7 +40,7 @@ class Graph(GraphData):
         self.setCenter(41.487, -71.274)
 
 
-    def setCenter(lat, lon):
+    def setCenter(self, lat, lon):
         self.__lat0__    = lat
         self.__lon0__    = lon
         self.setLimits(self.__scale__)
