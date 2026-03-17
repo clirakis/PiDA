@@ -101,7 +101,9 @@ def index():
 @app.route('/user')
 def user():
     return render_template('user.html',current_time=datetime.utcnow())
-
+#
+# GPS Tab/page whatever!
+#
 @app.route('/gps',methods=['GET','POST'])
 def gps():
 
@@ -118,6 +120,7 @@ def gps():
         # GET is a give me some data
         print('GPS GET')
 
+    # Get the GPS data from shared memory
     MyGGA.Read()
     MyVTG.Read()
 
@@ -138,7 +141,8 @@ def gps():
     sTrue  = '{:03.1f}'.format(MyVTG.fTrue)
     sMag   = '{:03.1f}'.format(MyVTG.fMagnetic)
 
-    if (lat>0.0):
+    # Add the data to the graph. 
+    if (lat>41.0) and (lat<41.8) and (lon>-72.0):
         MyGraph.AddPoint( lon, lat)
 
     return render_template('GPS.html',current_time=datetime.utcnow(),
