@@ -35,10 +35,32 @@ class Graph(GraphData):
         self.__ax.set_ylabel('Latitude')
         self.__ax.set_xlabel('Longitude')
         self.__ax.set_title('Simple Plot')
-        self.__lat_min__ = 41.0
-        self.__lat_max__ = 42.0
-        self.__lon_min__ = -72.0
-        self.__lon_max__ = -71.0
+
+        self.__scale__ = 500.0   # meters
+        self.setCenter(41.487, -71.274)
+
+
+    def setCenter(lat, lon):
+        self.__lat0__    = lat
+        self.__lon0__    = lon
+        self.setLimits(self.__scale__)
+
+    def setLimits(self, scale):
+        """
+        @param scale - scale in meters for extents. 
+        
+        Scale value, deg/meter
+        1852 meters per minute of latitude, doesn't work as well for long.
+        but eh we will take it.
+
+        NOTE: This only works in the local area!! Not general case!!!
+        """
+        pm = scale/(1852.0 * 60.0)
+        
+        self.__lat_min__ = self.__lat0__ - pm
+        self.__lat_max__ = self.__lat0__ + pm
+        self.__lon_min__ = self.__lon0__ + pm
+        self.__lon_max__ = self.__lon0__ - pm
 
     def __del__(self):
         """
