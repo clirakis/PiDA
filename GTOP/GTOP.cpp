@@ -538,7 +538,7 @@ bool GTOP::OpenLogFile(void)
 {
     SET_DEBUG_STACK;
 //    const char *Names = "Time:Lat:Lon:Z:NSV:PDOP:HDOP:VDOP:TDOP:VE:VN:VZ";
-    const char *Names = "Time:Lat:Lon:Z:NSV:PDOP:HDOP:VDOP:TRUE:MAG:SMPS:MODE:CTime:EVCount:PCDT:RMCDT:TOD:FLAG:";
+    const char *Names = "Time:Lat:Lon:Z:NSV:PDOP:HDOP:VDOP:TRUE:MAG:SMPS:MODE:CTime:EVCount:PCDT:RMCDT:TOD:FLAG";
     /*
      *
      *  0) Time - Seconds since unix epoch from GGA message
