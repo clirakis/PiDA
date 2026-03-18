@@ -225,7 +225,7 @@ void GPS_IPC::ProcessCommands(void)
 	    plogger->Log("# Command received: %d %s\n", 
 			 (int)available, command);
 	    // Process approprately.
-	    if (!strncmp( command, "CF", 2) == 0)
+	    if (strncmp( command, "CF", 2) == 0)
 	    {
 		plogger->Log("# DEBUG: Change Filename command\n");
 		GTOP::GetThis()->UpdateFileName();
@@ -234,14 +234,14 @@ void GPS_IPC::ProcessCommands(void)
 		pSM_Commands->PutData(zerobuf);
 		pSM_Commands->PutData(0.0);
 	    }
-	    else if (!strncmp( command, "GF",2) == 0)
+	    else if (strncmp( command, "GF",2) == 0)
 	    {
 		// get the current filename. 
 		const char *filespec = pGTOP->Filespec();
 		pSM_Commands->PutData(filespec);
 
 	    }
-	    else if (!strncmp( command, "CM", 2) == 0)
+	    else if (strncmp( command, "CM", 2) == 0)
 	    {
 		plogger->Log("# DEBUG: Marker command\n");
 		// Marker in H5 file
