@@ -220,11 +220,14 @@ void GPS_IPC::ProcessCommands(void)
 	if (available > 0.0)
 	{
 	    pSM_Commands->GetData(command);
+	    // Null terminate
+	    command[(int)available + 1] = 0;
 	    plogger->Log("# Command received: %d %s\n", 
 			 (int)available, command);
 	    // Process approprately.
 	    if (!strcmp( command, "CF") == 0)
 	    {
+		//plogger->Log("# DEBUG: Change Filename command\n");
 		GTOP::GetThis()->UpdateFileName();
 		// Now clear out the data buffer. 
 		// Otherwise the last command will stick around. 
