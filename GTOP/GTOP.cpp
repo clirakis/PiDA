@@ -21,6 +21,7 @@
  * 08-Sep-25    added in ability to prompt change log file names
  * 15-Nov-25    There have been some upgrades in the general NMEA_LIB
  * 07-Feb-26    Enable forced update in file number. 
+ * 18-Mar-26    Put FLAG in H5 file
  * 
  * Classification : Unclassified
  *
@@ -57,7 +58,7 @@ using namespace libconfig;
 GTOP* GTOP::fGTOP;
 
 const char *SensorName="GPS";     // Sensor name. 
-const size_t NVar = 17;
+const size_t NVar = 18;
 const size_t kMAXCHARCOUNT = 256;
 /**
  ******************************************************************
@@ -506,7 +507,8 @@ void GTOP::Update(void)
 	f5Logger->FillInternalVector(dt,14);
 	f5Logger->FillInternalVector(pRMC->Delta(), 15);
 	f5Logger->FillInternalVector(sec, 16);
-
+	f5Logger->FillInternalVector(fFlag, 17);
+	fFlag = 0; /* Reset flag after fill */
 	f5Logger->Fill();
     }
     SET_DEBUG_STACK;
@@ -536,7 +538,7 @@ bool GTOP::OpenLogFile(void)
 {
     SET_DEBUG_STACK;
 //    const char *Names = "Time:Lat:Lon:Z:NSV:PDOP:HDOP:VDOP:TDOP:VE:VN:VZ";
-    const char *Names = "Time:Lat:Lon:Z:NSV:PDOP:HDOP:VDOP:TRUE:MAG:SMPS:MODE:CTime:EVCount:PCDT:RMCDT:TOD";
+    const char *Names = "Time:Lat:Lon:Z:NSV:PDOP:HDOP:VDOP:TRUE:MAG:SMPS:MODE:CTime:EVCount:PCDT:RMCDT:TOD:FLAG";
     /*
      *
      *  0) Time - Seconds since unix epoch from GGA message
@@ -547,8 +549,8 @@ bool GTOP::OpenLogFile(void)
      *  5) PDOP
      *  6) HDOP
      *  7) VDOP
-     *  8) TRUE - compas true north
-     *  9) MAG  - magnetic north
+     *  8) TRUE - compass true North
+     *  9) MAG  - magnetic North
      * 10) SMPS - Speed Meters per second
      * 11) MODE - Velocity mode : Autonomous, Differential, Estimated
      * 12) CTime - computer time seconds since unix epoch
@@ -557,6 +559,7 @@ bool GTOP::OpenLogFile(void)
      *             GGA time
      * 15) RMC DT - same but for RMC message
      * 16) TOD - Time of Day
+     * 17) FLAG - integer encoded flag for processing information. 
      */
     CLogger *pLogger  = CLogger::GetThis();
     /* Give me a file name.  */

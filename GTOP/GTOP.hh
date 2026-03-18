@@ -10,6 +10,7 @@
  * Restrictions/Limitations : none
  *
  * Change Descriptions :
+ * 18-Mar-26   Added in Flag variable for data processing. 
  *
  * Classification : Unclassified
  *
@@ -25,6 +26,7 @@
 #ifndef __GTOP_hh_
 #define __GTOP_hh_
 #  include <sstream> 
+#  include <stdint.h>
 #  include "CObject.hh" // Base class with all kinds of intermediate
 #  include "NMEA_GPS.hh"  // Class definitions for NMEA GPS objects.
 #  include "smIPC.hh"
@@ -85,6 +87,9 @@ public:
 
     inline const char* Filespec(void) {return fn->GetCurrentFilespec();};
 
+
+    inline void SetFlag(uint32_t value) {fFlag = value;};
+
     /**
      * Control bits - control verbosity of output
      */
@@ -144,7 +149,7 @@ private:
     std::stringstream  fCurrentLine; /*! Last line read from GPS serial port. */
     bool   fLogNMEA;       /*! Log to a NMEA file if set. */
     ofstream fNMEAfd; 
-
+    uint32_t fFlag;         /*! bit packed data processing flag. */
 
     /* Private functions. =============================================   */
     /*!

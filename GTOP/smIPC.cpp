@@ -20,6 +20,8 @@
  *                     can be replied. The commands coming from the client
  *                     can be small, but potentinally the responses could
  *                     be larger. 
+ * 18-Mar-26    CBL    Added in a telegram command to put a marker in 
+ *                     the H5 file.
  *
  * Classification : Unclassified
  *
@@ -236,6 +238,12 @@ void GPS_IPC::ProcessCommands(void)
 		pSM_Commands->PutData(filespec);
 
 	    }
+	    else if (!strcmp( command, "CM") == 0)
+	    {
+		// Marker in H5 file
+		pGTOP->SetFlag(1);
+	    }
+
 	    available = 0.0; // Commands have been processed. 
 	    memset( command, 0, kCommandSize);
 	    pSM_Commands->PutData(available);
