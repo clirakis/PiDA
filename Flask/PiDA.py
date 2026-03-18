@@ -213,7 +213,7 @@ def filename():
     """
     if request.method == 'POST':
         COMM.Write("CF", 2)
-    return gps()
+    return render_template("DONE.html")
 
 @app.route('/marker', methods=['GET', 'POST'])
 def marker():
@@ -223,7 +223,7 @@ def marker():
     """
     if request.method == 'POST':
         COMM.Write("CM", 2)
-    return gps()
+    return render_template("DONE.html")
 
 @app.route('/testme')
 def testme():
