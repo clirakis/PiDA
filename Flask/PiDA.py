@@ -215,6 +215,16 @@ def filename():
         COMM.Write("CF", 2)
     return gps()
 
+@app.route('/marker', methods=['GET', 'POST'])
+def marker():
+    """
+    Lay down a marker in the h5 file
+
+    """
+    if request.method == 'POST':
+        COMM.Write("CM", 2)
+    return gps()
+
 @app.route('/testme')
 def testme():
     return render_template('testme.html')
