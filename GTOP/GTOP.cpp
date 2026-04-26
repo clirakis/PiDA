@@ -438,10 +438,10 @@ void GTOP::Update(void)
      * 3600 seconds per hour
      */
     const double KPH2MPS = 1852.0/3600.0;
-    GGA*  pGGA;
-    VTG*  pVTG;
-    GSA*  pGSA;
-    RMC*  pRMC;
+    //const GGA*  pGGA;
+    //const VTG*  pVTG;
+    //const GSA*  pGSA;
+    //const RMC*  pRMC;
     uint32_t Count; 
     uint32_t idt;
     double   dt = 0.0;
@@ -460,8 +460,8 @@ void GTOP::Update(void)
     // Any user code or logging belongs here. 
     if (f5Logger!=NULL)
     {
-	pRMC = fNMEA_GPS->pRMC();
-	pGGA = fNMEA_GPS->pGGA();
+	const RMC *pRMC = fNMEA_GPS->pRMC();
+	const GGA *pGGA = fNMEA_GPS->pGGA();
 	struct timespec PCTime = pGGA->PCTime();
 	struct tm *tmnow = localtime(&PCTime.tv_sec);
 	double sec = tmnow->tm_sec + tmnow->tm_min*60.0 + 
@@ -482,9 +482,9 @@ void GTOP::Update(void)
 	}
 	dt       -= timezone;
 
-	pVTG = fNMEA_GPS->pVTG();
+	const VTG *pVTG = fNMEA_GPS->pVTG();
 
-	pGSA = fNMEA_GPS->pGSA();
+	const GSA *pGSA = fNMEA_GPS->pGSA();
 	double t = pGGA->Seconds() + pGGA->Milli();
 	f5Logger->FillInternalVector(t, 0);
 	f5Logger->FillInternalVector(pGGA->Latitude()*RadToDeg, 1);

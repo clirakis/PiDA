@@ -280,11 +280,12 @@ void GTOP_Display::Update(NMEA_GPS *pGPS, const string& Message)
     SET_DEBUG_STACK;
 
     static unsigned char NSAT = 0;
+    const GGA *pGGA;
+    const VTG *pVTG;
+    const GSA *pGSA;
+    const RMC *pRMC;
+
     float t;
-    GGA* pGGA;
-    VTG* pVTG;
-    GSA* pGSA;
-    RMC* pRMC;
 
     if (fDisplayData)
 	WriteMsgToScreen(Message.c_str());

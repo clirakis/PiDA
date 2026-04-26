@@ -283,10 +283,10 @@ void GPS_IPC::Update(void)
 
     if (pGPS)
     {
-	GGA* pGGA = pGPS->pGGA();   // Full position
-	VTG* pVTG = pGPS->pVTG();   // course and speed
-	GSA* pGSA = pGPS->pGSA();   // Active satellites
-	RMC* pRMC = pGPS->pRMC();   // Postion and CMG etc
+	const GGA* pGGA = pGPS->pGGA();   // Full position
+	const VTG* pVTG = pGPS->pVTG();   // course and speed
+	const GSA* pGSA = pGPS->pGSA();   // Active satellites
+	const RMC* pRMC = pGPS->pRMC();   // Postion and CMG etc
 
 	SET_DEBUG_STACK;
 	if (pGGA && pSM_PositionData)
