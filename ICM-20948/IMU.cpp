@@ -89,6 +89,8 @@ IMU::IMU(const char* ConfigFile) : CObject(), IMUData()
     fIPC         = NULL;
     fSampleRate  = 1;     // 1 Hz
     fNSamples    = 10;    // 10 samples
+    f5Logger     = NULL;
+    fn           = NULL;
 
 
     time_t     t = time(NULL);
@@ -117,8 +119,6 @@ IMU::IMU(const char* ConfigFile) : CObject(), IMUData()
 
     /* USER POST CONFIGURATION STUFF. */
 
-    f5Logger = NULL;
-    fn       = NULL;
     if (fLogging)
     {
 	fn = new FileName("IMU", "h5", One_Day);
