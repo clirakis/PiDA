@@ -11,6 +11,7 @@
  *
  * Change Descriptions : 
  * 20-Dec-23   CBL   was not changing filenames on the chosen interval. 
+ * 27-Apr-26   CBL   put the I2C bus definition into the cfg file. 
  *
  * Classification : Unclassified
  *
@@ -95,7 +96,7 @@ IMU::IMU(const char* ConfigFile) : CObject(), IMUData()
     localtime_r(&t, &lt);
     fGMTOffset = lt.tm_gmtoff;
     //cout << "GMT OFFSET: " << fGMTOffset << endl;
-
+    fICMDeviceName = string("/dev/i2c-1");
     /* 
      * Set defaults for configuration file. 
      */
@@ -571,6 +572,7 @@ bool IMU::ReadConfiguration(void)
 	MM.lookupValue("MagAddress",    MagAddress);
 	MM.lookupValue("SampleRate",    fSampleRate);
 	MM.lookupValue("NumberSamples", fNSamples);
+	MM.lookupValue("I2Cdev",        fICMDeviceName);
 	
 	double ival;
 	double Period = 1.0/((double) fSampleRate);
@@ -589,10 +591,10 @@ bool IMU::ReadConfiguration(void)
 
     // Configuration read, setup devices. 
     // Initialize I2C subsystem. 
-    fI2C = new I2CHelper(kICMDeviceName);
+    fI2C = new I2CHelper(fICMDeviceName.c_str());
     if (fI2C->Error())
     {
-	Logger->Log("# FAIL ON to open I2C %s.\n", kICMDeviceName);
+	Logger->Log("# FAIL ON to open I2C %s.\n", fICMDeviceName.c_str());
 	delete fI2C;
 	fI2C = NULL;
 	return false;
@@ -678,6 +680,7 @@ bool IMU::WriteConfiguration(void)
     MM.add("MagAddress", Setting::TypeInt)     = (int) MagAddress;
     MM.add("SampleRate", Setting::TypeInt)     = (int) fSampleRate;
     MM.add("NumberSamples", Setting::TypeInt)  = (int) fNSamples;
+    MM.add("I2Cdev",     Setting::TypeString)  = fICMDeviceName;
 
     // Write out the new configuration.
     try

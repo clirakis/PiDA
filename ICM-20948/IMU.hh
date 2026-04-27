@@ -12,6 +12,7 @@
  * Change Descriptions :
  * 30-Mar-24 moved I2C and mag sensor to this level. 
  * 08-Sep-25 CBL put in ability to force a log filename change. 
+ * 27-Apr-26 Moved the declaration of the I2C bus to the cfg file. 
  *
  * Classification : Unclassified
  *
@@ -23,6 +24,7 @@
 #ifndef __IMU_hh_
 #define __IMU_hh_
 #  include <stdint.h>
+#  include <string>
 #  include "CObject.hh" // Base class with all kinds of intermediate
 #  include "IMUData.hh"
 
@@ -43,7 +45,7 @@ public:
      * sudo i2cdetect -y 1
      * You should see a device 69 if this works.
      */
-    const char *kICMDeviceName = "/dev/i2c-1";
+    //const char *kICMDeviceName = "/dev/i2c-1";
 
     /** 
      * Build on CObject error codes. 
@@ -164,6 +166,8 @@ private:
     AK09916         *fAK09916;      /* Magnetometer data. */
 
     time_t          fGMTOffset; 
+
+    std::string     fICMDeviceName; /* I2C bus. */  
 
     /* Private functions. ==============================  */
 
