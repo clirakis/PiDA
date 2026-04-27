@@ -109,13 +109,13 @@ IMU_IPC::IMU_IPC(void) : CObject()
 	delete pSM_Position;
 	pSM_Position = 0;
 	SET_DEBUG_STACK;
-	SetError(-1);
+	// Not fatal, but does have downstream effects. 
     }
     else
     {
 	plogger->Log("# GGA SM successfully attached.\n");
+	fGGA = new GGA();
     }
-    fGGA = new GGA();
 
     SET_DEBUG_STACK;
 }
