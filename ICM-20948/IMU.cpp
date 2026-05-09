@@ -353,15 +353,15 @@ void IMU::Update(void)
     if (f5Logger!=NULL)
     {
 
-	double t = (double) fSampleTime.tv_sec + 
-	    (double)fSampleTime.tv_nsec*1.0e-9;
+	double t = (double) fReadTime.tv_sec + 
+	    (double)fReadTime.tv_nsec*1.0e-9;
 	f5Logger->FillInternalVector( t,             0);
 	f5Logger->FillInternalVector(  fAcc[0],      1);
 	f5Logger->FillInternalVector(  fAcc[1],      2);
 	f5Logger->FillInternalVector(  fAcc[2],      3);
 	f5Logger->FillInternalVector(  fGyro[0],     4);
 	f5Logger->FillInternalVector(  fGyro[1],     5);
-	f5Logger->FillInternalVector(  fGyro[3],     6);
+	f5Logger->FillInternalVector(  fGyro[2],     6);
 	f5Logger->FillInternalVector(  fMagXYZ[0],   7);
 	f5Logger->FillInternalVector(  fMagXYZ[1],   8);
 	f5Logger->FillInternalVector(  fMagXYZ[2],   9);
