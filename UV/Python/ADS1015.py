@@ -35,7 +35,7 @@
 # SOFTWARE.
 #===============================================================================
 
-import qwiic_ads1015
+from qwiic_ads1015 import qwiic_ads1015
 import sys
 import time
 
