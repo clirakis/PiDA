@@ -75,9 +75,9 @@ def runExample():
 		multiplier = myAds.get_multiplier()
 		# The private variable _multiplierToVolts is auto-updated each time setGain is called
 		mV = channel_A3 * multiplier
-		print(mV, "mV", mV*UV_Mult*1.0e-3)
+		print(mV, "mV, UV:", mV*UV_Mult*1.0e-3, " mW/cm2")
 
-		time.sleep(0.050)
+		time.sleep(0.10)
 
 if __name__ == '__main__':
 	try:
