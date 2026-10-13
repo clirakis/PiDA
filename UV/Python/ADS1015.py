@@ -35,7 +35,7 @@
 # SOFTWARE.
 #===============================================================================
 
-from qwiic_ads1015 import QwiicADS1015 as qwiic_ads1015
+from qwiic_ads1015 import QwiicADS1015
 import sys
 import time
 
@@ -43,7 +43,8 @@ def runExample():
 	print("\nQwiic ADS1015 Example 1 - Basic Readings\n")
 
 	# Create instance of device
-	myAds = qwiic_ads1015.QwiicADS1015()
+	#myAds = qwiic_ads1015.QwiicADS1015()
+	myAds = QwiicADS1015()
 
 	# Check if it's connected
 	if myAds.is_connected() == False:
