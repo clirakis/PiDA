@@ -55,7 +55,7 @@ class UVSensor:
 
         # Attach to subsystem
         self.myAds = qwiic_ads1015.QwiicADS1015()
-        if myAds.is_connected() == False:
+        if self.myAds.is_connected() == False:
             print("The device isn't connected to the system. Please check your connection", file=sys.stderr)
             self.__error__ = 1 # not good.
             self.logfile.write("# ERROR opening the qwiic bus.\n")
