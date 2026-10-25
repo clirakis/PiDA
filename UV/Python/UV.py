@@ -56,10 +56,10 @@ class UVSensor:
         # Attach to subsystem
         self.myAds = qwiic_ads1015.QwiicADS1015()
         if myAds.is_connected() == False:
-	    print("The device isn't connected to the system. Please check your connection", file=sys.stderr)
+            print("The device isn't connected to the system. Please check your connection", file=sys.stderr)
             self.__error__ = 1 # not good.
             self.logfile.write("# ERROR opening the qwiic bus.\n")
-	    return
+            return
     
         myAds.begin()
         # set the gain. 
@@ -92,7 +92,7 @@ class UVSensor:
         # Get the multiplier for the gain setting
         multiplier = myAds.get_multiplier()
         # The private variable _multiplierToVolts
-	# is auto-updated each time setGain is called
+        # is auto-updated each time setGain is called
         mV = channel_A3 * multiplier
         UV = mV*UV_Mult*1.0e-3
         print("result: ", mV, "mV, UV:", UV, " mW/cm2")
@@ -124,7 +124,7 @@ def runExample():
     # Check if it's connected
     if myAds.is_connected() == False:
         print("The device isn't connected to the system. Please check your connection", file=sys.stderr)
-	return
+        return
 
     myAds.begin()
 
