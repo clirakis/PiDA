@@ -80,7 +80,7 @@ class UVSensor:
         self.Count   = 0
         self.Run     = True
         toWrite = "# time between samples: " + str(self.__SampleTime__) + " sec\n"
-	self.logfile.write(toWrite)
+        self.logfile.write(toWrite)
         self.logfile.write("# Count, Seconds, mv, UV mw/cm^2\n")
         
     def Do(self, Niterations):
