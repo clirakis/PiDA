@@ -90,6 +90,7 @@ class UVSensor:
         @param Niterations - number of iterations to run, 0 means
                indefinite. 
         """
+	self.logfile.write("# starting run, N:"+str(Niterations)+"\n")
         while self.Run:
             channel_A3 = self.myAds.get_single_ended(3)
             if self.__DoPrint__:
@@ -126,9 +127,13 @@ class UVSensor:
 
 if __name__ == '__main__':
 
+    N = 10
+    if len(sys.argv)>1:
+        N = sys.argv[1]
+
     try:
         uv = UVSensor()
-        uv.Do(10)
+        uv.Do(N)
         
     except (KeyboardInterrupt, SystemExit) as exErr:
         print("\nEnding UV")
