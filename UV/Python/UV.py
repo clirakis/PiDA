@@ -1,48 +1,121 @@
 #!/usr/bin/env python
-#-------------------------------------------------------------------------------
-# qwiic_ads1015_ex6_display_millivolts.py
-#
-#   This example shows how to output ADC values on one single-ended channel (A3).
-#   It will also print out the voltage of the reading in mV.
-#   Note, the conversion multiplier needs to be corrected for gain settings,
-#   And this is done automatically in the library, using .getMultiplier(),
-#   as shown below.
-  
-#   *at gain setting of 1, like in this example (and 3.3V VCC), 0-3.3V will read 0-1652.
-# 
-#-------------------------------------------------------------------------------
-# Written by SparkFun Electronics, November 2024
-#
-# This python library supports the SparkFun Electroncis Qwiic ecosystem
-#
-# More information on Qwiic is at https://www.sparkfun.com/qwiic
-#
-# Do you like this library? Help support SparkFun. Buy a board!
-#===============================================================================
-# Copyright (c) 2024 SparkFun Electronics
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy 
-# of this software and associated documentation files (the "Software"), to deal 
-# in the Software without restriction, including without limitation the rights 
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell 
-# copies of the Software, and to permit persons to whom the Software is 
-# furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in all 
-# copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, 
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE 
-# SOFTWARE.
-#===============================================================================
+ # ================================================================
+ #
+ # Module Name : UV.py
+ #
+ # Author/Date : C.B. Lirakis / 25-Oct-26
+ #
+ # Description : python interface to qwiic 12 bit adc and subsequently
+ #               connected to a UV sensor.
+ #
+ #             At gain setting of 1, like in this example (and 3.3V VCC),
+ #             0-3.3V will read 0-1652.
+ #
+ # Restrictions/Limitations : 
+ #
+ # Change Descriptions :
+ #
+ # Classification : Unclassified
+ #
+ # References :
+ #    More information on Qwiic is at https://www.sparkfun.com/qwiic
+ #    library  documentation -- https://github.com/sparkfun/Qwiic_Py
+ #    API -- https://qwiic-py.readthedocs.io/en/latest/apiref.html#qwiic
+ #    hardware for ADS1015 -- https://github.com/sparkfun/SparkFun_Qwiic_12_Bit_ADC_-_4_Channel_ADS1015
+ #    API for ADS1015 -- https://github.com/sparkfun/qwiic_ads1015_py
+ #
+ # Dependencies:
+ #    Since this is python it is run in a env -- .envSparkfun
+ #    This container has the qwiic and qwiic_ads1015 (ADC) libraries
+ #    installed. 
+ #
+ #    Modified    By    Reason
+ #    --------    --    ------
+ #    
+ #
+ # ================================================================
 
+# Imports!
 import qwiic_ads1015
 import sys
 import time
+import datetime
+
+class UVSensor:
+    def __init__(self):
+        """
+        Initialize the system. This means opening the Qwiic port
+        """
+        self.__error__ = 0 # no error
+        now = datetime.datetime.now()
+        self.logfile = open('UV.log','w') 
+        self.logfile.write("# ---------------------------------------------\n")
+        self.logfile.write("# SYS-I-FILE: UV sensor \n");
+        self.logfile.write('# SYS-I-FILE: Logfile started: '+str(now)+'\n')
+
+        # Attach to subsystem
+        self.myAds = qwiic_ads1015.QwiicADS1015()
+        if myAds.is_connected() == False:
+	    print("The device isn't connected to the system. Please check your connection", \
+	    file=sys.stderr)
+	    self.__error__ = 1 # not good.
+	    self.logfile.write("# ERROR opening the qwiic bus.\n")
+	    return
+	
+        myAds.begin()
+	# set the gain. 
+	myAds.set_gain(myAds.kConfigPga1)
+
+	# This is the multiplier for converting the UV
+	# value, V0 = 4.3 * Diode current in uA.
+	# 1uA = 9mW/cm^2
+	# inverting this. then it is 9/4.3 or
+	# ~2.09
+	# This is assuming that it is a +5 Vcc with 4.3V as maximum.
+	# not sure if this is the full story and max on this board
+	# may be 3.3 volts. 
+	self.UV_Mult = 9/4.3
+	self.Count   = 0
+	self.Run     = true
+	self.logfile.write("# Count, mv, UV mw/cm^2\n")
+	    
+    def Do(self, Niterations):
+        """
+        Read the data. Currently the UV sensor is on channel 3
+        so only the data at channel 3 need be sampled.
+        @param Niterations - number of iterations to run, 0 means
+               indefinite. 
+        """
+        while self.Run:
+	    channel_A3 = self.myAds.get_single_ended(3)
+	    print("A3: ", channel_A3, end = '\t')
+		
+	    # Get the multiplier for the gain setting
+	    multiplier = myAds.get_multiplier()
+	    # The private variable _multiplierToVolts
+            # is auto-updated each time setGain is called
+	    mV = channel_A3 * multiplier
+	    UV = mV*UV_Mult*1.0e-3
+	    print("result: ", mV, "mV, UV:", UV, " mW/cm2")
+
+	    toWrite = str(self.Count) + "," + self.str(mv) + "," + str(UV) + "\n"
+	    self.logfile.write( toWrite)
+
+	    self.Count = self.Count + 1
+	    if Niterations>0:
+	        self.Run = (self.Count<Niterations)
+		
+	    time.sleep(0.10)
+
+
+	def __del__(self):
+	    """
+	    Do any cleanup necessary. 
+	    """
+            self.logfile.write('# SYS-I-END: Program ends.\n')
+            now = datetime.datetime.now()
+            self.logfile.write('# SYS-I-ENDTIME ' + str(now) + '\n')
+            self.logfile.close()
 
 def runExample():
 	print("\nQwiic ADS1015 Example 6 - Display Millivolts\n")
@@ -80,9 +153,13 @@ def runExample():
 		time.sleep(0.10)
 
 if __name__ == '__main__':
+
 	try:
-		runExample()
+	    runExample()
+	    uv = UVSensor()
+	    uv.Do(100)
+	    
 	except (KeyboardInterrupt, SystemExit) as exErr:
-		print("\nEnding Example 6")
-		sys.exit(0)
+	    print("\nEnding UV")
+	    sys.exit(0)
                 
