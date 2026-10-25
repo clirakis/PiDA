@@ -128,7 +128,7 @@ def runExample():
 
     myAds.begin()
 
-    myAds.set_gain(myAds.kConfigPga1)
+    myAds.set_gain(self.myAds.kConfigPga1)
 
     # This is the multiplier for converting the UV
     # value, V0 = 4.3 * Diode current in uA.
