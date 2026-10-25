@@ -125,7 +125,7 @@ def runExample():
     # Check if it's connected
     if myAds.is_connected() == False:
         print("The device isn't connected to the system. Please check your connection", file=sys.stderr)
-        return
+	return
 
     myAds.begin()
 
