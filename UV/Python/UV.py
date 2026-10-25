@@ -65,8 +65,15 @@ class UVSensor:
             return
     
         self.myAds.begin()
-        # set the gain. 
-        self.myAds.set_gain(self.myAds.kConfigPga1)
+        # set the gain.
+	# ADS1015_CONFIG_PGA_TWOTHIRDS  +/- 6.144v
+        #   ADS1015_CONFIG_PGA_1          +/- 4.096v (used in this example)
+        #   ADS1015_CONFIG_PGA_2          +/- 2.048v
+        #   ADS1015_CONFIG_PGA_4          +/- 1.024v
+        #   ADS1015_CONFIG_PGA_8          +/- 0.512v
+        #   ADS1015_CONFIG_PGA_16         +/- 0.256v
+
+        self.myAds.set_gain(self.myAds.kConfigPga4)
 
         # This is the multiplier for converting the UV
         # value, V0 = 4.3 * Diode current in uA.
