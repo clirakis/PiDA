@@ -47,7 +47,7 @@ class UVSensor:
         Initialize the system. This means opening the Qwiic port
         """
         self.__error__ = 0 # no error
-        self.__debug__ = False
+        self.__DoPrint__ = False
         now = datetime.datetime.now()
         self.logfile = open('UV.log','w') 
         self.logfile.write("# ---------------------------------------------\n")
@@ -88,7 +88,7 @@ class UVSensor:
         """
         while self.Run:
             channel_A3 = self.myAds.get_single_ended(3)
-            if self.__debug__:
+            if self.__DoPrint__:
                 print("A3: ", channel_A3, end = '\t')
         
             # Get the multiplier for the gain setting
@@ -97,7 +97,7 @@ class UVSensor:
             # is auto-updated each time setGain is called
             mV = channel_A3 * multiplier
             UV = mV*self.UV_Mult*1.0e-3
-            if self.__debug__:
+            if self.__DoPrint__:
                 print("result: ", mV, "mV, UV:", UV, " mW/cm2")
 
             toWrite = str(self.Count) + "," + time.time() + "," + str(mV) + "," + str(UV) + "\n"
