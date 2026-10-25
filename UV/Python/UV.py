@@ -48,6 +48,8 @@ class UVSensor:
         """
         self.__error__ = 0 # no error
         self.__DoPrint__ = False
+	self.__SampleTime__ = 1 # seconds
+	
         now = datetime.datetime.now()
         self.logfile = open('UV.log','w') 
         self.logfile.write("# ---------------------------------------------\n")
@@ -77,6 +79,8 @@ class UVSensor:
         self.UV_Mult = 9/4.3
         self.Count   = 0
         self.Run     = True
+	toWrite = "# time between samples: " + str(self.__SampleTime__) + " sec\n"
+	self.logfile.write(toWrite)
         self.logfile.write("# Count, Seconds, mv, UV mw/cm^2\n")
         
     def Do(self, Niterations):
@@ -107,7 +111,7 @@ class UVSensor:
             if Niterations>0:
                 self.Run = (self.Count<Niterations)
         
-            time.sleep(0.10)
+            time.sleep(self.__SampleTime__)
 
 
     def __del__(self):
@@ -124,7 +128,7 @@ if __name__ == '__main__':
 
     try:
         uv = UVSensor()
-        uv.Do(100)
+        uv.Do(10)
         
     except (KeyboardInterrupt, SystemExit) as exErr:
         print("\nEnding UV")
