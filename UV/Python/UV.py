@@ -100,7 +100,7 @@ class UVSensor:
             if self.__DoPrint__:
                 print("result: ", mV, "mV, UV:", UV, " mW/cm2")
 
-            toWrite = str(self.Count) + "," + time.time() + "," + str(mV) + "," + str(UV) + "\n"
+            toWrite = str(self.Count) + "," + str(time.time()) + "," + str(mV) + "," + str(UV) + "\n"
             self.logfile.write( toWrite)
 
             self.Count = self.Count + 1
