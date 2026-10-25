@@ -86,25 +86,25 @@ class UVSensor:
                indefinite. 
         """
         while self.Run:
-        channel_A3 = self.myAds.get_single_ended(3)
-        print("A3: ", channel_A3, end = '\t')
+            channel_A3 = self.myAds.get_single_ended(3)
+            print("A3: ", channel_A3, end = '\t')
         
-        # Get the multiplier for the gain setting
-        multiplier = myAds.get_multiplier()
-        # The private variable _multiplierToVolts
-        # is auto-updated each time setGain is called
-        mV = channel_A3 * multiplier
-        UV = mV*UV_Mult*1.0e-3
-        print("result: ", mV, "mV, UV:", UV, " mW/cm2")
+            # Get the multiplier for the gain setting
+            multiplier = myAds.get_multiplier()
+            # The private variable _multiplierToVolts
+            # is auto-updated each time setGain is called
+            mV = channel_A3 * multiplier
+            UV = mV*UV_Mult*1.0e-3
+            print("result: ", mV, "mV, UV:", UV, " mW/cm2")
 
-        toWrite = str(self.Count) + "," + self.str(mv) + "," + str(UV) + "\n"
-        self.logfile.write( toWrite)
+            toWrite = str(self.Count) + "," + self.str(mv) + "," + str(UV) + "\n"
+            self.logfile.write( toWrite)
 
-        self.Count = self.Count + 1
-        if Niterations>0:
-            self.Run = (self.Count<Niterations)
+            self.Count = self.Count + 1
+            if Niterations>0:
+                self.Run = (self.Count<Niterations)
         
-        time.sleep(0.10)
+            time.sleep(0.10)
 
 
     def __del__(self):
