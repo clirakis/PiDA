@@ -94,7 +94,7 @@ class UVSensor:
             # The private variable _multiplierToVolts
             # is auto-updated each time setGain is called
             mV = channel_A3 * multiplier
-            UV = mV*UV_Mult*1.0e-3
+            UV = mV*self.UV_Mult*1.0e-3
             print("result: ", mV, "mV, UV:", UV, " mW/cm2")
 
             toWrite = str(self.Count) + "," + self.str(mv) + "," + str(UV) + "\n"
