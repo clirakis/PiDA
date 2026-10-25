@@ -47,7 +47,7 @@ class UVSensor:
         Initialize the system. This means opening the Qwiic port
         """
         self.__error__ = 0 # no error
-	self.__debug__ = False
+        self.__debug__ = False
         now = datetime.datetime.now()
         self.logfile = open('UV.log','w') 
         self.logfile.write("# ---------------------------------------------\n")
@@ -77,7 +77,7 @@ class UVSensor:
         self.UV_Mult = 9/4.3
         self.Count   = 0
         self.Run     = True
-        self.logfile.write("# Count, mv, UV mw/cm^2\n")
+        self.logfile.write("# Count, Seconds, mv, UV mw/cm^2\n")
         
     def Do(self, Niterations):
         """
@@ -100,7 +100,7 @@ class UVSensor:
 	    if self.__debug__:
                 print("result: ", mV, "mV, UV:", UV, " mW/cm2")
 
-            toWrite = str(self.Count) + "," + str(mV) + "," + str(UV) + "\n"
+            toWrite = str(self.Count) + "," + time.time() + "," + str(mV) + "," + str(UV) + "\n"
             self.logfile.write( toWrite)
 
             self.Count = self.Count + 1
@@ -119,44 +119,10 @@ class UVSensor:
         self.logfile.write('# SYS-I-ENDTIME ' + str(now) + '\n')
         self.logfile.close()
 
-def runExample():
-    print("\nQwiic ADS1015 Example 6 - Display Millivolts\n")
-
-    myAds = qwiic_ads1015.QwiicADS1015()
-
-    # Check if it's connected
-    if myAds.is_connected() == False:
-        print("The device isn't connected to the system. Please check your connection", file=sys.stderr)
-        return
-
-    myAds.begin()
-
-    myAds.set_gain(myAds.kConfigPga1)
-
-    # This is the multiplier for converting the UV
-    # value, V0 = 4.3 * Diode current in uA.
-    # 1uA = 9mW/cm^2
-    # inverting this. then it is 9/4.3 or
-    # ~2.09
-    # This is assuming that it is a +5 Vcc with 4.3V as maximum. 
-    UV_Mult = 9/4.3
-
-    while True:
-        channel_A3 = myAds.get_single_ended(3)
-        print("A3: ", channel_A3, end = '\t')
-        
-        # Get the multiplier for the gain setting
-        multiplier = myAds.get_multiplier()
-        # The private variable _multiplierToVolts is auto-updated each time setGain is called
-        mV = channel_A3 * multiplier
-        print(mV, "mV, UV:", mV*UV_Mult*1.0e-3, " mW/cm2")
-
-        time.sleep(0.10)
 
 if __name__ == '__main__':
 
     try:
-        #runExample()
         uv = UVSensor()
         uv.Do(100)
         
