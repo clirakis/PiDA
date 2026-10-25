@@ -48,7 +48,7 @@ class UVSensor:
         """
         self.__error__ = 0 # no error
         self.__DoPrint__ = False
-	self.__SampleTime__ = 1 # seconds
+        self.__SampleTime__ = 1 # seconds
 	
         now = datetime.datetime.now()
         self.logfile = open('UV.log','w') 
