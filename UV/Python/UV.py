@@ -129,7 +129,7 @@ if __name__ == '__main__':
 
     N = 10
     if len(sys.argv)>1:
-        N = sys.argv[1]
+        N = int(sys.argv[1])
 
     try:
         uv = UVSensor()
