@@ -153,7 +153,7 @@ def runExample():
 if __name__ == '__main__':
 
     try:
-        runExample()
+        #runExample()
         uv = UVSensor()
         uv.Do(100)
         
