@@ -90,7 +90,7 @@ class UVSensor:
         @param Niterations - number of iterations to run, 0 means
                indefinite. 
         """
-	self.logfile.write("# starting run, N:"+str(Niterations)+"\n")
+        self.logfile.write("# starting run, N:"+str(Niterations)+"\n")
         while self.Run:
             channel_A3 = self.myAds.get_single_ended(3)
             if self.__DoPrint__:
