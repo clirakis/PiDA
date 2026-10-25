@@ -75,7 +75,7 @@ class UVSensor:
         # may be 3.3 volts. 
         self.UV_Mult = 9/4.3
         self.Count   = 0
-        self.Run     = true
+        self.Run     = True
         self.logfile.write("# Count, mv, UV mw/cm^2\n")
         
     def Do(self, Niterations):
