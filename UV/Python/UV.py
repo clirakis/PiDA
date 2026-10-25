@@ -56,29 +56,29 @@ class UVSensor:
         # Attach to subsystem
         self.myAds = qwiic_ads1015.QwiicADS1015()
         if myAds.is_connected() == False:
-	    print("The device isn't connected to the system. Please check your connection", \
-	    file=sys.stderr)
-	    self.__error__ = 1 # not good.
-	    self.logfile.write("# ERROR opening the qwiic bus.\n")
-	    return
-	
+        print("The device isn't connected to the system. Please check your connection", \
+        file=sys.stderr)
+        self.__error__ = 1 # not good.
+        self.logfile.write("# ERROR opening the qwiic bus.\n")
+        return
+    
         myAds.begin()
-	# set the gain. 
-	myAds.set_gain(myAds.kConfigPga1)
+        # set the gain. 
+        myAds.set_gain(myAds.kConfigPga1)
 
-	# This is the multiplier for converting the UV
-	# value, V0 = 4.3 * Diode current in uA.
-	# 1uA = 9mW/cm^2
-	# inverting this. then it is 9/4.3 or
-	# ~2.09
-	# This is assuming that it is a +5 Vcc with 4.3V as maximum.
-	# not sure if this is the full story and max on this board
-	# may be 3.3 volts. 
-	self.UV_Mult = 9/4.3
-	self.Count   = 0
-	self.Run     = true
-	self.logfile.write("# Count, mv, UV mw/cm^2\n")
-	    
+        # This is the multiplier for converting the UV
+        # value, V0 = 4.3 * Diode current in uA.
+        # 1uA = 9mW/cm^2
+        # inverting this. then it is 9/4.3 or
+        # ~2.09
+        # This is assuming that it is a +5 Vcc with 4.3V as maximum.
+        # not sure if this is the full story and max on this board
+        # may be 3.3 volts. 
+        self.UV_Mult = 9/4.3
+        self.Count   = 0
+        self.Run     = true
+        self.logfile.write("# Count, mv, UV mw/cm^2\n")
+        
     def Do(self, Niterations):
         """
         Read the data. Currently the UV sensor is on channel 3
@@ -87,79 +87,79 @@ class UVSensor:
                indefinite. 
         """
         while self.Run:
-	    channel_A3 = self.myAds.get_single_ended(3)
-	    print("A3: ", channel_A3, end = '\t')
-		
-	    # Get the multiplier for the gain setting
-	    multiplier = myAds.get_multiplier()
-	    # The private variable _multiplierToVolts
-            # is auto-updated each time setGain is called
-	    mV = channel_A3 * multiplier
-	    UV = mV*UV_Mult*1.0e-3
-	    print("result: ", mV, "mV, UV:", UV, " mW/cm2")
+        channel_A3 = self.myAds.get_single_ended(3)
+        print("A3: ", channel_A3, end = '\t')
+        
+        # Get the multiplier for the gain setting
+        multiplier = myAds.get_multiplier()
+        # The private variable _multiplierToVolts
+	# is auto-updated each time setGain is called
+        mV = channel_A3 * multiplier
+        UV = mV*UV_Mult*1.0e-3
+        print("result: ", mV, "mV, UV:", UV, " mW/cm2")
 
-	    toWrite = str(self.Count) + "," + self.str(mv) + "," + str(UV) + "\n"
-	    self.logfile.write( toWrite)
+        toWrite = str(self.Count) + "," + self.str(mv) + "," + str(UV) + "\n"
+        self.logfile.write( toWrite)
 
-	    self.Count = self.Count + 1
-	    if Niterations>0:
-	        self.Run = (self.Count<Niterations)
-		
-	    time.sleep(0.10)
+        self.Count = self.Count + 1
+        if Niterations>0:
+            self.Run = (self.Count<Niterations)
+        
+        time.sleep(0.10)
 
 
-	def __del__(self):
-	    """
-	    Do any cleanup necessary. 
-	    """
-            self.logfile.write('# SYS-I-END: Program ends.\n')
-            now = datetime.datetime.now()
-            self.logfile.write('# SYS-I-ENDTIME ' + str(now) + '\n')
-            self.logfile.close()
+    def __del__(self):
+        """
+        Do any cleanup necessary. 
+        """
+        self.logfile.write('# SYS-I-END: Program ends.\n')
+        now = datetime.datetime.now()
+        self.logfile.write('# SYS-I-ENDTIME ' + str(now) + '\n')
+        self.logfile.close()
 
 def runExample():
-	print("\nQwiic ADS1015 Example 6 - Display Millivolts\n")
+    print("\nQwiic ADS1015 Example 6 - Display Millivolts\n")
 
-	myAds = qwiic_ads1015.QwiicADS1015()
+    myAds = qwiic_ads1015.QwiicADS1015()
 
-	# Check if it's connected
-	if myAds.is_connected() == False:
-		print("The device isn't connected to the system. Please check your connection", \
-			file=sys.stderr)
-		return
+    # Check if it's connected
+    if myAds.is_connected() == False:
+        print("The device isn't connected to the system. Please check your connection", \
+            file=sys.stderr)
+        return
 
-	myAds.begin()
+    myAds.begin()
 
-	myAds.set_gain(myAds.kConfigPga1)
+    myAds.set_gain(myAds.kConfigPga1)
 
-	# This is the multiplier for converting the UV
-	# value, V0 = 4.3 * Diode current in uA.
-	# 1uA = 9mW/cm^2
-	# inverting this. then it is 9/4.3 or
-	# ~2.09
-	# This is assuming that it is a +5 Vcc with 4.3V as maximum. 
-	UV_Mult = 9/4.3
+    # This is the multiplier for converting the UV
+    # value, V0 = 4.3 * Diode current in uA.
+    # 1uA = 9mW/cm^2
+    # inverting this. then it is 9/4.3 or
+    # ~2.09
+    # This is assuming that it is a +5 Vcc with 4.3V as maximum. 
+    UV_Mult = 9/4.3
 
-	while True:
-		channel_A3 = myAds.get_single_ended(3)
-		print("A3: ", channel_A3, end = '\t')
-		
-		# Get the multiplier for the gain setting
-		multiplier = myAds.get_multiplier()
-		# The private variable _multiplierToVolts is auto-updated each time setGain is called
-		mV = channel_A3 * multiplier
-		print(mV, "mV, UV:", mV*UV_Mult*1.0e-3, " mW/cm2")
+    while True:
+        channel_A3 = myAds.get_single_ended(3)
+        print("A3: ", channel_A3, end = '\t')
+        
+        # Get the multiplier for the gain setting
+        multiplier = myAds.get_multiplier()
+        # The private variable _multiplierToVolts is auto-updated each time setGain is called
+        mV = channel_A3 * multiplier
+        print(mV, "mV, UV:", mV*UV_Mult*1.0e-3, " mW/cm2")
 
-		time.sleep(0.10)
+        time.sleep(0.10)
 
 if __name__ == '__main__':
 
-	try:
-	    runExample()
-	    uv = UVSensor()
-	    uv.Do(100)
-	    
-	except (KeyboardInterrupt, SystemExit) as exErr:
-	    print("\nEnding UV")
-	    sys.exit(0)
+    try:
+        runExample()
+        uv = UVSensor()
+        uv.Do(100)
+        
+    except (KeyboardInterrupt, SystemExit) as exErr:
+        print("\nEnding UV")
+        sys.exit(0)
                 
