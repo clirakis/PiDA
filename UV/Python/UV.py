@@ -61,9 +61,9 @@ class UVSensor:
             self.logfile.write("# ERROR opening the qwiic bus.\n")
             return
     
-        myAds.begin()
+        self.myAds.begin()
         # set the gain. 
-        myAds.set_gain(myAds.kConfigPga1)
+        self.myAds.set_gain(myAds.kConfigPga1)
 
         # This is the multiplier for converting the UV
         # value, V0 = 4.3 * Diode current in uA.
@@ -90,7 +90,7 @@ class UVSensor:
             print("A3: ", channel_A3, end = '\t')
         
             # Get the multiplier for the gain setting
-            multiplier = myAds.get_multiplier()
+            multiplier = self.myAds.get_multiplier()
             # The private variable _multiplierToVolts
             # is auto-updated each time setGain is called
             mV = channel_A3 * multiplier
