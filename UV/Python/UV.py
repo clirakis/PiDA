@@ -170,7 +170,7 @@ if __name__ == '__main__':
 
     try:
         uv = UVSensor(args.gain)
-        uv.Do(args.number)
+        uv.Do(int(args.number))
         
     except (KeyboardInterrupt, SystemExit) as exErr:
         print("\nEnding UV")
