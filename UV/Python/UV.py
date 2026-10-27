@@ -174,7 +174,7 @@ if __name__ == '__main__':
 #        N = int(sys.argv[1])
 
     try:
-        uv = UVSensor(args.gain)
+        uv = UVSensor(int(args.gain))
         uv.Do(int(args.number))
         
     except (KeyboardInterrupt, SystemExit) as exErr:
