@@ -90,6 +90,10 @@ class UVSensor:
         elif gain==16:
             self.myAds.set_gain(self.myAds.kConfigPga16)
             self.logfile.write("Gain set to 16\n")
+        else:
+            self.myAds.set_gain(self.myAds.kConfigPga4)
+            self.logfile.write("Gain set to Default  -- 4\n")
+            
 
         # This is the multiplier for converting the UV
         # value, V0 = 4.3 * Diode current in uA.
@@ -163,6 +167,7 @@ if __name__ == '__main__':
     parser.add_argument("-g", "--gain",   help="ADC amplifier gain.")
 
     args = parser.parse_args()
+    print("GAIN: ", args.gain)
     
     
 #    if len(sys.argv)>1:
