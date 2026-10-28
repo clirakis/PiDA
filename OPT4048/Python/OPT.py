@@ -121,7 +121,7 @@ class OPT4048:
         value = (data[0]<<8) | data[1]
         if self.myDebug:
             print('------------------ RAW -----------------------------')
-            print(f'Read register 0x:{rAddress:x}, value 0x:{value:x}')
+            print(f'Read register: 0x{rAddress:x}, value: 0x{value:x}')
         return value
 
     def ReadChannel(self, channel):
