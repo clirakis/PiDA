@@ -120,7 +120,7 @@ class OPT4048:
 
         value = (data[0]<<8) | data[1]
         if self.myDebug:
-            print(f'Read register 0x: {rAddress,x}, value 0x: {value,x}')
+            print(f'Read register 0x: {rAddress:x}, value 0x: {value:x}')
         return value
 
     def ReadChannel(self, channel):
@@ -146,8 +146,8 @@ class OPT4048:
             rv = ((MSB<<8) | LSB)<<Exponent
             if self.myDebug:
                 print(f'channel: {channel}, value: {rv}, count {COUNTER}')
-                print(f'  {Upper,x}, {Lower,x}, {Exponent}, {MSB}, {LSB}')
-                print(f'  {COUNTER}, {CRC,x}')
+                print(f'  {Upper:x}, {Lower:x}, {Exponent}, {MSB}, {LSB}')
+                print(f'  {COUNTER}, {CRC:x}')
 
         return rv
 
@@ -160,7 +160,7 @@ class OPT4048:
         Mant     = value&0xF
         rv = Mant<<Exponent
         if self.myDebug:
-            print(f'Threshold Low: {rv,x}')
+            print(f'Threshold Low: {rv:x}')
         return rv
 
     def ThresholdH(self):
@@ -172,7 +172,7 @@ class OPT4048:
         Mant     = value&0xF
         rv = Mant<<Exponent
         if self.myDebug:
-            print(f'Threshold High: {rv,x}')
+            print(f'Threshold High: {rv:x}')
         return rv
 
     def Status(self):
@@ -222,7 +222,7 @@ class OPT4048:
 
         if self.myDebug:
             print(f'CSTATUS, High: {High}, Overload flag: {OVER}')
-            print(f'    Ready: {READY}, Flags:{FLAGS,x}')
+            print(f'    Ready: {READY}, Flags:{FLAGS:x}')
 
     def ReadDIDL(self):
         """
@@ -234,7 +234,7 @@ class OPT4048:
         DIDH = value&0xFFF
 
         if self.myDebug:
-            print(f'DIDL 0x:{DIDL,x}, DIDH 0x:{DIDH,x}')
+            print(f'DIDL 0x:{DIDL:x}, DIDH 0x:{DIDH:x}')
         
         
 if __name__ == '__main__':
