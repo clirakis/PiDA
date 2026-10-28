@@ -106,7 +106,7 @@ kADDRESS = 0x44
 
 class OPT4048:
     def __init__(self):
-        self.bus = SMBUS(kBUS)
+        self.bus = SMBus(kBUS)
         self.myDebug = True
 
     def ReadRegister(self, rAddress):
