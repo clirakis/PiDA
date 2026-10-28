@@ -190,7 +190,7 @@ class OPT4048:
         if self.myDebug:
             print(f'Status, QWAKE: {QWAKE}, RANGE: {RANGE}, CONVERSION_TIME {CONV}')
             print(f'Mode: {Mode}, Latch{LATCH}, Interrupt Polarity: {INT_POL}')
-            print(f'Fault: {FAULT})
+            print(f'Fault: {FAULT}')
 
     def Trigger(self):
         """
