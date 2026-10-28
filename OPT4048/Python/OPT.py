@@ -257,8 +257,13 @@ if __name__ == '__main__':
 #        N = int(sys.argv[1])
 
     try:
-        uv = UVSensor(int(args.gain))
-        uv.Do(int(args.number))
+        opt = OPT4048()
+        opt.ThresholdL()
+        opt.ThresholdH()
+        opt.Status()
+        opt.Trigger()
+        opt.CStatus()
+        opt.ReadDIDL()
         
     except (KeyboardInterrupt, SystemExit) as exErr:
         print("\nEnding UV")
