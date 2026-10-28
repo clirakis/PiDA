@@ -120,7 +120,8 @@ class OPT4048:
 
         value = (data[0]<<8) | data[1]
         if self.myDebug:
-            print(f'Read register 0x: {rAddress:x}, value 0x: {value:x}')
+            print('------------------ RAW -----------------------------')
+            print(f'Read register 0x:{rAddress:x}, value 0x:{value:x}')
         return value
 
     def ReadChannel(self, channel):
@@ -145,6 +146,7 @@ class OPT4048:
             #   ADC_CODES_CHx = (MANTISSA_CHx<<EXPONENT_CHx) 
             rv = ((MSB<<8) | LSB)<<Exponent
             if self.myDebug:
+                print('-----------------------------------------------')
                 print(f'channel: {channel}, value: {rv}, count {COUNTER}')
                 print(f'  {Upper:x}, {Lower:x}, {Exponent}, {MSB}, {LSB}')
                 print(f'  {COUNTER}, {CRC:x}')
@@ -160,6 +162,7 @@ class OPT4048:
         Mant     = value&0xF
         rv = Mant<<Exponent
         if self.myDebug:
+            print('-----------------------------------------------')
             print(f'Threshold Low: {rv:x}')
         return rv
 
@@ -172,6 +175,7 @@ class OPT4048:
         Mant     = value&0xF
         rv = Mant<<Exponent
         if self.myDebug:
+            print('-----------------------------------------------')
             print(f'Threshold High: {rv:x}')
         return rv
 
@@ -188,6 +192,7 @@ class OPT4048:
         INT_POL = (value>>2)&0x1
         FAULT = value&0x3
         if self.myDebug:
+            print('-----------------------------------------------')
             print(f'Status, QWAKE: {QWAKE}, RANGE: {RANGE}, CONVERSION_TIME {CONV}')
             print(f'Mode: {MODE}, Latch{LATCH}, Interrupt Polarity: {INT_POL}')
             print(f'Fault: {FAULT}')
@@ -205,6 +210,7 @@ class OPT4048:
         BURST   = value&0x1
 
         if self.myDebug:
+            print('-----------------------------------------------')
             print(f'Trigger, High: {High}, Channel select: {CH_SEL}')
             print(f'Interrupt direction: {INT_DIR}, configuration: {INT_CFG}')
             print(f'I2C burst: {BURST}')
@@ -221,6 +227,7 @@ class OPT4048:
         FLAGS = value&0x3
 
         if self.myDebug:
+            print('-----------------------------------------------')
             print(f'CSTATUS, High: {High}, Overload flag: {OVER}')
             print(f'    Ready: {READY}, Flags:{FLAGS:x}')
 
@@ -234,6 +241,7 @@ class OPT4048:
         DIDH = value&0xFFF
 
         if self.myDebug:
+            print('-----------------------------------------------')
             print(f'DIDL 0x:{DIDL:x}, DIDH 0x:{DIDH:x}')
         
         
