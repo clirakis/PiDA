@@ -108,7 +108,7 @@ kADDRESS = 0x44
 class OPT4048:
     def __init__(self):
         self.bus = SMBus(kBUS)
-        self.myDebug = True
+        self.myDebug = False
 
     def ReadRegister(self, rAddress):
         """
@@ -287,7 +287,7 @@ class OPT4048:
         Pol   = 0   # interrupt polarity
         Fault = 0
         Value = QWake<<15 | Range<<10 | Time<<6 | Mode<<4 | Latch<<3 | Pol<<2 | Fault
-        print(f'Setup word:0x{Value,x}')
+        print(f'Setup word:0x{Value:x}')
         # Previously used
         #Value = 0x3238
         self.WriteRegister(0x0A, Value)
