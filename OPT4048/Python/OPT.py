@@ -275,8 +275,21 @@ class OPT4048:
         """
         Register 0xA does setup. 
         """
-        # For the moment hand pack the data.
-        Value = 0x3238
+        """
+        For the moment hand pack the data.
+        QWake is 0, the next bit is also zero
+        """
+        QWake = 0
+        Range = 4   # 12 is autorange, 4 is 36klux
+        Time  = 8   # 100ms conversion time (is this also integration?)
+        Mode  = 3   # 3 is continious mode
+        Latch = 1   # interrupt reporting
+        Pol   = 0   # interrupt polarity
+        Fault = 0
+        Value = QWake<<15 | Range<<10 | Time<<6 | Mode<<4 | Latch<<3 | Pol<<2 | Fault
+        print(f'Setup word:0x{Value,x}')
+        # Previously used
+        #Value = 0x3238
         self.WriteRegister(0x0A, Value)
         
 if __name__ == '__main__':
