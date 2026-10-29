@@ -100,6 +100,7 @@ import sys
 import time
 import datetime
 import argparse
+import struct
 
 kBUS = 1
 kADDRESS = 0x44
@@ -133,8 +134,10 @@ class OPT4048:
         """
         # Ensure input is only 16 bits.
         wordData = Value&0xFFFF
-        data[0] = (wordData>>8)&0xFF
-        data[1] = wordData&0xFF
+#        data[0] = (wordData>>8)&0xFF
+#        data[1] = wordData&0xFF
+        data = struct.pack('BB', (wordData>>8)&0xFF, wordData&0xFF)
+        print(f'PACKED WRITE: 0x{data,x}')
         self.bus.write_i2c_block_data(kADDRESS, rAddress, data)
         
 
