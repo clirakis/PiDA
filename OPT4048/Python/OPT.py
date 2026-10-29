@@ -347,4 +347,4 @@ if __name__ == '__main__':
 #    if len(sys.argv)>1:
 #        N = int(sys.argv[1])
     #test1()
-    test2(args.gain)
+    test2(int(args.gain))
