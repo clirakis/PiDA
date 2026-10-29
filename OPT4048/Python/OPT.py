@@ -328,6 +328,35 @@ def test2(myRange):
         print(f'Count:{i} Result x:{x}, y:{y}, z:{z}, w:{w}') 
         time.sleep(1)
 
+def LogData(myRange, Number):
+    now = datetime.datetime.now()
+    logfile = open('VIS.log','w') 
+    logfile.write("# ---------------------------------------------\n")
+    logfile.write("# SYS-I-FILE: Visible Light sensor \n");
+    logfile.write('# SYS-I-FILE: Logfile started: '+str(now)+'\n')
+    logfile.write(f'# RANGE VALUE: {myRange}\n')
+    logfile.write("Count,Seconds,X,Y,Z,W\n')
+
+
+    opt = OPT4048()
+    print('Write Setup and then read back.')
+    opt.WriteSetup(myRange)
+    for i in range(Number):
+        x = opt.ReadChannel(0)
+        y = opt.ReadChannel(1)
+        z = opt.ReadChannel(2)
+        w = opt.ReadChannel(3)
+        toWrite = str(self.Count) + "," + str(time.time()) + "," + str(x) + "," + str(y) + "," + str(z) + "," + str(w) + "\n"
+        logfile.write( toWrite)
+
+        print(f'Count:{i} Result x:{x}, y:{y}, z:{z}, w:{w}') 
+        time.sleep(1)
+    logfile.write('# SYS-I-END: Program ends.\n')
+    now = datetime.datetime.now()
+    logfile.write('# SYS-I-ENDTIME ' + str(now) + '\n')
+    logfile.close()
+    
+
 if __name__ == '__main__':
 
     # default number of samples
@@ -347,4 +376,5 @@ if __name__ == '__main__':
 #    if len(sys.argv)>1:
 #        N = int(sys.argv[1])
     #test1()
-    test2(int(args.gain))
+    #test2(int(args.gain))
+    LogData(int(args.gain), int(args.number))
