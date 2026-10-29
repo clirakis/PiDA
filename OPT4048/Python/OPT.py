@@ -271,7 +271,7 @@ class OPT4048:
             print(f'DIDL 0x:{DIDL:x}, DIDH 0x:{DIDH:x}')
         
 
-    def WriteSetup(self):
+    def WriteSetup(self, inputRange):
         """
         Register 0xA does setup. 
         """
@@ -280,7 +280,8 @@ class OPT4048:
         QWake is 0, the next bit is also zero
         """
         QWake = 0
-        Range = 4   # 12 is autorange, 4 is 36klux
+        #Range = 4   # 12 is autorange, 4 is 36klux
+        Range = inputRange
         Time  = 8   # 100ms conversion time (is this also integration?)
         Mode  = 3   # 3 is continious mode
         Latch = 1   # interrupt reporting
@@ -315,10 +316,10 @@ def test1():
         print("\nEnding UV")
         sys.exit(0)
 
-def test2():
+def test2(range):
     opt = OPT4048()
     print('Write Setup and then read back.')
-    opt.WriteSetup()
+    opt.WriteSetup(range)
     for i in range(10):
         x = opt.ReadChannel(0)
         y = opt.ReadChannel(1)
@@ -346,4 +347,4 @@ if __name__ == '__main__':
 #    if len(sys.argv)>1:
 #        N = int(sys.argv[1])
     #test1()
-    test2()
+    test2(args.gain)
