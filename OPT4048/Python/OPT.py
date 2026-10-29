@@ -138,6 +138,7 @@ class OPT4048:
 #        data[1] = wordData&0xFF
         data = struct.pack('BB', (wordData>>8)&0xFF, wordData&0xFF)
         #print(f'PACKED WRITE: 0x{data:x}')
+        print(f'WRITE REGISTER 0x{rAddress:x} ------------------)
         self.bus.write_i2c_block_data(kADDRESS, rAddress, data)
         
 
@@ -150,7 +151,15 @@ class OPT4048:
         """
         rv = -1
         if channel<4:
-            address = channel+2
+            if channel==0:
+                address = 0
+            elif channel==1:
+                address = 2
+            elif channel==2:
+                address = 4
+            elif channel==3:
+                address = 6
+                
             Upper = self.ReadRegister(address)
             Lower = self.ReadRegister(address+1)
             Exponent = (Upper>>4) & 0X0F
