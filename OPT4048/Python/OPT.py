@@ -314,7 +314,19 @@ def test1():
     except (KeyboardInterrupt, SystemExit) as exErr:
         print("\nEnding UV")
         sys.exit(0)
-    
+
+def test2():
+    opt = OPT4048()
+    print('Write Setup and then read back.')
+    opt.WriteSetup()
+    for i in range(10):
+        x = opt.ReadChannel(0)
+        y = opt.ReadChannel(1)
+        z = opt.ReadChannel(2)
+        w = opt.ReadChannel(3)
+        print(f'Count:{i} Result x:{x}, y:{y}, z:{z}, w:{w}') 
+        time.sleep(1)
+
 if __name__ == '__main__':
 
     # default number of samples
@@ -333,4 +345,5 @@ if __name__ == '__main__':
     
 #    if len(sys.argv)>1:
 #        N = int(sys.argv[1])
-    test1()
+    #test1()
+    test2()
