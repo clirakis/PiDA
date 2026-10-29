@@ -124,6 +124,20 @@ class OPT4048:
             print(f'Read register: 0x{rAddress:x}, value: 0x{value:x}')
         return value
 
+    def WriteRegister(self, rAddress, Value):
+        """
+        Pack the data in Value in the correct word order and
+        write it to the register given in rAddress
+        @param rAddress - register address to write to.
+        @param Value    - 16 bit value to write to the register.
+        """
+        # Ensure input is only 16 bits.
+        wordData = Value&0xFFFF
+        data[0] = (wordData>>8)&0xFF
+        data[1] = wordData&0xFF
+        self.bus.write_i2c_block_data(kADDRESS, rAddress, data)
+        
+
     def ReadChannel(self, channel):
         """
         read the two words of data for the channel specified and
@@ -244,6 +258,14 @@ class OPT4048:
             print('-----------------------------------------------')
             print(f'DIDL 0x:{DIDL:x}, DIDH 0x:{DIDH:x}')
         
+
+    def WriteSetup(self):
+        """
+        Register 0xA does setup. 
+        """
+        # For the moment hand pack the data.
+        Value = 0x3238
+        self.WriteRegister(0x0A, Value)
         
 if __name__ == '__main__':
 
@@ -272,6 +294,13 @@ if __name__ == '__main__':
         opt.Trigger()
         opt.CStatus()
         opt.ReadDIDL()
+        #
+        print('Write Setup and then read back.')
+        opt.WriteSetup()
+        opt.ReadChannel(0)
+        opt.ReadChannel(1)
+        opt.ReadChannel(2)
+        opt.ReadChannel(3)
         
     except (KeyboardInterrupt, SystemExit) as exErr:
         print("\nEnding UV")
