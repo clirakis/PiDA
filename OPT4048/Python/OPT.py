@@ -339,7 +339,7 @@ def LogData(myRange, Number):
 
 
     opt = OPT4048()
-    print('Write Setup and then read back.')
+    print('Loop begins.')
     opt.WriteSetup(myRange)
     for i in range(Number):
         x = opt.ReadChannel(0)
