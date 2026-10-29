@@ -291,26 +291,8 @@ class OPT4048:
         # Previously used
         #Value = 0x3238
         self.WriteRegister(0x0A, Value)
-        
-if __name__ == '__main__':
 
-    # default number of samples
-    N = 10
-    # default elapsed time, hard coded to 1/sec so this ends up
-    # being the number of samples.
-
-    # Default gain
-    Gain = 4
-
-    parser = argparse.ArgumentParser("Incident UV tool.")
-    parser.add_argument("-n", "--number", help="Number samples")
-    parser.add_argument("-g", "--gain",   help="ADC amplifier gain.")
-
-    args = parser.parse_args()
-    
-#    if len(sys.argv)>1:
-#        N = int(sys.argv[1])
-
+def test1():
     try:
         opt = OPT4048()
         opt.ThresholdL()
@@ -332,3 +314,23 @@ if __name__ == '__main__':
     except (KeyboardInterrupt, SystemExit) as exErr:
         print("\nEnding UV")
         sys.exit(0)
+    
+if __name__ == '__main__':
+
+    # default number of samples
+    N = 10
+    # default elapsed time, hard coded to 1/sec so this ends up
+    # being the number of samples.
+
+    # Default gain
+    Gain = 4
+
+    parser = argparse.ArgumentParser("Incident UV tool.")
+    parser.add_argument("-n", "--number", help="Number samples")
+    parser.add_argument("-g", "--gain",   help="ADC amplifier gain.")
+
+    args = parser.parse_args()
+    
+#    if len(sys.argv)>1:
+#        N = int(sys.argv[1])
+    test1()
