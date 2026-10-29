@@ -349,7 +349,7 @@ def LogData(myRange, Number):
         toWrite = str(i) + "," + str(time.time()) + "," + str(x) + "," + str(y) + "," + str(z) + "," + str(w) + "\n"
         logfile.write( toWrite)
 
-        print(f'Count:{i} Result x:{x}, y:{y}, z:{z}, w:{w}') 
+        #print(f'Count:{i} Result x:{x}, y:{y}, z:{z}, w:{w}') 
         time.sleep(1)
     logfile.write('# SYS-I-END: Program ends.\n')
     now = datetime.datetime.now()
