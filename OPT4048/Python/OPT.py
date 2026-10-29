@@ -162,8 +162,8 @@ class OPT4048:
                 
             Upper = self.ReadRegister(address)
             Lower = self.ReadRegister(address+1)
-            Exponent = (Upper>>4) & 0X0F
-            MSB      = Upper & 0x0F
+            Exponent = (Upper>>12) & 0X0F
+            MSB      = Upper & 0xFF
             LSB      = (Lower >>8) & 0xFF
             COUNTER  = (Lower>>4)  & 0x0F
             CRC      = Lower&0x0F
