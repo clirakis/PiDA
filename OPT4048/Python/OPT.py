@@ -316,10 +316,10 @@ def test1():
         print("\nEnding UV")
         sys.exit(0)
 
-def test2(range):
+def test2(myRange):
     opt = OPT4048()
     print('Write Setup and then read back.')
-    opt.WriteSetup(range)
+    opt.WriteSetup(myRange)
     for i in range(10):
         x = opt.ReadChannel(0)
         y = opt.ReadChannel(1)
