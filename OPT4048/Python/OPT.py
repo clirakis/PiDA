@@ -322,11 +322,12 @@ if __name__ == '__main__':
         #
         print('Write Setup and then read back.')
         opt.WriteSetup()
-        opt.Status()
-        opt.ReadChannel(0)
-        opt.ReadChannel(1)
-        opt.ReadChannel(2)
-        opt.ReadChannel(3)
+        #opt.Status()
+        x = opt.ReadChannel(0)
+        y = opt.ReadChannel(1)
+        z = opt.ReadChannel(2)
+        w = opt.ReadChannel(3)
+        print(f'Result x:{x}, y:{y}, z:{z}, w:{w}') 
         
     except (KeyboardInterrupt, SystemExit) as exErr:
         print("\nEnding UV")
