@@ -138,7 +138,7 @@ class OPT4048:
 #        data[1] = wordData&0xFF
         data = struct.pack('BB', (wordData>>8)&0xFF, wordData&0xFF)
         #print(f'PACKED WRITE: 0x{data:x}')
-        print(f'WRITE REGISTER 0x{rAddress:x} ------------------')
+        #print(f'WRITE REGISTER 0x{rAddress:x} ------------------')
         self.bus.write_i2c_block_data(kADDRESS, rAddress, data)
         
 
@@ -288,7 +288,7 @@ class OPT4048:
         Pol   = 0   # interrupt polarity
         Fault = 0
         Value = QWake<<15 | Range<<10 | Time<<6 | Mode<<4 | Latch<<3 | Pol<<2 | Fault
-        print(f'Setup word:0x{Value:x}')
+        #print(f'Setup word:0x{Value:x}')
         # Previously used
         #Value = 0x3238
         self.WriteRegister(0x0A, Value)
@@ -335,7 +335,7 @@ def LogData(myRange, Number):
     logfile.write("# SYS-I-FILE: Visible Light sensor \n");
     logfile.write('# SYS-I-FILE: Logfile started: '+str(now)+'\n')
     logfile.write(f'# RANGE VALUE: {myRange}\n')
-    logfile.write("Count,Seconds,X,Y,Z,W\n')
+    logfile.write('Count,Seconds,X,Y,Z,W\n')
 
 
     opt = OPT4048()
