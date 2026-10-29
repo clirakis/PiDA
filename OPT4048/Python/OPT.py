@@ -309,6 +309,7 @@ if __name__ == '__main__':
         #
         print('Write Setup and then read back.')
         opt.WriteSetup()
+        opt.Status()
         opt.ReadChannel(0)
         opt.ReadChannel(1)
         opt.ReadChannel(2)
