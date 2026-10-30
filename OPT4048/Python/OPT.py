@@ -344,10 +344,10 @@ def LogData(myRange, Number):
     print('Loop begins.')
     opt.WriteSetup(myRange)
     for i in range(Number):
-        x,m,e = opt.ReadChannel(0)
-        y,my,ey = opt.ReadChannel(1)
-        z,m,e = opt.ReadChannel(2)
-        w,m,e = opt.ReadChannel(3)
+        x,e,m = opt.ReadChannel(0)
+        y,ey,my = opt.ReadChannel(1)
+        z,e,m = opt.ReadChannel(2)
+        w,e,m = opt.ReadChannel(3)
         toWrite = str(i) + "," + str(time.time()) + "," + str(x) + "," + str(y) + "," + str(z) + "," + str(w) + "," + str(my) + "," + str(ey) + "\n"
         logfile.write( toWrite)
 
