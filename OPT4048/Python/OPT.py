@@ -169,15 +169,16 @@ class OPT4048:
             CRC      = Lower&0x0F
             
             #   MANTISSA_CHx  = (RESULT_MSB_CHx<<8) + RESULT_LSB_CHx
-            #   ADC_CODES_CHx = (MANTISSA_CHx<<EXPONENT_CHx) 
-            rv = ((MSB<<8) | LSB)<<Exponent
+            #   ADC_CODES_CHx = (MANTISSA_CHx<<EXPONENT_CHx)
+            Mantissa = (MSB<<8) | LSB 
+            rv = Mantissa<<Exponent
             if self.myDebug:
                 print('-----------------------------------------------')
                 print(f'channel: {channel}, value: {rv}, count {COUNTER}')
                 print(f'  {Upper:x}, {Lower:x}, {Exponent}, {MSB}, {LSB}')
                 print(f'  {COUNTER}, {CRC:x}')
 
-        return rv
+        return rv, Exponent, Mantissa
 
     def ThresholdL(self):
         """
@@ -335,18 +336,19 @@ def LogData(myRange, Number):
     logfile.write("# SYS-I-FILE: Visible Light sensor \n");
     logfile.write('# SYS-I-FILE: Logfile started: '+str(now)+'\n')
     logfile.write(f'# RANGE VALUE: {myRange}\n')
-    logfile.write('Count,Seconds,X,Y,Z,W\n')
+    #logfile.write('Count,Seconds,X,Y,Z,W\n')
+    logfile.write('Count,Seconds,X,Y,Z,W,MY,EY\n')
 
 
     opt = OPT4048()
     print('Loop begins.')
     opt.WriteSetup(myRange)
     for i in range(Number):
-        x = opt.ReadChannel(0)
-        y = opt.ReadChannel(1)
-        z = opt.ReadChannel(2)
-        w = opt.ReadChannel(3)
-        toWrite = str(i) + "," + str(time.time()) + "," + str(x) + "," + str(y) + "," + str(z) + "," + str(w) + "\n"
+        x,m,e = opt.ReadChannel(0)
+        y,my,ey = opt.ReadChannel(1)
+        z,m,e = opt.ReadChannel(2)
+        w,m,e = opt.ReadChannel(3)
+        toWrite = str(i) + "," + str(time.time()) + "," + str(x) + "," + str(y) + "," + str(z) + "," + str(w) + "," + str(my) + "," + str(ey) + "\n"
         logfile.write( toWrite)
 
         #print(f'Count:{i} Result x:{x}, y:{y}, z:{z}, w:{w}') 
