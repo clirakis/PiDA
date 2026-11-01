@@ -167,11 +167,18 @@ class OPT4048:
             LSB      = (Lower >>8) & 0xFF
             COUNTER  = (Lower>>4)  & 0x0F
             CRC      = Lower&0x0F
-            
+
             #   MANTISSA_CHx  = (RESULT_MSB_CHx<<8) + RESULT_LSB_CHx
             #   ADC_CODES_CHx = (MANTISSA_CHx<<EXPONENT_CHx)
             Mantissa = (MSB<<8) | LSB 
             rv = Mantissa<<Exponent
+
+            # DEBUG
+            #
+            toWrite =  str(rv) + "," + str(COUNTER) + "," + str(Upper) + "," + str(Lower) + "," + str(Exponent) + "," + str(MSB) + "," + str(LSB)  "\n"
+            logfile.write( toWrite)
+
+
             if self.myDebug:
                 print('-----------------------------------------------')
                 print(f'channel: {channel}, value: {rv}, count {COUNTER}')
@@ -357,7 +364,33 @@ def LogData(myRange, Number):
     now = datetime.datetime.now()
     logfile.write('# SYS-I-ENDTIME ' + str(now) + '\n')
     logfile.close()
-    
+
+def ReadTest(myRange, Number):
+    now = datetime.datetime.now()
+    logfile = open('VIS.log','w') 
+    logfile.write("# ---------------------------------------------\n")
+    logfile.write("# SYS-I-FILE: Visible Light sensor \n");
+    logfile.write('# SYS-I-FILE: Logfile started: '+str(now)+'\n')
+    logfile.write(f'# RANGE VALUE: {myRange}\n')
+    #logfile.write('Count,Seconds,X,Y,Z,W\n')
+    logfile.write('Count,Seconds,COUNTER,Upper,Lower,Exponent,MSB,LSB\n')
+
+
+    opt = OPT4048()
+    print('Loop begins.')
+    opt.WriteSetup(myRange)
+    for i in range(Number):
+        toWrite = str(i)+ "," + str(time.time()) + ","
+        logfile.write( toWrite)
+        y = opt.ReadChannel(1)
+
+        #print(f'Count:{i} Result x:{x}, y:{y}, z:{z}, w:{w}') 
+        time.sleep(1)
+    logfile.write('# SYS-I-END: Program ends.\n')
+    now = datetime.datetime.now()
+    logfile.write('# SYS-I-ENDTIME ' + str(now) + '\n')
+    logfile.close()
+ 
 
 if __name__ == '__main__':
 
