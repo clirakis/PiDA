@@ -106,10 +106,9 @@ kBUS = 1
 kADDRESS = 0x44
 
 class OPT4048:
-    def __init__(self, logfile):
+    def __init__(self):
         self.bus = SMBus(kBUS)
         self.myDebug = False
-        self.logfile = logfile
 
     def ReadRegister(self, rAddress):
         """
@@ -181,8 +180,8 @@ class OPT4048:
 
             # DEBUG
             #
-            toWrite =  str(rv) + "," + str(COUNTER) + "," + str(Upper) + "," + str(Lower) + "," + str(Exponent) + "," + str(MSB) + "," + str(LSB) +  "\n"
-            self.logfile.write( toWrite)
+            #toWrite =  str(rv) + "," + str(COUNTER) + "," + str(Upper) + "," + str(Lower) + "," + str(Exponent) + "," + str(MSB) + "," + str(LSB) +  "\n"
+            #self.logfile.write( toWrite)
 
 
             if self.myDebug:
@@ -191,7 +190,7 @@ class OPT4048:
                 print(f'  {Upper:x}, {Lower:x}, {Exponent}, {MSB}, {LSB}')
                 print(f'  {COUNTER}, {CRC:x}')
 
-        return rv, Exponent, Mantissa
+        return rv
 
     def ThresholdL(self):
         """
@@ -350,18 +349,18 @@ def LogData(myRange, Number):
     logfile.write('# SYS-I-FILE: Logfile started: '+str(now)+'\n')
     logfile.write(f'# RANGE VALUE: {myRange}\n')
     #logfile.write('Count,Seconds,X,Y,Z,W\n')
-    logfile.write('Count,Seconds,X,Y,Z,W,MY,EY\n')
+    logfile.write('Count,Seconds,X,Y,Z,W\n')
 
 
     opt = OPT4048()
     print('Loop begins.')
     opt.WriteSetup(myRange)
     for i in range(Number):
-        x,e,m = opt.ReadChannel(0)
-        y,ey,my = opt.ReadChannel(1)
-        z,e,m = opt.ReadChannel(2)
-        w,e,m = opt.ReadChannel(3)
-        toWrite = str(i) + "," + str(time.time()) + "," + str(x) + "," + str(y) + "," + str(z) + "," + str(w) + "," + str(my) + "," + str(ey) + "\n"
+        x = opt.ReadChannel(0)
+        y = opt.ReadChannel(1)
+        z = opt.ReadChannel(2)
+        w = opt.ReadChannel(3)
+        toWrite = str(i) + "," + str(time.time()) + "," + str(x) + "," + str(y) + "," + str(z) + "," + str(w) "\n"
         logfile.write( toWrite)
 
         #print(f'Count:{i} Result x:{x}, y:{y}, z:{z}, w:{w}') 
@@ -418,5 +417,5 @@ if __name__ == '__main__':
 #        N = int(sys.argv[1])
     #test1()
     #test2(int(args.gain))
-    #LogData(int(args.gain), int(args.number))
-    ReadTest(int(args.gain), int(args.number))
+    LogData(int(args.gain), int(args.number))
+    #ReadTest(int(args.gain), int(args.number))
