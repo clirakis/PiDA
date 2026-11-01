@@ -175,7 +175,7 @@ class OPT4048:
 
             # DEBUG
             #
-            toWrite =  str(rv) + "," + str(COUNTER) + "," + str(Upper) + "," + str(Lower) + "," + str(Exponent) + "," + str(MSB) + "," + str(LSB)  "\n"
+            toWrite =  str(rv) + "," + str(COUNTER) + "," + str(Upper) + "," + str(Lower) + "," + str(Exponent) + "," + str(MSB) + "," + str(LSB) +  "\n"
             logfile.write( toWrite)
 
 
