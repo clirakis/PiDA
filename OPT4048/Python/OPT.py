@@ -163,11 +163,16 @@ class OPT4048:
                 
             Upper = self.ReadRegister(address)
             Lower = self.ReadRegister(address+1)
+            # In the upper word, the top 4 bits are the exponent. 
             Exponent = (Upper>>12) & 0X0F
-            MSB      = Upper & 0xFF
+            # The remaining 12 bits are the MSWord of the mantissa. 
+            MSB      = Upper & 0xFFF
+            # The top 8 bits are the LSB of the Mantissa
             LSB      = (Lower >>8) & 0xFF
-            COUNTER  = (Lower>>4)  & 0x0F
-            CRC      = Lower&0x0F
+            # The counter is a nibble of the final 8 bits. 
+            COUNTER  = (Lower>>4)  & 0x000F
+            # and the CRC is the lower 4 bits. 
+            CRC      = Lower&0x000F
 
             #   MANTISSA_CHx  = (RESULT_MSB_CHx<<8) + RESULT_LSB_CHx
             #   ADC_CODES_CHx = (MANTISSA_CHx<<EXPONENT_CHx)
@@ -374,7 +379,7 @@ def ReadTest(myRange, Number):
     logfile.write('# SYS-I-FILE: Logfile started: '+str(now)+'\n')
     logfile.write(f'# RANGE VALUE: {myRange}\n')
     #logfile.write('Count,Seconds,X,Y,Z,W\n')
-    logfile.write('Count,Seconds,COUNTER,Upper,Lower,Exponent,MSB,LSB\n')
+    logfile.write('Count,Seconds,Y,COUNTER,Upper,Lower,Exponent,MSB,LSB\n')
 
 
     opt = OPT4048(logfile)
