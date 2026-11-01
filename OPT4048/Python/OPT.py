@@ -413,4 +413,5 @@ if __name__ == '__main__':
 #        N = int(sys.argv[1])
     #test1()
     #test2(int(args.gain))
-    LogData(int(args.gain), int(args.number))
+    #LogData(int(args.gain), int(args.number))
+    ReadTest(int(args.gain), int(args.number))
