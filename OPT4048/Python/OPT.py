@@ -106,9 +106,10 @@ kBUS = 1
 kADDRESS = 0x44
 
 class OPT4048:
-    def __init__(self):
+    def __init__(self, logfile):
         self.bus = SMBus(kBUS)
         self.myDebug = False
+        self.logfile = logfile
 
     def ReadRegister(self, rAddress):
         """
@@ -176,7 +177,7 @@ class OPT4048:
             # DEBUG
             #
             toWrite =  str(rv) + "," + str(COUNTER) + "," + str(Upper) + "," + str(Lower) + "," + str(Exponent) + "," + str(MSB) + "," + str(LSB) +  "\n"
-            logfile.write( toWrite)
+            self.logfile.write( toWrite)
 
 
             if self.myDebug:
@@ -376,7 +377,7 @@ def ReadTest(myRange, Number):
     logfile.write('Count,Seconds,COUNTER,Upper,Lower,Exponent,MSB,LSB\n')
 
 
-    opt = OPT4048()
+    opt = OPT4048(logfile)
     print('Loop begins.')
     opt.WriteSetup(myRange)
     for i in range(Number):
