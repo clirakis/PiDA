@@ -360,7 +360,7 @@ def LogData(myRange, Number):
         y = opt.ReadChannel(1)
         z = opt.ReadChannel(2)
         w = opt.ReadChannel(3)
-        toWrite = str(i) + "," + str(time.time()) + "," + str(x) + "," + str(y) + "," + str(z) + "," + str(w) "\n"
+        toWrite = str(i) + "," + str(time.time()) + "," + str(x) + "," + str(y) + "," + str(z) + "," + str(w) + "\n"
         logfile.write( toWrite)
 
         #print(f'Count:{i} Result x:{x}, y:{y}, z:{z}, w:{w}') 
