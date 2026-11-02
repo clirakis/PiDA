@@ -181,7 +181,7 @@ class OPT4048:
 
             # DEBUG
             #
-            if self.Extended:
+            if self.extended:
                 toWrite =  str(rv) + "," + str(COUNTER) + "," + str(Upper) + "," + str(Lower) + "," + str(Exponent) + "," + str(MSB) + "," + str(LSB) +  "\n"
 
             else:
