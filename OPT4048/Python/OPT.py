@@ -411,9 +411,10 @@ if __name__ == '__main__':
     # Default gain
     Gain = 4
 
-    parser = argparse.ArgumentParser("Incident UV tool.")
+    parser = argparse.ArgumentParser("Incident VIS Light tool.")
     parser.add_argument("-n", "--number", help="Number samples")
     parser.add_argument("-g", "--gain",   help="ADC amplifier gain.")
+    parser.add_argument("-c", "--channel",help="single channel debug")
 
     args = parser.parse_args()
     
@@ -421,5 +422,7 @@ if __name__ == '__main__':
 #        N = int(sys.argv[1])
     #test1()
     #test2(int(args.gain))
-    LogData(int(args.gain), int(args.number))
-    #ReadTest(int(args.gain), int(args.number))
+    if args.channel =='n':
+        LogData(int(args.gain), int(args.number))
+    else:
+        ReadTest(int(args.gain), int(args.number))
