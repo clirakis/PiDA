@@ -383,7 +383,7 @@ def ReadTest(myRange, Number):
     logfile.write('Count,Seconds,Y,COUNTER,Upper,Lower,Exponent,MSB,LSB\n')
 
 
-    opt = OPT4048(logfile)
+    opt = OPT4048()
     opt.extended = True
     
     print('Loop begins.')
