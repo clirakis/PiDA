@@ -108,8 +108,9 @@ kADDRESS = 0x44
 class OPT4048:
     def __init__(self):
         self.bus = SMBus(kBUS)
-        self.myDebug = False
-
+        self.myDebug  = False
+        self.extended = False  # extended prints in ReadChannel
+        
     def ReadRegister(self, rAddress):
         """
         read the 16 bit register and do the byte order corrections.
@@ -180,17 +181,19 @@ class OPT4048:
 
             # DEBUG
             #
-            #toWrite =  str(rv) + "," + str(COUNTER) + "," + str(Upper) + "," + str(Lower) + "," + str(Exponent) + "," + str(MSB) + "," + str(LSB) +  "\n"
-            #self.logfile.write( toWrite)
+            if self.Extended:
+                toWrite =  str(rv) + "," + str(COUNTER) + "," + str(Upper) + "," + str(Lower) + "," + str(Exponent) + "," + str(MSB) + "," + str(LSB) +  "\n"
 
-
+            else:
+                toWrite = []
+                    
             if self.myDebug:
                 print('-----------------------------------------------')
                 print(f'channel: {channel}, value: {rv}, count {COUNTER}')
                 print(f'  {Upper:x}, {Lower:x}, {Exponent}, {MSB}, {LSB}')
                 print(f'  {COUNTER}, {CRC:x}')
-
-        return rv
+                
+        return rv,toWrite
 
     def ThresholdL(self):
         """
@@ -377,17 +380,18 @@ def ReadTest(myRange, Number):
     logfile.write("# SYS-I-FILE: Visible Light sensor \n");
     logfile.write('# SYS-I-FILE: Logfile started: '+str(now)+'\n')
     logfile.write(f'# RANGE VALUE: {myRange}\n')
-    #logfile.write('Count,Seconds,X,Y,Z,W\n')
     logfile.write('Count,Seconds,Y,COUNTER,Upper,Lower,Exponent,MSB,LSB\n')
 
 
     opt = OPT4048(logfile)
+    opt.extended = True
+    
     print('Loop begins.')
     opt.WriteSetup(myRange)
     for i in range(Number):
-        toWrite = str(i)+ "," + str(time.time()) + ","
+        y,dstring = opt.ReadChannel(1)
+        toWrite = str(i)+ "," + str(time.time()) + "," + dstring
         logfile.write( toWrite)
-        y = opt.ReadChannel(1)
 
         #print(f'Count:{i} Result x:{x}, y:{y}, z:{z}, w:{w}') 
         time.sleep(1)
